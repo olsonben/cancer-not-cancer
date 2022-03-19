@@ -1,0 +1,25 @@
+{
+  "name": "cancernotcancer",
+  "version": "1.0.0",
+  "description": "Simple webapp to label uncertain ai images",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/olsonben/cancer-not-cancer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/olsonben/cancer-not-cancer/issues"
+  },
+  "homepage": "https://github.com/olsonben/cancer-not-cancer#readme",
+  "dependencies": {
+    "@vitejs/plugin-vue": "^2.2.4",
+    "vue": "^3.2.31"
+  }
+}
