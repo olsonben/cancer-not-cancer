@@ -1,4 +1,5 @@
 <script>
+import axios from 'axios';
 export default {
     data() {
         return {
@@ -35,6 +36,8 @@ export default {
             this.addRes()
             this.lastComment = this.comment
             this.comment = '' // clear the last comment
+            // post test
+            this.postData()
 
             // move on to the next image
             this.nextImage()
@@ -63,6 +66,20 @@ export default {
         },
         nextImage() {
             this.imageName = this.imageNameList[Math.floor(Math.random() * this.imageNameList.length)]
+        },
+
+        postData() {
+            var formData = new URLSearchParams()
+            formData.append('msg', this.msg)
+
+            const axiosConfig = {
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                }
+            }
+            axios.post('127.0.0.1:5050/, formData, axiosConfig')
+                .then(response => {this.responseData = response.data; this.formSubmitted = true})
+                .catch(error => {console.log(error.message)})
         }
     }
 }
