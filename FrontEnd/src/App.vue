@@ -65,21 +65,26 @@ export default {
             }
         },
         nextImage() {
-            this.imageName = this.imageNameList[Math.floor(Math.random() * this.imageNameList.length)]
+            axios.get('127.0.0.1:5050/')
+                .then((res) => {
+                    this.imageName = res.imageName
+                    console.log(res)
+                })
+                .catch((err) => {
+                    console.error(err)
+                })
         },
 
         postData() {
-            var formData = new URLSearchParams()
-            formData.append('msg', this.msg)
-
-            const axiosConfig = {
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                }
-            }
-            axios.post('127.0.0.1:5050/, formData, axiosConfig')
-                .then(response => {this.responseData = response.data; this.formSubmitted = true})
-                .catch(error => {console.log(error.message)})
+            axios.post('127.0.0.1:5050/', {
+                history: this.resHistory
+            })
+                .then((res) => {
+                    console.log(res);
+                })
+                .catch((err) => {
+                    console.error((err));
+                })
         }
     }
 }
