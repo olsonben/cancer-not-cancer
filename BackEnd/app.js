@@ -14,14 +14,18 @@ const imageNameList = [
 let resHistory = {}
 
 app.get('/', (req, res) => {
-    res.send({imageName: imageNameList[Math.floor(Math.random() * imageNameList.length)]})
-    console.log("get success");
+//     // res.send({imageName: imageNameList[Math.floor(Math.random() * imageNameList.length)]})
+//     res.send("hello")
+//     console.log("req get: " + req)
+//     console.log("get success");
 })
 
 app.post('/', (req, res) => {
-    for (const values of req.history) {
-        resHistory.push(values);
-    }
+    console.log("req post: " + req)
+    res.send("post hello")
+    // for (const values of req.history) {
+    //     resHistory.push(values);
+    // }
     console.log("post success");
 })
 

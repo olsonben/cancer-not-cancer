@@ -44,7 +44,7 @@ export default {
         },
         // Add response to resHistory
         addRes() {
-            this.resHistory.push({ 
+            this.resHistory.push({
                 // keeping track of imageID, which button was pressed, and any comments
                 imageID: this.imageName,
                 resValue: this.resValue,
@@ -65,20 +65,30 @@ export default {
             }
         },
         nextImage() {
-            axios.get('127.0.0.1:5050/')
+            console.log("hello");
+            axios.get('http://localhost:5050')
                 .then((res) => {
-                    this.imageName = res.imageName
                     console.log(res)
                 })
                 .catch((err) => {
                     console.error(err)
                 })
+                .then(() => {
+                    console.log("final");
+                })
+            console.log(this.imageName);
         },
 
         postData() {
-            axios.post('127.0.0.1:5050/', {
-                history: this.resHistory
-            })
+            console.log("Hello postData");
+            let history = this.resHistory
+            const axiosConfig = {
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            }
+            console.log("hello" + history);
+            const response = axios.post('http://localhost:5050', history, axiosConfig)
                 .then((res) => {
                     console.log(res);
                 })
@@ -94,7 +104,7 @@ export default {
     <div class="container">
         <!-- This is the main app: the current picture + buttons + comment field -->
         <div class="app">
-            <div class="picture"><img :src="'/src/assets/' + imageName + '.jpeg'" alt="peacock feather"></div>
+            <div class="picture"><img :src="'/src/assets/' + imageName + '.jpeg'" :alt="imageName"></div>
 
             <div class="button-row">
                 <div class="button a"><button @click="onClick('yes-cancer')">Yes Cancer</button></div>
