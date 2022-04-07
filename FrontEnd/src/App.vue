@@ -1,6 +1,6 @@
 <script>
 import axios from 'axios';
-import qs from 'qs';
+import { onMounted } from 'vue'
 export default {
     data() {
         return {
@@ -10,16 +10,14 @@ export default {
             history: [],
             resComment: '',
 
-            imageName: 'peacock-feather',
-            imageNameList: [
-                'peacock-feather',
-                'bridge',
-                'butterfly',
-                'leaf-path',
-                'orange-slice',
-                'tree'
-            ]
+            fromServer: '',
+
+            imageName: '',
         }
+    },
+
+    beforeMount() {
+        this.nextImage()
     },
 
     methods: {
@@ -65,20 +63,16 @@ export default {
                 this.history = []
             }
         },
-        nextImage() {
+        async nextImage() {
             console.log("In nextImage from App.vue");
-            // axios.get('http://localhost:5050/images')
-            //     .then((res) => {
-            //         console.log(res)
-            //         console.log("Response Get")
-            //     })
-            //     .catch((err) => {
-            //         console.error(err)
-            //     })
-            //     .then(() => {
-            //         console.log("final");
-            //     })
-            // console.log(this.imageName);
+
+            try {
+                const response = await axios.get('http://localhost:5050/images');
+                
+                this.imageName = response.data
+            } catch (error) {
+                console.error(error);
+            }
         },
 
         async postData() {
@@ -87,7 +81,6 @@ export default {
             let axiosData = {
                 'myParameter': "My History is cool"
             }
-            console.log(axiosData)
 
             const axiosConfig = {
                 headers: {
@@ -97,7 +90,8 @@ export default {
 
             try {
                 const response = await axios.post('http://localhost:5050/history', axiosData, axiosConfig)
-                console.log(response);
+                
+                this.fromServer = response.data
             } catch (error) {
                 console.error(error);
             }
@@ -124,6 +118,7 @@ export default {
 
 <template>
     <div class="container">
+        <p>{{fromServer}}</p>
         <!-- This is the main app: the current picture + buttons + comment field -->
         <div class="app">
             <div class="picture"><img :src="'/src/assets/' + imageName + '.jpeg'" :alt="imageName"></div>
