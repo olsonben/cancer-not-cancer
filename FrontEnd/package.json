@@ -20,7 +20,6 @@
   "homepage": "https://github.com/olsonben/cancer-not-cancer#readme",
   "dependencies": {
     "axios": "^0.26.1",
-    "qs": "^6.10.3",
     "vue": "^3.2.31"
   },
   "devDependencies": {

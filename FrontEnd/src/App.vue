@@ -1,6 +1,5 @@
 <script>
 import axios from 'axios';
-import qs from 'qs';
 export default {
     data() {
         return {
@@ -9,6 +8,8 @@ export default {
             lastComment: '',
             history: [],
             resComment: '',
+
+            fromServer: '',
 
             imageName: 'peacock-feather',
             imageNameList: [
@@ -97,7 +98,8 @@ export default {
 
             try {
                 const response = await axios.post('http://localhost:5050/history', axiosData, axiosConfig)
-                console.log(response);
+                
+                this.fromServer = response.data
             } catch (error) {
                 console.error(error);
             }
@@ -124,6 +126,7 @@ export default {
 
 <template>
     <div class="container">
+        <p>{{fromServer}}</p>
         <!-- This is the main app: the current picture + buttons + comment field -->
         <div class="app">
             <div class="picture"><img :src="'/src/assets/' + imageName + '.jpeg'" :alt="imageName"></div>
