@@ -66,20 +66,16 @@ export default {
                 this.history = []
             }
         },
-        nextImage() {
+        async nextImage() {
             console.log("In nextImage from App.vue");
-            // axios.get('http://localhost:5050/images')
-            //     .then((res) => {
-            //         console.log(res)
-            //         console.log("Response Get")
-            //     })
-            //     .catch((err) => {
-            //         console.error(err)
-            //     })
-            //     .then(() => {
-            //         console.log("final");
-            //     })
-            // console.log(this.imageName);
+
+            try {
+                const response = await axios.post('http://localhost:5050/images');
+                
+                this.imageName = response.data
+            } catch (error) {
+                console.error(error);
+            }
         },
 
         async postData() {
@@ -88,7 +84,6 @@ export default {
             let axiosData = {
                 'myParameter': "My History is cool"
             }
-            console.log(axiosData)
 
             const axiosConfig = {
                 headers: {
