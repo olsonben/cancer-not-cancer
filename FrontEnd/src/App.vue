@@ -1,5 +1,6 @@
 <script>
 import axios from 'axios';
+import { onMounted } from 'vue'
 export default {
     data() {
         return {
@@ -11,16 +12,12 @@ export default {
 
             fromServer: '',
 
-            imageName: 'peacock-feather',
-            imageNameList: [
-                'peacock-feather',
-                'bridge',
-                'butterfly',
-                'leaf-path',
-                'orange-slice',
-                'tree'
-            ]
+            imageName: '',
         }
+    },
+
+    beforeMount() {
+        this.nextImage()
     },
 
     methods: {
