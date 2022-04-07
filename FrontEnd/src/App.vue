@@ -1,5 +1,6 @@
 <script>
 import axios from 'axios';
+import qs from 'qs';
 export default {
     data() {
         return {
@@ -66,7 +67,7 @@ export default {
         },
         nextImage() {
             console.log("In nextImage from App.vue");
-            // axios.get('http://localho.st:5050/images')
+            // axios.get('http://localhost:5050/images')
             //     .then((res) => {
             //         console.log(res)
             //         console.log("Response Get")
@@ -82,18 +83,20 @@ export default {
 
         async postData() {
             console.log("In postdata from App.vue");
-            // let axiosParams = {
-            //     history: this.history
-            // }
-            // const axiosConfig = {
-            //     headers: {
-            //         "Content-Type": "application/json",
-            //     }
-            // }
-            console.log("hello" + history);
+
+            let axiosData = {
+                'myParameter': "My History is cool"
+            }
+            console.log(axiosData)
+
+            const axiosConfig = {
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            }
 
             try {
-                const response = await axios.post('http://localho.st:5050/history?msg=1234')
+                const response = await axios.post('http://localhost:5050/history', axiosData, axiosConfig)
                 console.log(response);
             } catch (error) {
                 console.error(error);
