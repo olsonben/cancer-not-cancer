@@ -6,7 +6,7 @@ export default {
             resValue: 'Hello',
             comment: '',
             lastComment: '',
-            resHistory: [],
+            history: [],
             resComment: '',
 
             imageName: 'peacock-feather',
@@ -42,59 +42,78 @@ export default {
             // move on to the next image
             this.nextImage()
         },
-        // Add response to resHistory
+        // Add response to history
         addRes() {
-            this.resHistory.push({
+            this.history.push({
                 // keeping track of imageID, which button was pressed, and any comments
                 imageID: this.imageName,
                 resValue: this.resValue,
                 comment: this.comment
             })
-            // check and handle an overflow og resHistory
+            // check and handle an overflow og history
             this.resOverflow()
         },
-        // check and handle an overflow og resHistory
+        // check and handle an overflow og history
         resOverflow() {
             this.resComment = ''
             // after 5 responses
-            if (this.resHistory.length >= 5) {
+            if (this.history.length >= 5) {
                 // record the number of responses made before overflow
-                this.resComment = 'Response history reached ' + this.resHistory.length + ' responses before overflowing.'
-                // clear resHistory
-                this.resHistory = []
+                this.resComment = 'Response history reached ' + this.history.length + ' responses before overflowing.'
+                // clear history
+                this.history = []
             }
         },
         nextImage() {
-            console.log("hello");
-            axios.get('http://localhost:5050')
-                .then((res) => {
-                    console.log(res)
-                })
-                .catch((err) => {
-                    console.error(err)
-                })
-                .then(() => {
-                    console.log("final");
-                })
-            console.log(this.imageName);
+            console.log("In nextImage from App.vue");
+            // axios.get('http://localho.st:5050/images')
+            //     .then((res) => {
+            //         console.log(res)
+            //         console.log("Response Get")
+            //     })
+            //     .catch((err) => {
+            //         console.error(err)
+            //     })
+            //     .then(() => {
+            //         console.log("final");
+            //     })
+            // console.log(this.imageName);
         },
 
-        postData() {
-            console.log("Hello postData");
-            let history = this.resHistory
-            const axiosConfig = {
-                headers: {
-                    "Content-Type": "application/json",
-                }
-            }
+        async postData() {
+            console.log("In postdata from App.vue");
+            // let axiosParams = {
+            //     history: this.history
+            // }
+            // const axiosConfig = {
+            //     headers: {
+            //         "Content-Type": "application/json",
+            //     }
+            // }
             console.log("hello" + history);
-            const response = axios.post('http://localhost:5050', history, axiosConfig)
-                .then((res) => {
-                    console.log(res);
-                })
-                .catch((err) => {
-                    console.error((err));
-                })
+
+            try {
+                const response = await axios.post('http://localho.st:5050/history?msg=1234')
+                console.log(response);
+            } catch (error) {
+                console.error(error);
+            }
+
+            // axios.post('http://localhost:5050', {
+            //     params: {
+            //         msg: "My Message is neeku"
+            //     }
+            // })
+            //     .then((res) => {
+            //         console.log(res)
+            //         console.log("Response Post")
+            //     })
+            //     .catch((err) => {
+            //         console.error(err)
+            //     })
+            //     .then(() => {
+            //         console.log("final");
+            //     })
         }
     }
 }
@@ -122,7 +141,7 @@ export default {
                 Last response: {{ resValue }} <br>
                 Last comment: {{ lastComment }} <br><br>
 
-                <li align='left' v-for="response in resHistory">
+                <li align='left' v-for="response in history">
                     {{ response }}
                 </li>
                 {{ resComment }}
