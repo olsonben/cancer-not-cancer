@@ -1,11 +1,13 @@
 <script>
+import axios from 'axios';
+import qs from 'qs';
 export default {
     data() {
         return {
             resValue: 'Hello',
             comment: '',
             lastComment: '',
-            resHistory: [],
+            history: [],
             resComment: '',
 
             imageName: 'peacock-feather',
@@ -35,34 +37,86 @@ export default {
             this.addRes()
             this.lastComment = this.comment
             this.comment = '' // clear the last comment
+            // post test
+            this.postData()
 
             // move on to the next image
             this.nextImage()
         },
-        // Add response to resHistory
+        // Add response to history
         addRes() {
-            this.resHistory.push({ 
+            this.history.push({
                 // keeping track of imageID, which button was pressed, and any comments
                 imageID: this.imageName,
                 resValue: this.resValue,
                 comment: this.comment
             })
-            // check and handle an overflow og resHistory
+            // check and handle an overflow og history
             this.resOverflow()
         },
-        // check and handle an overflow og resHistory
+        // check and handle an overflow og history
         resOverflow() {
             this.resComment = ''
             // after 5 responses
-            if (this.resHistory.length >= 5) {
+            if (this.history.length >= 5) {
                 // record the number of responses made before overflow
-                this.resComment = 'Response history reached ' + this.resHistory.length + ' responses before overflowing.'
-                // clear resHistory
-                this.resHistory = []
+                this.resComment = 'Response history reached ' + this.history.length + ' responses before overflowing.'
+                // clear history
+                this.history = []
             }
         },
         nextImage() {
-            this.imageName = this.imageNameList[Math.floor(Math.random() * this.imageNameList.length)]
+            console.log("In nextImage from App.vue");
+            // axios.get('http://localhost:5050/images')
+            //     .then((res) => {
+            //         console.log(res)
+            //         console.log("Response Get")
+            //     })
+            //     .catch((err) => {
+            //         console.error(err)
+            //     })
+            //     .then(() => {
+            //         console.log("final");
+            //     })
+            // console.log(this.imageName);
+        },
+
+        async postData() {
+            console.log("In postdata from App.vue");
+
+            let axiosData = {
+                'myParameter': "My History is cool"
+            }
+            console.log(axiosData)
+
+            const axiosConfig = {
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            }
+
+            try {
+                const response = await axios.post('http://localhost:5050/history', axiosData, axiosConfig)
+                console.log(response);
+            } catch (error) {
+                console.error(error);
+            }
+
+            // axios.post('http://localhost:5050', {
+            //     params: {
+            //         msg: "My Message is neeku"
+            //     }
+            // })
+            //     .then((res) => {
+            //         console.log(res)
+            //         console.log("Response Post")
+            //     })
+            //     .catch((err) => {
+            //         console.error(err)
+            //     })
+            //     .then(() => {
+            //         console.log("final");
+            //     })
         }
     }
 }
@@ -72,7 +126,7 @@ export default {
     <div class="container">
         <!-- This is the main app: the current picture + buttons + comment field -->
         <div class="app">
-            <div class="picture"><img :src="'/src/assets/' + imageName + '.jpeg'" alt="peacock feather"></div>
+            <div class="picture"><img :src="'/src/assets/' + imageName + '.jpeg'" :alt="imageName"></div>
 
             <div class="button-row">
                 <div class="button a"><button @click="onClick('yes-cancer')">Yes Cancer</button></div>
@@ -90,7 +144,7 @@ export default {
                 Last response: {{ resValue }} <br>
                 Last comment: {{ lastComment }} <br><br>
 
-                <li align='left' v-for="response in resHistory">
+                <li align='left' v-for="response in history">
                     {{ response }}
                 </li>
                 {{ resComment }}

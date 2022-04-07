@@ -1,2 +1,4 @@
-node_modules
-.eslintrc.json
+FrontEnd/node_modules
+FrontEnd/.eslintrc.json
+
+BackEnd/node_modules
