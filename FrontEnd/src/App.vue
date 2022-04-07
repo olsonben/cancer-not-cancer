@@ -1,21 +1,21 @@
 <script>
 import axios from 'axios';
-import { onMounted } from 'vue'
 export default {
     data() {
         return {
-            resValue: 'Hello',
+            imageName: '',
+
+            resValue: '',
             comment: '',
             lastComment: '',
             history: [],
             resComment: '',
 
-            fromServer: '',
-
-            imageName: '',
+            fromServer: '' // this should be temporary, used for checking responses from the server
         }
     },
 
+    // Get the next image before rendering the page for the first time
     beforeMount() {
         this.nextImage()
     },
@@ -64,11 +64,12 @@ export default {
             }
         },
         async nextImage() {
-            console.log("In nextImage from App.vue");
+            console.log("In nextImage from App.vue"); // keeping trakc of location
 
+            // try-catch is needed for async/await
             try {
                 const response = await axios.get('http://localhost:5050/images');
-                
+
                 this.imageName = response.data
             } catch (error) {
                 console.error(error);
@@ -78,10 +79,11 @@ export default {
         async postData() {
             console.log("In postdata from App.vue");
 
+            // axiosData MUST be in JSON format before going into the API call
             let axiosData = {
                 'myParameter': "My History is cool"
             }
-
+            // bc we specify that we are using JSON
             const axiosConfig = {
                 headers: {
                     "Content-Type": "application/json",
@@ -95,22 +97,6 @@ export default {
             } catch (error) {
                 console.error(error);
             }
-
-            // axios.post('http://localhost:5050', {
-            //     params: {
-            //         msg: "My Message is neeku"
-            //     }
-            // })
-            //     .then((res) => {
-            //         console.log(res)
-            //         console.log("Response Post")
-            //     })
-            //     .catch((err) => {
-            //         console.error(err)
-            //     })
-            //     .then(() => {
-            //         console.log("final");
-            //     })
         }
     }
 }
@@ -118,7 +104,6 @@ export default {
 
 <template>
     <div class="container">
-        <p>{{fromServer}}</p>
         <!-- This is the main app: the current picture + buttons + comment field -->
         <div class="app">
             <div class="picture"><img :src="'/src/assets/' + imageName + '.jpeg'" :alt="imageName"></div>
@@ -133,7 +118,10 @@ export default {
                 <textarea v-model="comment" placeholder="Add a comment to this image or leave blank."></textarea>
             </div>
         </div>
-        <!-- This is for debugging and keeping track of responses made -->
+        <!-- Below is for debugging and keeping track of responses made -->
+        <!-- recording the response from the server -->
+        <p>{{fromServer}}</p> 
+        <!-- recording the response from the pathologist -->
         <div class="response">
             <p align='center'>
                 Last response: {{ resValue }} <br>
@@ -160,6 +148,7 @@ export default {
     grid-template-rows: repeat(2, auto);
     gap: 10px;
 }
+/* I am using indentation to roughly match the indentation of the html template */
 .app {
     display: grid;
     grid-template-columns: 1fr;
