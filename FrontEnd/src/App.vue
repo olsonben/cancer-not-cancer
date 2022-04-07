@@ -70,7 +70,7 @@ export default {
             console.log("In nextImage from App.vue");
 
             try {
-                const response = await axios.post('http://localhost:5050/images');
+                const response = await axios.get('http://localhost:5050/images');
                 
                 this.imageName = response.data
             } catch (error) {
