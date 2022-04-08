@@ -64,13 +64,14 @@ export default {
             }
         },
         async nextImage() {
-            console.log("In nextImage from App.vue"); // keeping trakc of location
+            console.log("In nextImage from App.vue"); // keeping track of location
 
             // try-catch is needed for async/await
             try {
                 const response = await axios.get('http://localhost:5050/images');
 
-                this.imageName = response.data
+                console.log(response)
+                // this.imageName = response.data
             } catch (error) {
                 console.error(error);
             }
