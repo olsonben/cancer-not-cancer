@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express()
 const port = process.env.PORT || 5050;
-
+const path = require('path')
 // This is vital to parsing the requests
 const bodyParser = require('body-parser')
 app.use(bodyParser.json());       // to support JSON-encoded bodies
@@ -25,7 +25,16 @@ let pathHistory = []
 app.get('/images', (req, res) => {
     console.log("Express server: /images"); // tracking location
 
-    res.send(imageNameList[Math.floor(Math.random() * imageNameList.length)]) // send a random image name
+    let imageName = imageNameList[Math.floor(Math.random() * imageNameList.length)]
+    let imagePath = path.join(__dirname, '/images/' + imageName + '.jpeg')
+
+    res.sendFile(imagePath)
+    // res.send(imageName) // send a random image name
+})
+
+app.get('/images/:id', (req, res) => {
+    console.log("Express server: /images/:id")
+    res.sendFile(path.join(__dirname, '/images/' + req.params.id))
 })
 
 app.post('/pathHistory', (req, res) => {
