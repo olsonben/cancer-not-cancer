@@ -8,7 +8,7 @@ export default {
             resValue: '',
             comment: '',
             lastComment: '',
-            history: [],
+            pathHistory: [],
             resComment: '',
 
             fromServer: '' // this should be temporary, used for checking responses from the server
@@ -41,26 +41,26 @@ export default {
             // move on to the next image
             this.nextImage()
         },
-        // Add response to history
+        // Add response to pathHistory
         addRes() {
-            this.history.push({
+            this.pathHistory.push({
                 // keeping track of imageID, which button was pressed, and any comments
                 imageID: this.imageName,
                 resValue: this.resValue,
                 comment: this.comment
             })
-            // check and handle an overflow og history
+            // check and handle an overflow og pathHistory
             this.resOverflow()
         },
-        // check and handle an overflow og history
+        // check and handle an overflow og pathHistory
         resOverflow() {
             this.resComment = ''
             // after 5 responses
-            if (this.history.length >= 5) {
+            if (this.pathHistory.length >= 5) {
                 // record the number of responses made before overflow
-                this.resComment = 'Response history reached ' + this.history.length + ' responses before overflowing.'
-                // clear history
-                this.history = []
+                this.resComment = 'Response pathHistory reached ' + this.pathHistory.length + ' responses before overflowing.'
+                // clear pathHistory
+                this.pathHistory = []
             }
         },
         async nextImage() {
@@ -80,9 +80,8 @@ export default {
             console.log("In postdata from App.vue");
 
             // axiosData MUST be in JSON format before going into the API call
-            let axiosData = {
-                'myParameter': "My History is cool"
-            }
+            console.log(this.pathHistory)
+            let axiosData = JSON.stringify(this.pathHistory)
             // bc we specify that we are using JSON
             const axiosConfig = {
                 headers: {
@@ -91,8 +90,9 @@ export default {
             }
 
             try {
-                const response = await axios.post('http://localhost:5050/history', axiosData, axiosConfig)
+                const response = await axios.post('http://localhost:5050/pathHistory', axiosData, axiosConfig)
                 
+                this.pathHistory = []
                 this.fromServer = response.data
             } catch (error) {
                 console.error(error);
@@ -127,7 +127,7 @@ export default {
                 Last response: {{ resValue }} <br>
                 Last comment: {{ lastComment }} <br><br>
 
-                <li align='left' v-for="response in history">
+                <li align='left' v-for="response in pathHistory">
                     {{ response }}
                 </li>
                 {{ resComment }}

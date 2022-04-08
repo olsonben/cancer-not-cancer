@@ -20,8 +20,7 @@ const imageNameList = [
 ]
 
 // TODO: store the history as a solid database, not holding it in memory
-// TODO: come up with a better term that 'history' for the responses from the pathologist. `pathHistory`?
-let resHistory = {}
+let pathHistory = []
 
 app.get('/images', (req, res) => {
     console.log("Express server: /images"); // tracking location
@@ -29,13 +28,17 @@ app.get('/images', (req, res) => {
     res.send(imageNameList[Math.floor(Math.random() * imageNameList.length)]) // send a random image name
 })
 
-app.post('/history', (req, res) => {
-    console.log("Express server: /history")
+app.post('/pathHistory', (req, res) => {
+    console.log("Express server: /pathHistory")
 
     // REMEMBER: the data in body is in JSON format
-    console.log("Joe Stuff " + req.body.myParameter)
 
-    res.send(req.body.myParameter.toUpperCase()) //mutate the request data and send it back to the website
+    // add each obj to the pathHistory
+    for (const obj in req.body) {
+        pathHistory.push(obj)
+    }
+
+    res.send("pathHistory length = " + pathHistory.length) // respond with the new length of pathHistory
 })
 
 app.listen(port, () => {
