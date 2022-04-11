@@ -3,7 +3,7 @@ import axios from 'axios';
 export default {
     data() {
         return {
-            imageName: '',
+            imageURL: '',
 
             resValue: '',
             comment: '',
@@ -11,7 +11,7 @@ export default {
             pathHistory: [],
             resComment: '',
 
-            fromServer: '' // this should be temporary, used for checking responses from the server
+            fromServer: '', // this should be temporary, used for checking responses from the server
         }
     },
 
@@ -45,7 +45,7 @@ export default {
         addRes() {
             this.pathHistory.push({
                 // keeping track of imageID, which button was pressed, and any comments
-                imageID: this.imageName,
+                imageID: this.imageURL,
                 resValue: this.resValue,
                 comment: this.comment
             })
@@ -64,13 +64,13 @@ export default {
             }
         },
         async nextImage() {
-            console.log("In nextImage from App.vue"); // keeping trakc of location
+            console.log("In nextImage from App.vue"); // keeping track of location
 
             // try-catch is needed for async/await
             try {
                 const response = await axios.get('http://localhost:5050/images');
+                this.imageURL = response.data
 
-                this.imageName = response.data
             } catch (error) {
                 console.error(error);
             }
@@ -78,18 +78,17 @@ export default {
 
         async postData() {
             console.log("In postdata from App.vue");
-
-            // axiosData MUST be in JSON format before going into the API call
-            console.log(this.pathHistory)
-            let axiosData = JSON.stringify(this.pathHistory)
-            // bc we specify that we are using JSON
-            const axiosConfig = {
-                headers: {
-                    "Content-Type": "application/json",
-                }
-            }
-
             try {
+                // axiosData MUST be in JSON format before going into the API call
+                console.log(this.pathHistory)
+                let axiosData = JSON.stringify(this.pathHistory)
+                // bc we specify that we are using JSON
+                const axiosConfig = {
+                    headers: {
+                        "Content-Type": "application/json",
+                    }
+                }
+
                 const response = await axios.post('http://localhost:5050/pathHistory', axiosData, axiosConfig)
                 
                 this.pathHistory = []
@@ -106,7 +105,7 @@ export default {
     <div class="container">
         <!-- This is the main app: the current picture + buttons + comment field -->
         <div class="app">
-            <div class="picture"><img :src="'/src/assets/' + imageName + '.jpeg'" :alt="imageName"></div>
+            <div class="picture"><img :src="this.imageURL" :alt="imageURL"></div>
 
             <div class="button-row">
                 <div class="button a"><button @click="onClick('yes-cancer')">Yes Cancer</button></div>
