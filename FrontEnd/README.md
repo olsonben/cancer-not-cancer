@@ -8,6 +8,7 @@
 Currently (as of 3-8-22), pressing the different buttons changes displayed text. Selecting "Comment" opens an input area to type a comment (which is displayed).
 
 # TODO
-1. Set this up as a node server.
+~~1. Set this up as a node server.~~
 2. Record responses by writing to json file.
-3. Change image after a response is made.
+~~3. Change image after a response is made.~~
+4. Update this README.
