@@ -10,7 +10,6 @@ export default {
             value: '',
             comment: '',
             lastComment: '',
-            // resComment: '',
 
             fromServer: '', // this should be temporary, used for checking responses from the server
         }
@@ -35,8 +34,6 @@ export default {
             // record the response
             this.addRes()
             this.comment = '' // clear the last comment
-            // this.lastComment = this.comment
-            // post test
 
             // move on to the next image
             this.nextImage()
@@ -113,24 +110,6 @@ export default {
                 <textarea v-model="comment" placeholder="Add a comment to this image or leave blank."></textarea>
             </div>
         </div>
-        <!-- // Below is for debugging and keeping track of responses made
-        // recording the response from the server
-
-        <p>{{fromServer}}</p> 
-
-        // recording the response from the pathologist
-
-        <div class="response">
-            <p align='center'>
-                Last response: {{ value }} <br>
-                Last comment: {{ lastComment }} <br><br>
-
-                <li align='left' v-for="response in pathHistory">
-                    {{ response }}
-                </li>
-                {{ resComment }}
-            </p>
-        </div> -->
     </div>
 </template>
 
