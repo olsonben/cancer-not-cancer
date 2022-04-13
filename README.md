@@ -7,8 +7,8 @@ A great project covering a surprising amount of web basics. Incidentally, it als
 2. [Usage](#usage)
     1. [Front End](#front-end)
     2. [Back End](#back-end)
-        1. [GET](#get)
-        2. [POST](#post)
+        * [GET](#get)
+        * [POST](#post)
 3. [TODO](#todo)
 4. [Discuss](#discuss)
 
