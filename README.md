@@ -14,7 +14,7 @@ A great project covering a surprising amount of web basics. Incidentally, it als
 
 # Set Up
 1. Run `cd BackEnd && npm install && npm run dev` to install packages and start the server.
-2. Run `cd ../BackEnd && npm install && npm run dev` to install packages and start the client.
+2. In a new terminal window, run `cd FrontEnd && npm install && npm run dev` to install packages and start the client.
 
 # Usage
 (As of 12 Apr)
