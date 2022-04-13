@@ -2,6 +2,16 @@
 ~~A simple webapp to label uncertain ai images.~~
 A great project covering a surprising amount of web basics. Incidentally, it also is useful for hand-labelling uncertain AI images.
 
+# Table of Contents
+1. [Set Up](#set-up)
+2. [Usage](#usage)
+    1. [Front End](#front-end)
+    2. [Back End](#back-end)
+        * [GET](#get)
+        * [POST](#post)
+3. [TODO](#todo)
+4. [Discuss](#discuss)
+
 # Set Up
 1. Run `cd BackEnd && npm install && npm run dev` to install packages and start the server.
 2. Run `cd ../BackEnd && npm install && npm run dev` to install packages and start the client.
