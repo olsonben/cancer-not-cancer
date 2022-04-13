@@ -64,7 +64,7 @@ export default {
 
             // try-catch is needed for async/await
             try {
-                const response = await axios.get('http://localhost:5050/images');
+                const response = await axios.get('http://localhost:5050/nextImage');
                 this.imageURL = response.data
 
             } catch (error) {

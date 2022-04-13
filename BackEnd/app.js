@@ -25,7 +25,7 @@ const imageNameList = [
 // TODO: store the history as a solid database, not holding it in memory
 let pathHistory = []
 
-app.get('/images', (req, res) => {
+app.get('/nextImage', (req, res) => {
     console.log("Express server: /images"); // tracking location
 
     let selectedImage = imageNameList[Math.floor(Math.random() * imageNameList.length)]
