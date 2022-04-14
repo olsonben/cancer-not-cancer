@@ -8,11 +8,8 @@ const port = process.env.PORT || 5050;
 
 // This is vital to parsing the requests
 app.use(bodyParser.json());       // to support JSON-encoded bodies
-app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
-    extended: true
-})); 
 
-const imageNameList = fs.readdirSync('./images/') // list of images in the images directory
+const imageNameList = fs.readdirSync('./images/') // list of image names in the images directory
 
 app.get('/nextImage', (req, res) => {
     console.log("Express server: /images"); // tracking location
@@ -31,25 +28,6 @@ app.post('/archive', (req, res) => {
     console.log("Express server: /archive")
 
     // REMEMBER: the data in body is in JSON format
-
-    /* TODO: decide btw list vs object for the json 
-    list
-    [
-        {
-            'id': '0001',
-            'value': 'cancer',
-            'comment': 'This is a list'
-        },
-        ...
-    ]
-    object
-    {
-        '0001': {
-            'value': 'cancer',
-            'comment': 'This is an object'
-        }
-    }
-    */
 
     // we are constantly appending to the archive json so you have to read, write, then save
     fs.readFile('archive.json', (err, data) => {
