@@ -8,10 +8,7 @@ export default {
             pathHistory: [],
 
             value: '',
-            comment: '',
-            lastComment: '',
-
-            fromServer: '', // this should be temporary, used for checking responses from the server
+            comment: ''
         }
     },
 
@@ -82,10 +79,9 @@ export default {
                     }
                 }
 
-                const response = await axios.post('http://localhost:5050/pathHistory', axiosData, axiosConfig)
+                const response = await axios.post('http://localhost:5050/archive', axiosData, axiosConfig)
                 
                 this.pathHistory = [] // reset pathHistory
-                this.fromServer = response.data
             } catch (error) {
                 console.error(error);
             }

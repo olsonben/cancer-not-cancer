@@ -12,24 +12,13 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
     extended: true
 })); 
 
-// this should match the name names of the images in assets
-const imageNameList = [
-    'peacock-feather',
-    'bridge',
-    'butterfly',
-    'leaf-path',
-    'orange-slice',
-    'tree'
-]
-
-// TODO: store the history as a solid database, not holding it in memory
-let pathHistory = []
+const imageNameList = fs.readdirSync('./images/') // list of images in the images directory
 
 app.get('/nextImage', (req, res) => {
     console.log("Express server: /images"); // tracking location
 
     let selectedImage = imageNameList[Math.floor(Math.random() * imageNameList.length)]
-    let imageURL = 'http://localhost:' + port + '/images/' + selectedImage + '.jpeg' // baseURL + route/to/myImage.jpeg
+    let imageURL = 'http://localhost:' + port + '/images/' + selectedImage // baseURL + route/to/myImage
     res.send(imageURL) // send a random image name
 })
 
@@ -38,15 +27,10 @@ app.get('/images/:id', (req, res) => {
     res.sendFile(path.join(__dirname, '/images/' + req.params.id))
 })
 
-app.post('/pathHistory', (req, res) => {
-    console.log("Express server: /pathHistory")
+app.post('/archive', (req, res) => {
+    console.log("Express server: /archive")
 
     // REMEMBER: the data in body is in JSON format
-
-    // add each obj to the pathHistory
-    for (let i = 0; i < req.body.length; i++) {
-        pathHistory.push(req.body[i])
-    }
 
     /* TODO: decide btw list vs object for the json 
     list
@@ -70,13 +54,17 @@ app.post('/pathHistory', (req, res) => {
     // we are constantly appending to the archive json so you have to read, write, then save
     fs.readFile('archive.json', (err, data) => {
         const json = JSON.parse(data)
-        json.push(pathHistory[0])
+        json.push(req.body[0])
 
-        fs.writeFile("archive.json", JSON.stringify(json), (err) => {if (err) throw err}) // save to archive
+        fs.writeFile("archive.json", JSON.stringify(json), (err) => {
+            if (!err) {
+                res.status(200).send('OK') // the response has to have something, even when everything works
+            } else {
+                res.status(500).send('Response not archived')
+                throw err
+            }
+        }) // save to archive
     })
-
-    res.send("pathHistory length = " + pathHistory.length) // respond with the new length of pathHistory
-    console.log(pathHistory)
 })
 
 app.listen(port, () => {
