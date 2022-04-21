@@ -15,7 +15,7 @@ app.get('/nextImage', (req, res) => {
     console.log("Express server: /images"); // tracking location
 
     let selectedImage = imageNameList[Math.floor(Math.random() * imageNameList.length)]
-    let imageURL = 'http://localhost:' + port + '/images/' + selectedImage // baseURL + route/to/myImage
+    let imageURL = 'https://static.milmed.ai/images/' + selectedImage // baseURL + route/to/myImage
     res.send(imageURL) // send a random image name
 })
 

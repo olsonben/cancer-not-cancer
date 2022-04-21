@@ -58,7 +58,7 @@ export default {
 
             // try-catch is needed for async/await
             try {
-                const response = await axios.get('http://localhost:5050/nextImage');
+                const response = await axios.get('https://api.milmed.ai/nextImage');
                 this.imageURL = response.data
 
             } catch (error) {
@@ -79,7 +79,7 @@ export default {
                     }
                 }
 
-                const response = await axios.post('http://localhost:5050/archive', axiosData, axiosConfig)
+                const response = await axios.post('https://api.milmed.ai/archive', axiosData, axiosConfig)
                 
                 this.pathHistory = [] // reset pathHistory
             } catch (error) {

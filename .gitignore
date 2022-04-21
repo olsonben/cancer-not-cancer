@@ -2,3 +2,5 @@ FrontEnd/node_modules
 FrontEnd/.eslintrc.json
 
 BackEnd/node_modules
+
+client/node_modules
