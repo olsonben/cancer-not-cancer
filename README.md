@@ -40,6 +40,7 @@ You can get images and post the pathologist's response
 
 # TODO
 1. Set up MariaDB server in DigitalOcean. (wtf do I need to do for this? I am thoroughly unprepared on how this should be done.)
+2. Deal with https stuff (moved to http)
 
 # Discuss
 1. Should I have seperate READMEs for the back and front ends?

@@ -1,21 +1,23 @@
+const https = require('https');
 const express = require('express')
 const path = require('path')
 const bodyParser = require('body-parser');
 const fs = require('fs')
 
 const app = express()
-const port = process.env.PORT || 5050;
+const port = process.env.PORT || 5000;
 
 // This is vital to parsing the requests
 app.use(bodyParser.json());       // to support JSON-encoded bodies
 
 const imageNameList = fs.readdirSync('./images/') // list of image names in the images directory
+const imageBase = process.env.IMAGE_BASE || 'https://static.milmed.ai'
 
 app.get('/nextImage', (req, res) => {
     console.log("Express server: /images"); // tracking location
 
     let selectedImage = imageNameList[Math.floor(Math.random() * imageNameList.length)]
-    let imageURL = 'https://static.milmed.ai/images/' + selectedImage // baseURL + route/to/myImage
+    let imageURL = imageBase + '/images/' + selectedImage // baseURL + route/to/myImage
     res.send(imageURL) // send a random image name
 })
 
@@ -43,6 +45,10 @@ app.post('/archive', (req, res) => {
             }
         }) // save to archive
     })
+})
+
+app.get('/archive', (req, res) => {
+    res.sendStatus(200);
 })
 
 app.listen(port, () => {
