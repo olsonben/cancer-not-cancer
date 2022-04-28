@@ -66,25 +66,24 @@ export default {
             }
         },
 
-        async postData() {
+        postData() {
             console.log("In postdata from App.vue");
-            try {
-                console.log(this.pathHistory)
-                // axiosData MUST be in JSON format before going into the API call
-                let axiosData = JSON.stringify(this.pathHistory)
-                // bc we specify that we are using JSON
-                const axiosConfig = {
-                    headers: {
-                        "Content-Type": "application/json",
-                    }
+            console.log(this.pathHistory)
+            // axiosData MUST be in JSON format before going into the API call
+            let axiosData = JSON.stringify(this.pathHistory)
+            // bc we specify that we are using JSON
+            const axiosConfig = {
+                headers: {
+                    "Content-Type": "application/json",
                 }
-
-                const response = await axios.post('https://api.milmed.ai/archive', axiosData, axiosConfig)
-                
-                this.pathHistory = [] // reset pathHistory
-            } catch (error) {
-                console.error(error);
             }
+
+            axios.post('https://api.milmed.ai/archive', axiosData, axiosConfig)
+                .then((res, err) => {
+                    if (err) console.error(err)
+                })
+            
+            this.pathHistory = [] // reset pathHistory
         }
     }
 }

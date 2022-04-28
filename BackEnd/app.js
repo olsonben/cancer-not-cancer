@@ -36,14 +36,18 @@ app.post('/archive', (req, res) => {
         const json = JSON.parse(data)
         json.push(req.body[0])
 
-        fs.writeFile("archive.json", JSON.stringify(json), (err) => {
-            if (!err) {
-                res.status(200).send('OK') // the response has to have something, even when everything works
-            } else {
-                res.status(500).send('Response not archived')
-                throw err
-            }
-        }) // save to archive
+        if (!err) {
+            fs.writeFile("archive.json", JSON.stringify(json), (err) => {
+                if (!err) {
+                    res.sendStatus(200) // the response has to have something, even when everything works
+                } else {
+                    res.status(500).send('Could not write to archive')
+                    throw err
+                }
+            }) // save to archive
+        } else {
+            res.status(500).send('Could not read archive')
+        }
     })
 })
 

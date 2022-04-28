@@ -1,4 +1,4 @@
-FrontEnd/node_modules/*
+**/node_modules/*
 
 BackEnd/node_modules/*
 
@@ -6,8 +6,7 @@ client/node_modules/*
 client/.nuxt/*
 client/dist/*
 client/client/node_modules/*
-client/client/.nuxt/*
-client/client/dist/*
+client/client/*
 
 client_bk/node_modules/*
 client_bk/dist/*
