@@ -40,8 +40,15 @@ app.post('/archive', (req, res) => {
 
     // REMEMBER: the data in body is in JSON format
 
-    // query = 'INSERT INTO hotornot (user_id rating, comment) VALUES (0, 5, "Is this working?");'
-    query = 'INSERT INTO users (fullname, username, password) VALUES ("Jason", "jaz", "pass");'
+    let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
+    ip = ip.substring(ip.lastIndexOf(':')+1)
+    ip = "127.0.0.1"
+    console.log(ip === "127.0.0.1");
+    // query = `INSERT INTO hotornot (user_id, image_id rating, comment, from_ip) VALUES (1, 1, 5, "Is this working?", ${ip});`
+    // query = 'INSERT INTO users (fullname, username, password) VALUES ("Maria", "mar", "i_like2db");' // insert user
+    // NOTE: figure out why ip is being stupid. It is a string and ip === "127.0.0.1" ("127.0.0.1" hard coded works fine)
+    query = `INSERT INTO images (path, from_ip, user_id) VALUES ("images/leaf-path.jpeg", "${ip}", 1);`
+    // query = ''
 
     pool.query(query, (err, rows, fields) => {
         if (err) throw err
