@@ -3,7 +3,7 @@ import axios from 'axios';
 export default {
     data() {
         return {
-            imageURL: '',
+            image: {},
 
             pathHistory: [],
 
@@ -22,11 +22,11 @@ export default {
         onClick(source) {
             // determine the message based on source
             if (source === 'yes-cancer') {
-                this.value = 'Yes Cancer'
+                this.value = 1
             } else if (source === 'no-cancer') {
-                this.value = 'No Cancer'
+                this.value = -1
             } else if (source === 'maybe-cancer') {
-                this.value = 'Maybe Cancer'
+                this.value = 0
             }
             // record the response
             this.addRes()
@@ -38,32 +38,13 @@ export default {
 
         // Add response to pathHistory
         addRes() {
-            let strippedID = this.stripID(this.imageURL)
             // the client should keep a copy of the results until successfully passed to server
             this.pathHistory.push({
-                id: strippedID,
-                value: this.value,
+                id: this.image.id,
+                rating: this.value,
                 comment: this.comment
             })
             this.postData()
-        },
-
-        stripID(imageURL) {
-            // just want the image name (w/out extension)
-            return imageURL.slice(imageURL.lastIndexOf('/')+1, imageURL.lastIndexOf('.'))
-        },
-
-        async nextImage() {
-            console.log("In nextImage from App.vue"); // keeping track of location
-
-            // try-catch is needed for async/await
-            try {
-                const response = await axios.get('https://api.milmed.ai/nextImage');
-                this.imageURL = response.data
-
-            } catch (error) {
-                console.error(error);
-            }
         },
 
         postData() {
@@ -84,6 +65,18 @@ export default {
                 })
             
             this.pathHistory = [] // reset pathHistory
+        },
+
+        async nextImage() {
+            console.log("In nextImage from App.vue"); // keeping track of location
+
+            // try-catch is needed for async/await
+            try {
+                const response = await axios.get('https://api.milmed.ai/nextImage');
+                this.image = response.data
+            } catch (error) {
+                console.error(error);
+            }
         }
     }
 }
@@ -93,7 +86,7 @@ export default {
     <div class="container">
         <!-- This is the main app: the current picture + buttons + comment field -->
         <div class="app">
-            <div class="picture"><img :src="this.imageURL" :alt="imageURL"></div>
+            <div class="picture"><img :src="this.image.url" :alt="image.url"></div>
 
             <div class="button-row">
                 <div class="button a"><button @click="onClick('yes-cancer')">Yes Cancer</button></div>

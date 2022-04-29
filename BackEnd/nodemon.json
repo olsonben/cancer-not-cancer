@@ -1,6 +1,6 @@
 {
     "events": {
-        "crash": "kill-port 5000 && nodemon app.js"
+        "crash": "kill-port 5000"
     },
-    "delay": "1500"
+    "delay": "500"
 }
