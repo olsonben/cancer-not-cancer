@@ -1,6 +1,0 @@
-{
-    "events": {
-        "quit": "kill-port 5000"
-    },
-    "delay": "2500"
-}

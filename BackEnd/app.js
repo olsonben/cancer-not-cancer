@@ -23,6 +23,10 @@ pool.connect()
 
 const imageBase = process.env.IMAGE_BASE || 'https://static.milmed.ai/'
 
+/**********************************************
+ * Express REQUESTS
+ **********************************************/
+
 app.get('/nextImage', (req, res) => {
     console.log("Express server: /images"); // tracking location
 
@@ -54,6 +58,7 @@ app.post('/archive', (req, res) => {
     // query = 'INSERT INTO users (fullname, username, password) VALUES ("Maria", "mar", "i_like2db");' // insert user
     // query = `INSERT INTO images (path, from_ip, user_id) VALUES ("images/leaf-path.jpeg", ${ip}, 1);` // insert image
     
+    // Insert the hotornots
     query = 'INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) VALUES '
     // TODO: handle user_id
     for (let i = 0; i < req.body.length; i++) {
@@ -67,19 +72,7 @@ app.post('/archive', (req, res) => {
     })
 })
 
-app.get('/archive', (req, res) => {
-    res.sendStatus(200);
-})
-
-process.once('SIGUSR2', function () {
-  process.kill(process.pid, 'SIGUSR2');
-})
-
-process.on('SIGINT', function () {
-  // this is only called on ctrl+c, not restart
-  process.kill(process.pid, 'SIGINT');
-})
-
+// listen to app
 app.listen(port, () => {
     console.log(`CNC running on port ${port}`);
 })
