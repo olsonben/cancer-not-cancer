@@ -39,8 +39,12 @@ You can get images and post the pathologist's response
 `'/postData'` will record the pathologist's history into a JSON file (specifically, `archive.json`)
 
 # TODO
-1. Set up MariaDB server in DigitalOcean. (wtf do I need to do for this? I am thoroughly unprepared on how this should be done.)
-2. Deal with https stuff (moved to http)
+1. Cleanup client html.
+2. client_id for inserting images - username/password system (Google OAuth?).
+3. Insert users.
+4. Insert images.
+5. UI to insert users and images.
 
 # Discuss
 1. Should I have seperate READMEs for the back and front ends?
+2. How to choose the next image?
