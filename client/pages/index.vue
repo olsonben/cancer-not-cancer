@@ -5,8 +5,6 @@ export default {
         return {
             image: {},
 
-            pathHistory: [],
-
             value: '',
             comment: ''
         }
@@ -29,29 +27,22 @@ export default {
                 this.value = 0
             }
             // record the response
-            this.addRes()
+            this.postData({
+                id: this.image.id,
+                rating: this.value,
+                comment: this.comment
+            })
             this.comment = '' // clear the last comment
 
             // move on to the next image
             this.nextImage()
         },
 
-        // Add response to pathHistory
-        addRes() {
-            // the client should keep a copy of the results until successfully passed to server
-            this.pathHistory.push({
-                id: this.image.id,
-                rating: this.value,
-                comment: this.comment
-            })
-            this.postData()
-        },
-
-        postData() {
+        postData(pathHistory) {
             console.log("In postdata from App.vue");
-            console.log(this.pathHistory)
+            console.log(pathHistory)
             // axiosData MUST be in JSON format before going into the API call
-            let axiosData = JSON.stringify(this.pathHistory)
+            let axiosData = JSON.stringify(pathHistory)
             // bc we specify that we are using JSON
             const axiosConfig = {
                 headers: {
@@ -63,8 +54,6 @@ export default {
                 .then((res, err) => {
                     if (err) console.error(err)
                 })
-            
-            this.pathHistory = [] // reset pathHistory
         },
 
         async nextImage() {

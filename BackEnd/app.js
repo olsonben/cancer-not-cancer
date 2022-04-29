@@ -61,14 +61,12 @@ app.post('/archive', (req, res) => {
     // Insert the hotornots
     query = 'INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) VALUES '
     // TODO: handle user_id
-    for (let i = 0; i < req.body.length; i++) {
-        query += `(1, ${req.body[i].id}, ${req.body[i].rating}, "${req.body[i].comment}", ${ip}) `
-    }
-    query += ';'
+    query += `(1, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${ip});`
     
     pool.query(query, (err, rows, fields) => {
         if (err) throw err
         console.log("Successful archive query");
+        res.sendStatus(200)
     })
 })
 
