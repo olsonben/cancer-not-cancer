@@ -13,7 +13,7 @@ All requests must pass the credentialling of `isValid` (see `HELPER FUNCTIONS` o
 
 ### GET
 
-- [nextImage]
+- [nextImage](#nextImage)
 
 #### nextImage
 
@@ -23,9 +23,9 @@ Example return: `"https://static.milmed.ai/images/bridge.jpeg"`.
 
 ### POST
 
-- [archive]
-- [users]
-- [images]
+- [archive](#archive)
+- [users](#users)
+- [images](#images)
 
 #### archive
 
