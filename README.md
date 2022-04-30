@@ -39,7 +39,7 @@ You can get images and post the pathologist's response
 `'/postData'` will record the pathologist's history into a JSON file (specifically, `archive.json`)
 
 # TODO
-1. Cleanup client html.
+1. ~~Cleanup client html.~~
 2. client_id for inserting images - username/password system (Google OAuth?).
 3. Insert users.
 4. Insert images.

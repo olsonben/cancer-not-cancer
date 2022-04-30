@@ -97,10 +97,9 @@ export default {
     justify-content: center;
 }
 .container {
-    display: grid;
-    grid-template-columns: auto;
-    grid-template-rows: repeat(2, auto);
-    gap: 10px;
+    justify-content: center;
+    display: flex;
+    width: 100%;
 }
 /* I am using indentation to roughly match the indentation of the html template */
 .app {
