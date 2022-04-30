@@ -30,7 +30,8 @@ export default {
             this.postData({
                 id: this.image.id,
                 rating: this.value,
-                comment: this.comment
+                comment: this.comment,
+                user: "mar",
             })
             this.comment = '' // clear the last comment
 
