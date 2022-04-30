@@ -55,7 +55,7 @@ CREATE TABLE `images` (
 CREATE TABLE `users` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `fullname` varchar(256) NOT NULL,
-  `username` varchar(24) NOT NULL,
+  `username` varchar(24) NOT NULL, -- This is unique
   `password` varchar(32) NOT NULL,
   `is_pathologist` tinyint(1) NOT NULL DEFAULT 0,
   `created` datetime NOT NULL DEFAULT current_timestamp(),
