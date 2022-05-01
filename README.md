@@ -27,13 +27,18 @@ Pressing the buttons will send the pathologist's response to the server; you can
 Moved to `BackEnd/README.md`
 
 # TODO
+
 1. ~~Cleanup client html.~~
 2. client_id for inserting images - username/password system (Google OAuth?).
 3. Insert users.    :: post request scaffolded
 4. Insert images.   :: post request scaffolded
 5. UI to insert users and images.
 
+## Urgent
+1. Re-route all http calls to api.milmed.ai to https
+
 # Discuss
+
 1. ~~Should I have seperate READMEs for the back and front ends?~~
 2. How to choose the next image?
 3. Who can add users, images, and archive?

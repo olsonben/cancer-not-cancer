@@ -149,8 +149,4 @@ export default {
         display: flex;
         justify-content: center;
     }
-.response {
-    display: flex;
-    justify-content: center;
-}
 </style>
