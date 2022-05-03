@@ -1,11 +1,22 @@
+/**********************************************
+ * IMPORTS
+ **********************************************/
+// Basic stuff for the server
 const express = require('express')
 const path = require('path')
-const env = require('./.env.js')
+const env = require('./.env') // js will still include this even though it doesn't specify file ending 
 
+// Features
 const bodyParser = require('body-parser')
 const mysql = require('mysql')
-const passport = require('passport')
 
+require('./auth')                           // This needs to be loaded for passport.authenticate
+const passport = require('passport')        // Authentication procedure
+const session = require('express-session')  // Session gives us cookies
+
+/**********************************************
+ * SERVER SETUP
+ **********************************************/
 // Make the server
 const app = express() 
 const port = env.port || 5000;
@@ -25,32 +36,54 @@ const pool = mysql.createConnection({
 pool.connect()
 
 // Google OAuth 2.0 stuff
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
+app.use(session({ secret: 'env.google.sessionSecret' }))
+app.use(passport.initialize())
+app.use(passport.session())
 
-passport.use(new GoogleStrategy({
-    clientID: env.google.clientID,
-    clientSecret: env.google.clientSecret,
-    callbackURL: this.baseURL + "/auth/google/callback"
-  },
-  (accessToken, refreshToken, profile, cb) => {
-    User.findOrCreate({ googleId: profile.id }, (err, user) => {
-      return cb(err, user);
+// Authorization options page
+app.get('/auth', (req, res) => {
+    res.send('<a href="/auth/google">Authenticate with Google</a>')
+
+})
+
+// Authenticate the session with google
+app.get('/auth/google',
+    //                        Interested in: email and profile (name, id, language, profile pic)
+    passport.authenticate('google', { scope: ['email', 'profile'] })
+)
+
+// You need to tell google where to go for successul and failed authorizations
+app.get('/auth/google/callback',
+    passport.authenticate('google', {
+        successRedirect: '/protected',
+        failureRedirect: '/auth/failure',
     })
-  }
-))
-
-app.get('/auth/google', passport.authenticate('google', {scope: ['profile']})
 )
 
-app.get('/auth/google/callback', passport.authenticate('google', {failureRedirect: '/login'}), (req, res) => {
-        // Successful authentication, redirect home.
-        res.redirect('/');
-    }
-)
+// Falied authorization
+app.get('/auth/failure', (req, res) => {
+    res.send("Something went wrong...")
+})
+
+// Example of a page we want to be protected
+app.get('/protected', isLoggedIn, (req, res) => {
+    res.send(`Hello ${req.user.displayName}`)
+})
+
+// Requirments for a user to log out
+app.get('/logout', (req, res) => {
+    req.logout()            // Log out the user
+    req.session.destroy()   // kill their session
+    res.send('Goodbye!')
+})
 
 /**********************************************
  * HELPER FUNCTIONS
  **********************************************/
+function isLoggedIn(req, res, next) {
+    // has user ? move on : unauthorized status
+    req.user ? next() : res.sendStatus(401)
+}
 
 function getIP(req) {
     let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
