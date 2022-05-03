@@ -7,6 +7,8 @@ $ npm install
 $ <NOTE: ask Elaine how she set up the DB>
 ```
 
+Fill in the `.env.js.bk` with the relavant values and rename the file to `.env.js`.
+
 ## HTTP Requests
 
 All requests must pass the credentialling of `isValid` (see `HELPER FUNCTIONS` of `app.js`).

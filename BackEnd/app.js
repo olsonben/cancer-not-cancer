@@ -1,40 +1,65 @@
 const express = require('express')
 const path = require('path')
-require('dotenv').config()
+const env = require('./.env.js')
 
 const bodyParser = require('body-parser')
 const mysql = require('mysql')
+const passport = require('passport')
 
 // Make the server
 const app = express() 
-const port = process.env.PORT || 5000;
+const port = env.port || 5000;
+const imageBaseURL = env.url.image
+const baseURL = env.url.base
 
 // This is vital to parsing the requests
 app.use(bodyParser.json());       // to support JSON-encoded bodies
 
 // This is for connecting to the MariaDB db
 const pool = mysql.createConnection({
-  host: 'localhost',
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE
+    host: 'localhost',
+    user: env.db.user,
+    password: env.db.password,
+    database: env.db.database
 }) 
 pool.connect()
 
-const imageBase = process.env.IMAGE_BASE || 'https://static.milmed.ai/'
+// Google OAuth 2.0 stuff
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+
+passport.use(new GoogleStrategy({
+    clientID: env.google.clientID,
+    clientSecret: env.google.clientSecret,
+    callbackURL: this.baseURL + "/auth/google/callback"
+  },
+  (accessToken, refreshToken, profile, cb) => {
+    User.findOrCreate({ googleId: profile.id }, (err, user) => {
+      return cb(err, user);
+    })
+  }
+))
+
+app.get('/auth/google', passport.authenticate('google', {scope: ['profile']})
+)
+
+app.get('/auth/google/callback', passport.authenticate('google', {failureRedirect: '/login'}), (req, res) => {
+        // Successful authentication, redirect home.
+        res.redirect('/');
+    }
+)
 
 /**********************************************
  * HELPER FUNCTIONS
  **********************************************/
 
-const getIP = (req) => {
+function getIP(req) {
     let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
     ip = '"' + ip.substring(ip.lastIndexOf(':')+1) + '"'
     return ip
 }
 
 // NOTE: TEMP: This is more a framework than hard and fast for validity tests
-const isValid = (req, method, source) => {
+function isValid(req, method, source) {
     // Handle credentials
     if (req.body.credentials != "I am valid") return false
     // Each method and source has specific requirments to be valid
@@ -80,7 +105,7 @@ app.get('/nextImage', (req, res) => {
         if (err) throw err
         res.send({
             id: rows[0].id, // imageID
-            url: imageBase + rows[0].path
+            url: imageBaseURL + rows[0].path
         })
         console.log("Successful image get query");
     })

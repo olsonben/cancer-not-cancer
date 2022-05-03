@@ -29,10 +29,14 @@ Moved to `BackEnd/README.md`
 # TODO
 
 1. ~~Cleanup client html.~~
-2. client_id for inserting images - username/password system (Google OAuth?).
+2. Implement Google OAuth2.0
+    - Set up user_id for posting images.
 3. Insert users.    :: post request scaffolded
+    a. Figure out a good way to do tabs.
+    b. Add components: display box, display bar + open/close function
 4. Insert images.   :: post request scaffolded
-5. UI to insert users and images.
+    a. How to add images?
+    b. How to "click or drag & drop to add images"
 
 ## Urgent
 1. Re-route all http calls to api.milmed.ai to https
@@ -43,3 +47,6 @@ Moved to `BackEnd/README.md`
 2. How to choose the next image?
 3. Who can add users, images, and archive?
 4. How does credentialling work?
+5. How do we add users and images?
+    - Users: admin can add users? Do we need a UI for that?
+    - Images: anyone (validated) can add images? Again, do we need a UI (yes, that gets painful FAST)?
