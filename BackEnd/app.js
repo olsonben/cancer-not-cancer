@@ -13,6 +13,7 @@ const mysql = require('mysql')
 require('./auth')                           // This needs to be loaded for passport.authenticate
 const passport = require('passport')        // Authentication procedure
 const session = require('express-session')  // Session gives us cookies
+const cookieParser = require('cookie-parser')
 
 /**********************************************
  * SERVER SETUP
@@ -36,14 +37,22 @@ const pool = mysql.createConnection({
 pool.connect()
 
 // Google OAuth 2.0 stuff
-app.use(session({ secret: 'env.google.sessionSecret' }))
-app.use(passport.initialize())
-app.use(passport.session())
+// This was done with this video: https://youtu.be/Q0a0594tOrc
+app.use(
+    cookieParser(),
+    session({ secret: env.google.sessionSecret }),
+    passport.initialize(),
+    passport.session()
+)
 
 // Authorization options page
 app.get('/auth', (req, res) => {
     res.send('<a href="/auth/google">Authenticate with Google</a>')
+})
 
+// Falied authorization
+app.get('/auth/failure', (req, res) => {
+    res.send("Something went wrong...")
 })
 
 // Authenticate the session with google
@@ -55,20 +64,10 @@ app.get('/auth/google',
 // You need to tell google where to go for successul and failed authorizations
 app.get('/auth/google/callback',
     passport.authenticate('google', {
-        successRedirect: '/protected',
         failureRedirect: '/auth/failure',
+        successRedirect: '/bouncer'
     })
 )
-
-// Falied authorization
-app.get('/auth/failure', (req, res) => {
-    res.send("Something went wrong...")
-})
-
-// Example of a page we want to be protected
-app.get('/protected', isLoggedIn, (req, res) => {
-    res.send(`Hello ${req.user.displayName}`)
-})
 
 // Requirments for a user to log out
 app.get('/logout', (req, res) => {
@@ -82,7 +81,8 @@ app.get('/logout', (req, res) => {
  **********************************************/
 function isLoggedIn(req, res, next) {
     // has user ? move on : unauthorized status
-    req.user ? next() : res.sendStatus(401)
+    req.session.origin = req.originalUrl
+    req.user ? next() : res.redirect('/auth')
 }
 
 function getIP(req) {
@@ -95,7 +95,7 @@ function getIP(req) {
 function isValid(req, method, source) {
     // Handle credentials
     if (req.body.credentials != "I am valid") return false
-    // Each method and source has specific requirments to be valid
+    // Each method and source has specific requirements to be valid
     if (method === 'post') {
         if (source === 'archive') {
             // Only pathologists can archive
@@ -114,7 +114,7 @@ function isValid(req, method, source) {
             }
         }
     }
-
+    
     return false
 }
 
@@ -126,14 +126,14 @@ function isValid(req, method, source) {
 /**********************************************
  * GET
  **********************************************/
-app.get('/nextImage', (req, res) => {
+app.get('/nextImage', isLoggedIn, (req, res) => {
     console.log("get /images"); // tracking location
-
+    
     // Get random row
     // NOTE: this is not very efficient, but it works
     // TODO: only consider rows with a rule - eg. least # of hotornot entries
     query = `SELECT id, path FROM images ORDER BY RAND() LIMIT 1;`
-
+    
     pool.query(query, (err, rows, fields) => {
         if (err) throw err
         res.send({
@@ -142,14 +142,27 @@ app.get('/nextImage', (req, res) => {
         })
         console.log("Successful image get query");
     })
+    
+})
 
+// This bounces back to the origin
+app.get('/bouncer', (req, res) => {
+    if (req.session.origin) {
+        const origin = req.session.origin
+        delete req.session.origin;
+        res.redirect(origin || '/');
+    } else {
+        res.status(400).send({
+            message: 'Session origin not defined.'
+        })
+    }
 })
 
 /**********************************************
  * POST
  **********************************************/
 
-app.post('/archive', (req, res) => {
+app.post('/archive', isLoggedIn, (req, res) => {
     console.log("post /archive")
     
     // REMEMBER: the data in body is in JSON format
@@ -169,7 +182,7 @@ app.post('/archive', (req, res) => {
     }
 })
 
-app.post('/users', (req, res) => {
+app.post('/users', isLoggedIn, (req, res) => {
     console.log("post /users");
 
     /**
@@ -194,7 +207,7 @@ app.post('/users', (req, res) => {
     }
 })
 
-app.post('/images', (req, res) => {
+app.post('/images', isLoggedIn, (req, res) => {
     console.log("post /images");
 
     /**
