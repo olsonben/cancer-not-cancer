@@ -65,9 +65,19 @@ app.get('/auth/google',
 app.get('/auth/google/callback',
     passport.authenticate('google', {
         failureRedirect: '/auth/failure',
-        successRedirect: '/bouncer'
+        successRedirect: '/auth/success'
     })
 )
+
+// Handle successful authentications
+app.get('/auth/success', (req, res) => {
+    // Store the user id from the DB
+    let query = `SELECT id FROM users WHERE fullname = "${req.user.email}";`
+
+    const origin = req.session.origin
+    delete req.session.origin;
+    res.redirect(origin || '/');
+})
 
 // Requirments for a user to log out
 app.get('/logout', (req, res) => {
@@ -81,8 +91,12 @@ app.get('/logout', (req, res) => {
  **********************************************/
 function isLoggedIn(req, res, next) {
     // has user ? move on : unauthorized status
-    req.session.origin = req.originalUrl
-    req.user ? next() : res.redirect('/auth')
+    if (req.user) {
+        next()
+    } else {
+        req.session.origin = req.originalUrl
+        res.redirect('/auth')
+    } 
 }
 
 function getIP(req) {
@@ -92,18 +106,12 @@ function getIP(req) {
 }
 
 // NOTE: TEMP: This is more a framework than hard and fast for validity tests
-function isValid(req, method, source) {
-    // Handle credentials
-    if (req.body.credentials != "I am valid") return false
+function isValid(req, res, next) {
     // Each method and source has specific requirements to be valid
-    if (method === 'post') {
-        if (source === 'archive') {
+    if (req.route.methods.post) {
+        if (req.route.path === '/archive') {
             // Only pathologists can archive
-            let query = `SELECT is_pathologist FROM users WHERE username = ${req.body.user}`
-            pool.query(query, (err, rows, fields) => {
-                if (err) throw err
-                return rows[0].is_pathologist // remember: truthiness
-            })
+            req.user.database.is_pathologist === 1 && req.user.database.enabled === 1 ? next() : res.sendStatus(401)
         } else if (source === 'images') {
             // Anyone can add images
             return true
@@ -127,7 +135,7 @@ function isValid(req, method, source) {
  * GET
  **********************************************/
 app.get('/nextImage', isLoggedIn, (req, res) => {
-    console.log("get /images"); // tracking location
+    console.log("Get /images"); // tracking location
     
     // Get random row
     // NOTE: this is not very efficient, but it works
@@ -145,44 +153,29 @@ app.get('/nextImage', isLoggedIn, (req, res) => {
     
 })
 
-// This bounces back to the origin
-app.get('/bouncer', (req, res) => {
-    if (req.session.origin) {
-        const origin = req.session.origin
-        delete req.session.origin;
-        res.redirect(origin || '/');
-    } else {
-        res.status(400).send({
-            message: 'Session origin not defined.'
-        })
-    }
-})
-
 /**********************************************
  * POST
  **********************************************/
 
-app.post('/archive', isLoggedIn, (req, res) => {
+app.post('/archive', isLoggedIn, isValid, (req, res) => {
     console.log("post /archive")
     
     // REMEMBER: the data in body is in JSON format
     
     // This should check is the person is allowed to add iamges
-    if (isValid(req, 'post', 'archive') || true) {
-        // Insert the hotornots
-        query = 'INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) VALUES '
-        // TODO: handle user_id
-        query += `((SELECT id FROM users WHERE username = "${req.body.user}"), ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});`
-        
-        pool.query(query, (err, rows, fields) => {
-            if (err) throw err
-            console.log("Successful archive insert query");
-            res.sendStatus(200)
-        })
-    }
+    // Insert the hotornots
+    query = 'INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) VALUES '
+    // TODO: handle user_id
+    query += `(${req.user.database.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});`
+    
+    pool.query(query, (err, rows, fields) => {
+        if (err) throw err
+        console.log("Successful archive insert query");
+        res.sendStatus(200)
+    })
 })
 
-app.post('/users', isLoggedIn, (req, res) => {
+app.post('/users', isLoggedIn, isValid, (req, res) => {
     console.log("post /users");
 
     /**
@@ -196,7 +189,7 @@ app.post('/users', isLoggedIn, (req, res) => {
      */
 
     // this should test if person adding new users has permission
-    if (false && isValid(req, 'post', 'users')) {
+    if (false) {
         // Insert new user
         query = `INSERT INTO users (fullname, username, password, is_pathologist) VALUES ("${req.body.fullname}", "${req.body.username}", "${req.body.password}", ${req.body.is_pathologist ? 1 : 0});` // insert user
         pool.query(query, (err, rows, fields) => {
@@ -207,7 +200,7 @@ app.post('/users', isLoggedIn, (req, res) => {
     }
 })
 
-app.post('/images', isLoggedIn, (req, res) => {
+app.post('/images', isLoggedIn, isValid, (req, res) => {
     console.log("post /images");
 
     /**
@@ -220,7 +213,7 @@ app.post('/images', isLoggedIn, (req, res) => {
      */
 
     // this should test if person adding new users has permission
-    if (false && isValid(req, 'post', 'images')) {
+    if (false) {
         // Insert new image
         query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("${req.body.path}", ${req.body.hash}, ${getIP(req)}, (SELECT id FROM users WHERE username = "${req.body.user}"));` // insert image
         pool.query(query, (err, rows, fields) => {

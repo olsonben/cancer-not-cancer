@@ -30,6 +30,7 @@ Moved to `BackEnd/README.md`
 
 1. ~~Cleanup client html.~~
 2. ~~Implement Google OAuth2.0~~
+    - Filter authentication to require being a user in the database.
     - Set up user_id for posting images.
 3. Insert users.    :: post request scaffolded
     a. Figure out a good way to do tabs.
