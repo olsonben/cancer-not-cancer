@@ -41,6 +41,7 @@ Moved to `BackEnd/README.md`
 
 ## Urgent
 1. Re-route all http calls to api.milmed.ai to https
+2. Get client pages locked under authorization
 
 # Discuss
 
