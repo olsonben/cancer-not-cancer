@@ -1,7 +1,11 @@
 {
-    "folders": [
-        {
-            "path": "BackEnd"
-        }
-    ]
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../sites-available"
+		}
+	],
+	"settings": {}
 }

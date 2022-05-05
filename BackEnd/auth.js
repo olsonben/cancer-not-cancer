@@ -19,6 +19,7 @@ passport.use(new GoogleStrategy({
     },
     (request, accessToken, refreshToken, profile, done) => {
         // If they have logged in before, find them in the DB, if they haven't, create a new user
+        // Anything involved with tracking the info on the user should go here
         let query = `SELECT id, is_pathologist, enabled FROM users WHERE username = "${profile.email}";`
         
         pool.query(query, (err, rows, fields) => {

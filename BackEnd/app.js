@@ -112,11 +112,11 @@ function isValid(req, res, next) {
             req.user.database.is_pathologist === 1 && req.user.database.enabled === 1 ? next() : res.sendStatus(401)
         } else if (source === 'images') {
             // Anyone can add images
-            return true
+            next()
         } else if (source === 'users') {
             // Only admins can add users
             if (req.body.admin_credentials == 'I am an admin') {
-                return true
+                next()
             }
         }
     }
