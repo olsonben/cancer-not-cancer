@@ -72,8 +72,6 @@ app.get('/auth/google/callback',
 // Handle successful authentications
 app.get('/auth/success', (req, res) => {
     // Store the user id from the DB
-    let query = `SELECT id FROM users WHERE fullname = "${req.user.email}";`
-
     const origin = req.session.origin
     delete req.session.origin;
     res.redirect(origin || '/');
