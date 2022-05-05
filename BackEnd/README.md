@@ -1,33 +1,72 @@
 # BackEnd
 
-## Setup
+# Setup
 
 ```bash
 $ npm install
 $ <NOTE: ask Elaine how she set up the DB>
 ```
 
-## HTTP Requests
+Fill in the `.env.js.bk` with the relavant values and rename the file to `.env.js`.
+
+# HTTP Requests
 
 All requests must pass the credentialling of `isValid` (see `HELPER FUNCTIONS` of `app.js`).
 
-### GET
+## GET
 
+<<<<<<< HEAD
 - [nextImage](#nextImage)
+=======
+- [/nextImage]
+- [/auth]
+    - [/auth/failure]
+    - [/auth/google]
+        - [/auth/google/callback]
+- [/logout]
+- [/bouncer]
+>>>>>>> bo/googleoauth
 
-#### nextImage
+### /nextImage
 
 Randomly select the next image to display. Returns static path to the image.
 
 Example return: `"https://static.milmed.ai/images/bridge.jpeg"`.
 
-### POST
+### /auth
 
-- [archive](#archive)
-- [users](#users)
-- [images](#images)
+Base page for authorization and where you can login. Protected pages are rerouted here for authorization.
 
-#### archive
+Current methods of authorization:
+- Google
+
+#### /auth/failure
+
+Page to show when authorization fails.
+
+#### /auth/google
+
+Authorize with Google
+
+##### /auth/google/callback
+
+Callback for authorizing with google
+
+### /logout
+
+Logout of the session. The session will automatically logout after enough time but this is instantaneous and cleaner than deleting the cookie.
+
+### /bouncer
+
+Redirects back to the origin after autherntication.
+
+## POST
+
+- [/archive]
+- [/users]
+- [/images]
+
+### /archive
 
 Archive responses from the pathologist. Only pathologists can archive.
 
@@ -41,7 +80,7 @@ Example request body:
 }
 ```
 
-#### users
+### /users
 
 Add a user. Only admins can add users.
 
@@ -58,7 +97,7 @@ Example request body:
 
 Note that username is a unique key for users.
 
-#### images
+### /images
 
 Add an image. Anyone can add an image.
 
@@ -73,7 +112,7 @@ Add an image. Anyone can add an image.
 
 Note that `path` should be the local path to the location of the image on the server (ie. accessible by `"https://static.milmed.ai" + path`).
 
-## Keys for `ratings`
+# Keys for `ratings`
 
 Keys generally follow the pattern of `-` for "not"-ness while the absolute value of the rating refers to the specific diagnosis. 
 

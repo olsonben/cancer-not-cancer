@@ -1,6 +1,6 @@
 **/node_modules/*
 
-BackEnd/.env
+BackEnd/.env.js
 
 client/.nuxt/*
 client/dist/*

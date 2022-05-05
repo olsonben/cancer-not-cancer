@@ -30,8 +30,7 @@ export default {
             this.postData({
                 id: this.image.id,
                 rating: this.value,
-                comment: this.comment,
-                user: "mar",
+                comment: this.comment
             })
             this.comment = '' // clear the last comment
 
@@ -149,8 +148,4 @@ export default {
         display: flex;
         justify-content: center;
     }
-.response {
-    display: flex;
-    justify-content: center;
-}
 </style>
