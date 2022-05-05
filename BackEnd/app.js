@@ -215,7 +215,7 @@ app.post('/images', isLoggedIn, isValid, (req, res) => {
     // this should test if person adding new users has permission
     if (false) {
         // Insert new image
-        query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("${req.body.path}", ${req.body.hash}, ${getIP(req)}, (SELECT id FROM users WHERE username = "${req.body.user}"));` // insert image
+        query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("${req.body.path}", ${req.body.hash}, ${getIP(req)}, ${req.user.database.id}));` // insert image
         pool.query(query, (err, rows, fields) => {
             if (err) throw err
             console.log("Successful image insert query");
