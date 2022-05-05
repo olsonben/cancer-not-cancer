@@ -40,7 +40,7 @@ pool.connect()
 // This was done with this video: https://youtu.be/Q0a0594tOrc
 app.use(
     cookieParser(),
-    session({ secret: env.google.sessionSecret }),
+    session({ secret: env.session.secret }),
     passport.initialize(),
     passport.session()
 )
@@ -103,21 +103,24 @@ function getIP(req) {
     return ip
 }
 
-// NOTE: TEMP: This is more a framework than hard and fast for validity tests
+// Checking if a user is allowed to make a specific request
 function isValid(req, res, next) {
     // Each method and source has specific requirements to be valid
-    if (req.route.methods.post) {
+    if (req.route.methods.get) {
+        if (req.route.path === '/nextImage') {
+            // Anyone can get images
+            next()
+        }
+    } else if (req.route.methods.post) {
         if (req.route.path === '/archive') {
-            // Only pathologists can archive
+            // Only enabled pathologists can archive
             req.user.database.is_pathologist === 1 && req.user.database.enabled === 1 ? next() : res.sendStatus(401)
         } else if (source === 'images') {
             // Anyone can add images
             next()
         } else if (source === 'users') {
             // Only admins can add users
-            if (req.body.admin_credentials == 'I am an admin') {
-                next()
-            }
+            req.user.database.is_admin === 1 && req.user.database.enabled === 1 ? next() : res.sendStatus(401)
         }
     }
     
@@ -128,11 +131,10 @@ function isValid(req, res, next) {
  * Express REQUESTS
  **********************************************/
 
-
 /**********************************************
  * GET
  **********************************************/
-app.get('/nextImage', isLoggedIn, (req, res) => {
+app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
     console.log("Get /images"); // tracking location
     
     // Get random row
@@ -148,7 +150,6 @@ app.get('/nextImage', isLoggedIn, (req, res) => {
         })
         console.log("Successful image get query");
     })
-    
 })
 
 /**********************************************
@@ -160,10 +161,8 @@ app.post('/archive', isLoggedIn, isValid, (req, res) => {
     
     // REMEMBER: the data in body is in JSON format
     
-    // This should check is the person is allowed to add iamges
     // Insert the hotornots
     query = 'INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) VALUES '
-    // TODO: handle user_id
     query += `(${req.user.database.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});`
     
     pool.query(query, (err, rows, fields) => {
@@ -175,16 +174,6 @@ app.post('/archive', isLoggedIn, isValid, (req, res) => {
 
 app.post('/users', isLoggedIn, isValid, (req, res) => {
     console.log("post /users");
-
-    /**
-     * req.body = {
-     *     credentials: <idk>
-     *     fullname: "Maria Doe",
-     *     username: "mar",
-     *     password: "i_like2DB",
-     *     is_pathologies: true
-     * }
-     */
 
     // this should test if person adding new users has permission
     if (false) {
@@ -200,15 +189,6 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
 
 app.post('/images', isLoggedIn, isValid, (req, res) => {
     console.log("post /images");
-
-    /**
-     * req.body = {
-     *     credentials: <idk>
-     *     path: "images/leaf-path.jpeg", // should be a static path
-     *     hash: NULL,
-     *     user: "mar"
-     * }
-     */
 
     // this should test if person adding new users has permission
     if (false) {

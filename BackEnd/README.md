@@ -15,9 +15,6 @@ All requests must pass the credentialling of `isValid` (see `HELPER FUNCTIONS` o
 
 ## GET
 
-<<<<<<< HEAD
-- [nextImage](#nextImage)
-=======
 - [/nextImage]
 - [/auth]
     - [/auth/failure]
@@ -25,7 +22,6 @@ All requests must pass the credentialling of `isValid` (see `HELPER FUNCTIONS` o
         - [/auth/google/callback]
 - [/logout]
 - [/bouncer]
->>>>>>> bo/googleoauth
 
 ### /nextImage
 
@@ -75,8 +71,7 @@ Example request body:
 {
     id: 1,
     rating: 0,
-    comment: "I like to comment.",
-    user: "mar",
+    comment: "I like to comment."
 }
 ```
 
@@ -87,9 +82,8 @@ Add a user. Only admins can add users.
 Example request body:
 ```json
 {
-    credentials: <idk>
-    fullname: "Maria Doe",
-    username: "mar",
+    fullname: "Maria Doe"
+    username: "mar.doe@gmail.com",
     password: "i_like2DB",
     is_pathologies: true
 }
@@ -103,10 +97,8 @@ Add an image. Anyone can add an image.
 
 ```json
 {
-    credentials: <idk>
     path: "/images/bridge.jpeg",
-    hash: NULL,
-    user: "mar"
+    hash: NULL
 }
 ```
 

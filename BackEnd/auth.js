@@ -24,15 +24,14 @@ passport.use(new GoogleStrategy({
         
         pool.query(query, (err, rows, fields) => {
             if (err) console.log(err);
-            if (rows.length === 1) {
-                profile.database = {
-                    id: rows[0].id,
-                    is_pathologist: rows[0].is_pathologist,
-                    enabled: rows[0].enabled,
-                }
-                return done(null, profile)
+            if (rows.length != 1) return done(err, null);
+            
+            profile.database = {
+                id: rows[0].id,
+                is_pathologist: rows[0].is_pathologist,
+                enabled: rows[0].enabled,
             }
-            return done(err, null);
+            return done(null, profile)
         })
 
     }
