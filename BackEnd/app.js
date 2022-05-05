@@ -1,13 +1,13 @@
 const express = require('express')
 const path = require('path')
-require('dotenv').config()
+const env = require('./.env.js')
 
 const bodyParser = require('body-parser')
 const mysql = require('mysql')
 
 // Make the server
 const app = express() 
-const port = process.env.PORT || 5000;
+const port = env.port || 5000;
 
 // This is vital to parsing the requests
 app.use(bodyParser.json());       // to support JSON-encoded bodies
@@ -15,13 +15,13 @@ app.use(bodyParser.json());       // to support JSON-encoded bodies
 // This is for connecting to the MariaDB db
 const pool = mysql.createConnection({
   host: 'localhost',
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE
+  user: env.db.user,
+  password: env.db.password,
+  database: env.db.database
 }) 
 pool.connect()
 
-const imageBase = process.env.IMAGE_BASE || 'https://static.milmed.ai/'
+const imageBase = env.url.image
 
 /**********************************************
  * HELPER FUNCTIONS
