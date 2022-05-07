@@ -28,11 +28,17 @@ passport.use(new GoogleStrategy({
             if (err) console.log(err)
             if (rows.length != 1) return done(err, null)
             let permissions = [...rows[0].permissions] // Each element is an 8-bit unsigned int (0 --> 255)
-            if (~permissions[0]&1) return done(err, null)
+            if (~permissions[0]&1) return done(err, null) // Check enabled
+            
+            // Create the permissions number
+            let perm = 0
+            for (let i = permissions.length-1; i >= 0; i--) {
+                perm = (perm << 8) | permissions[i]
+            }
 
             profile.database = {
                 id: rows[0].id,
-                permissions: permissions[0] // NOTE: this MUST expand with increasing permissions
+                permissions: perm // NOTE: this MUST expand with increasing permissions
             }
             return done(null, profile)
         })

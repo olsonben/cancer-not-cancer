@@ -118,12 +118,15 @@ function isValid(req, res, next) {
     } else if (req.route.methods.post) {
         if (req.route.path === '/archive') {
             // Only enabled pathologists can archive
+            //              is_pathologist                                  enabled
             getKthBit(req.user.database.permissions, 2) && getKthBit(req.user.database.permissions, 0) ? next() : res.sendStatus(401)
         } else if (req.route.path === '/images') {
             // Anyone can add images
-            next()
+            //              is_uploader                                     enabled
+            getKthBit(req.user.database.permissions, 1) && getKthBit(req.user.database.permissions, 0) ? next() : res.sendStatus(401)
         } else if (req.route.path === '/users') {
             // Only admins can add users
+            //              is_admin                                        enabled
             getKthBit(req.user.database.permissions, 3) && getKthBit(req.user.database.permissions, 0) ? next() : res.sendStatus(401)
         }
     }
