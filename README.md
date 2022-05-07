@@ -32,6 +32,7 @@ Moved to `BackEnd/README.md`
 2. ~~Implement Google OAuth2.0~~
     - ~~Filter authentication to require being a user in the database.~~
     - ~~Set up user_id for posting images.~~
+    - Adjust permissions stuff
 3. Insert users.    :: post request scaffolded
     a. Figure out a good way to do tabs.
     b. Add components: display box, display bar + open/close function
@@ -40,7 +41,7 @@ Moved to `BackEnd/README.md`
     b. How to "click or drag & drop to add images"
 
 ## Urgent
-1. Re-route all http calls to api.milmed.ai to https
+1. ~~Re-route all http calls to api.milmed.ai to https~~
 2. Get client pages locked under authorization
 
 # Discuss

@@ -103,6 +103,10 @@ function getIP(req) {
     return ip
 }
 
+function getKthBit(n, k) {
+    return (n & ( 1 << k )) >> k
+}
+
 // Checking if a user is allowed to make a specific request
 function isValid(req, res, next) {
     // Each method and source has specific requirements to be valid
@@ -114,13 +118,13 @@ function isValid(req, res, next) {
     } else if (req.route.methods.post) {
         if (req.route.path === '/archive') {
             // Only enabled pathologists can archive
-            req.user.database.is_pathologist === 1 && req.user.database.enabled === 1 ? next() : res.sendStatus(401)
-        } else if (source === 'images') {
+            getKthBit(req.user.database.permissions, 2) && getKthBit(req.user.database.permissions, 0) ? next() : res.sendStatus(401)
+        } else if (req.route.path === '/images') {
             // Anyone can add images
             next()
-        } else if (source === 'users') {
+        } else if (req.route.path === '/users') {
             // Only admins can add users
-            req.user.database.is_admin === 1 && req.user.database.enabled === 1 ? next() : res.sendStatus(401)
+            getKthBit(req.user.database.permissions, 3) && getKthBit(req.user.database.permissions, 0) ? next() : res.sendStatus(401)
         }
     }
     

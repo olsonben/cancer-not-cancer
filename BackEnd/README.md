@@ -104,7 +104,7 @@ Add an image. Anyone can add an image.
 
 Note that `path` should be the local path to the location of the image on the server (ie. accessible by `"https://static.milmed.ai" + path`).
 
-# Keys for `ratings`
+# Keys for `rating`
 
 Keys generally follow the pattern of `-` for "not"-ness while the absolute value of the rating refers to the specific diagnosis. 
 
@@ -113,3 +113,13 @@ Keys generally follow the pattern of `-` for "not"-ness while the absolute value
 | -1     | Not Cancer |
 | 0      | Unsure     |
 | 1      | Cancer     |
+
+# Keys for `permissions`
+
+Binary order (like chmod). For example, an enabled admin would be `1001`, an enabled admin pathologist would be `1101`. 
+
+| Location | 3        | 2              | 1           | 0       |
+|----------|----------|----------------|-------------|---------|
+| Value    | is_admin | is_pathologist | is_uploader | enabled |
+
+Here, `Location` refers to the index of the relevant permission in the permission number as to be fed into `getKthBit`. For example, to get the `is_pathologist` permission, use `getKthBit(permissions, 2)`, and `getKthBit(permissions, 0)` tells whether or not a user is enabled.

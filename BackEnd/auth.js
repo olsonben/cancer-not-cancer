@@ -20,16 +20,19 @@ passport.use(new GoogleStrategy({
     (request, accessToken, refreshToken, profile, done) => {
         // If they have logged in before, find them in the DB, if they haven't, create a new user
         // Anything involved with tracking the info on the user should go here
-        let query = `SELECT id, is_pathologist, enabled FROM users WHERE username = "${profile.email}";`
+
+        // NOTE: permissions is a Buffer object
+        let query = `SELECT id, permissions FROM users WHERE username = "${profile.email}";`
         
         pool.query(query, (err, rows, fields) => {
-            if (err) console.log(err);
-            if (rows.length != 1) return done(err, null);
-            
+            if (err) console.log(err)
+            if (rows.length != 1) return done(err, null)
+            let permissions = [...rows[0].permissions] // Each element is an 8-bit unsigned int (0 --> 255)
+            if (~permissions[0]&1) return done(err, null)
+
             profile.database = {
                 id: rows[0].id,
-                is_pathologist: rows[0].is_pathologist,
-                enabled: rows[0].enabled,
+                permissions: permissions[0] // NOTE: this MUST expand with increasing permissions
             }
             return done(null, profile)
         })
