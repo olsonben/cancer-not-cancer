@@ -22,23 +22,20 @@ passport.use(new GoogleStrategy({
         // Anything involved with tracking the info on the user should go here
 
         // NOTE: permissions is a Buffer object
-        let query = `SELECT id, permissions FROM users WHERE username = "${profile.email}";`
+        let query = `SELECT * FROM users WHERE username = "${profile.email}";`
         
         pool.query(query, (err, rows, fields) => {
             if (err) console.log(err)
-            if (rows.length != 1) return done(err, null)
-            let permissions = [...rows[0].permissions] // Each element is an 8-bit unsigned int (0 --> 255)
-            if (~permissions[0]&1) return done(err, null) // Check enabled
-            
-            // Create the permissions number
-            let perm = 0
-            for (let i = permissions.length-1; i >= 0; i--) {
-                perm = (perm << 8) | permissions[i]
-            }
+            if (rows.length != 1 || !rows[0].is_enabled) return done(err, null)
 
             profile.database = {
                 id: rows[0].id,
-                permissions: perm // NOTE: this MUST expand with increasing permissions
+                permissions: {
+                    enabled: rows[0].is_enabled,
+                    uploader: rows[0].is_uploader,
+                    pathologist: rows[0].is_pathologist,
+                    admin: rows[0].is_admin,
+                }
             }
             return done(null, profile)
         })
