@@ -116,10 +116,9 @@ Keys generally follow the pattern of `-` for "not"-ness while the absolute value
 
 # Keys for `permissions`
 
-Binary order (like chmod). For example, an enabled admin would be `1001`, an enabled admin pathologist would be `1101`. 
-
-| Location | 3        | 2              | 1           | 0       |
-|----------|----------|----------------|-------------|---------|
-| Value    | is_admin | is_pathologist | is_uploader | enabled |
-
-Here, `Location` refers to the index of the relevant permission in the permission number as to be fed into `getKthBit`. For example, to get the `is_pathologist` permission, use `getKthBit(permissions, 2)`, and `getKthBit(permissions, 0)` tells whether or not a user is enabled.
+| Permission     |  Allows           |
+|:--------------:|:-----------------:|
+| is_enabled     | All actions       |
+| is_uploader    | Uploading images  |
+| is_pathologist | Scoring hotornots |
+| is_admin       | Adding users      |
