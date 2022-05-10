@@ -9,7 +9,6 @@ const env = require('./.env') // js will still include this even though it doesn
 // Features
 const bodyParser = require('body-parser')
 const mysql = require('mysql')
-const multer = require('multer')
 
 require('./auth')                           // This needs to be loaded for passport.authenticate
 const passport = require('passport')        // Authentication procedure
@@ -26,9 +25,9 @@ const imageBaseURL = env.url.image
 const baseURL = env.url.base
 
 // This is vital to parsing the json requests
-app.use(bodyParser.json({           // to support JSON-encoded bodies
-    type: 'application/json'
-}));
+// app.use(bodyParser.json({           // to support JSON-encoded bodies
+//     type: 'application/json'
+// }));
 
 // This is for connecting to the MariaDB db
 const pool = mysql.createConnection({
@@ -40,30 +39,16 @@ const pool = mysql.createConnection({
 pool.connect()
 
 // For file uploads with multer
+const multer = require('multer')
+
 const upload = multer({
-  dest: "uploads"
-  // you might also want to set some limits: https://github.com/expressjs/multer#limits
+    dest: "./uploads/"
+    // you might also want to set some limits: https://github.com/expressjs/multer#limits
 });
 
-
-app.post('/upload', upload.single("file" /* name attribute of <file> element in your form */), (req, res) => {
-    console.log("Got past the great upload");
-    const tempPath = req.file.path;
-    const targetPath = path.join(__dirname, "./uploads/image.png");
-
-    if (path.extname(req.file.originalname).toLowerCase() === ".png") { // check for filetype
-        fs.rename(tempPath, targetPath, err => { // rename the file to image.png
-            if (err) res.status(500).send("Oops! Something went wrong!");
-
-            res.send("File uploaded!");
-        });
-    } else {
-        fs.unlink(tempPath, err => {
-            if (err) return res.status(500).send("Oops! Something went wrong!");
-            res.status(403).send("Only .png files are allowed!");
-        });
+app.post('/upload', upload.single('file'), (req, res) => {
+        console.log(req.file, req.body)
     }
-  }
 );
 
 /*
