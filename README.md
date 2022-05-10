@@ -39,6 +39,7 @@ Moved to `BackEnd/README.md`
 4. Insert images.   :: post request scaffolded
     a. How to add images?
     b. "Upload" component
+5. Set up index page
 
 ## Urgent
 1. ~~Re-route all http calls to api.milmed.ai to https~~

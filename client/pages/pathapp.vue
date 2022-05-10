@@ -1,11 +1,31 @@
+<template>
+    <div class="container">
+        <!-- This is the main app: the current picture + buttons + comment field -->
+        <div class="app">
+            <div class="picture"><img :src="this.image.url" :alt="image.url"></div>
+
+            <div class="button-row">
+                <div class="button a"><button @click="onClick('yes-cancer')">Yes Cancer</button></div>
+                <div class="button b"><button @click="onClick('no-cancer')">No Cancer</button></div>
+                <div class="button c"><button @click="onClick('maybe-cancer')">Maybe Cancer</button></div>
+            </div>
+            
+            <div class="comment-field">
+                <textarea v-model="comment" placeholder="Add a comment to this image or leave blank."></textarea>
+            </div>
+        </div>
+    </div>
+</template>
+
 <script>
 import axios from 'axios';
+import * as env from '../.env.js';
 export default {
     data() {
         return {
             image: {},
 
-            value: '',
+            rating: '',
             comment: ''
         }
     },
@@ -16,20 +36,23 @@ export default {
     },
 
     methods: {
+        /**********************************************
+        * App Control
+        **********************************************/
         // when a button is clicked
         onClick(source) {
             // determine the message based on source
             if (source === 'yes-cancer') {
-                this.value = 1
+                this.rating = 1
             } else if (source === 'no-cancer') {
-                this.value = -1
+                this.rating = -1
             } else if (source === 'maybe-cancer') {
-                this.value = 0
+                this.rating = 0
             }
             // record the response
             this.postData({
                 id: this.image.id,
-                rating: this.value,
+                rating: this.rating,
                 comment: this.comment
             })
             this.comment = '' // clear the last comment
@@ -50,7 +73,7 @@ export default {
                 }
             }
 
-            axios.post('https://api.milmed.ai/archive', axiosData, axiosConfig)
+            axios.post(env.url.api + '/hotornot', axiosData, axiosConfig)
                 .then((res, err) => {
                     if (err) console.error(err)
                 })
@@ -61,34 +84,21 @@ export default {
 
             // try-catch is needed for async/await
             try {
-                const response = await axios.get('https://api.milmed.ai/nextImage');
+                const response = await axios.get(env.url.api + '/nextImage');
                 this.image = response.data
             } catch (error) {
                 console.error(error);
             }
-        }
+        },
+
+        /**********************************************
+        * User Authentication
+        **********************************************/
+
+        
     }
 }
 </script>
-
-<template>
-    <div class="container">
-        <!-- This is the main app: the current picture + buttons + comment field -->
-        <div class="app">
-            <div class="picture"><img :src="this.image.url" :alt="image.url"></div>
-
-            <div class="button-row">
-                <div class="button a"><button @click="onClick('yes-cancer')">Yes Cancer</button></div>
-                <div class="button b"><button @click="onClick('no-cancer')">No Cancer</button></div>
-                <div class="button c"><button @click="onClick('maybe-cancer')">Maybe Cancer</button></div>
-            </div>
-            
-            <div class="comment-field">
-                <textarea v-model="comment" placeholder="Add a comment to this image or leave blank."></textarea>
-            </div>
-        </div>
-    </div>
-</template>
 
 <style>
 #app {

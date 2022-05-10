@@ -1,3 +1,5 @@
+const env = require('./.env.js')
+
 export default {
   // Target: https://go.nuxtjs.dev/config-target
   target: 'static',
@@ -25,6 +27,7 @@ export default {
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
+    '@/plugins/bootstrap-vue'
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -36,7 +39,27 @@ export default {
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
+    '@nuxtjs/auth-next',
+    '@nuxtjs/axios'
   ],
+
+  auth: {
+    strategies: {
+      google: {
+        clientId: env.google.clientID,
+        codeChallengeMethod: '',
+        responseType: 'code',
+        endpoints: {
+          token: 'https://api.milmed.ai/auth/google/',
+          userInfo: 'https://api.milmed.ai/auth/google/callback'
+        }
+      }
+    }
+  },
+
+  // router: {
+  //   middleware: ['auth']
+  // },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {

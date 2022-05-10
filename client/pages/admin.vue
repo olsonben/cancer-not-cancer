@@ -1,56 +1,96 @@
+<template>
+    <div class="container">
+      <!--UPLOAD-->
+      <form enctype="multipart/form-data" novalidate v-if="isInitial || isSaving">
+        <h1>Upload images</h1>
+        <div class="dropbox">
+          <input type="file" multiple :name="uploadFieldName" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length"
+            accept="image/*" class="input-file">
+            <p v-if="isInitial">
+              Drag your file(s) here to begin<br> or click to browse
+            </p>
+            <p v-if="isSaving">
+              Uploading {{ fileCount }} files...
+            </p>
+        </div>
+      </form>
+  </div>
+</template>
+
 <script>
+import { upload } from './file-upload.service';
+
+const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED = 3;
+
 export default {
     data() {
         return {
-            users: [],
-            images: []
+        uploadedFiles: [],
+        uploadError: null,
+        currentStatus: null,
+        uploadFieldName: 'photos'
+        }
+    },
+
+    mounted() {
+        this.reset();
+    },
+
+    computed: {
+        isInitial() {
+        return this.currentStatus === STATUS_INITIAL;
+        },
+        isSaving() {
+        return this.currentStatus === STATUS_SAVING;
+        },
+        isSuccess() {
+        return this.currentStatus === STATUS_SUCCESS;
+        },
+        isFailed() {
+        return this.currentStatus === STATUS_FAILED;
         }
     },
 
     methods: {
-        createUserTemplate() {
+        reset() {
+            // reset form to initial state
+            this.currentStatus = STATUS_INITIAL;
+            this.uploadedFiles = [];
+            this.uploadError = null;
+        },
+        save(formData) {
+            // upload data to the server
+            this.currentStatus = STATUS_SAVING;
+            
+            upload(formData)
+                .then(x => {
+                    this.uploadedFiles = [].concat(x);
+                    this.currentStatus = STATUS_SUCCESS;
+                }).catch(err => {
+                    this.uploadError = err.response;
+                    this.currentStatus = STATUS_FAILED;
+                });
+        },
 
+        filesChange(fieldName, fileList) {
+            // handle file changes
+            const formData = new FormData();
+
+            if (!fileList.length) return;
+
+            // append the files to FormData
+            Array
+                .from(Array(fileList.length).keys())
+                .map(x => {
+                    formData.append(fieldName, fileList[x], fileList[x].name);
+                });
+
+            // save it
+            this.save(formData);
         }
     }
 }
 </script>
-
-<template>
-    <div class="container">
-        <!-- NOTE:: Just use bootstrap + components -->
-        <!-- NOTE:: Just make these things components -->
-
-        <!-- Tabs: images, users -->
-
-        <!-- images tab -->
-        <div id="images">
-            <h3>Adding New Images</h3>
-            <!-- Display for new images -->
-                <!-- List of new images -->
-                    <!-- Each image has a miniaturized version, the name, and the path: path field (prefilled with "/images/[image name]") -->
-                <!-- Button to add new images -->
-                <!-- Click or drag & drop to add new images from file system -->
-            <!-- Submit button -->
-        </div>
-
-
-        <!-- users tab -->
-        <div id="users">
-            <h3>Adding New Users</h3>
-            
-            <!-- Display box for new users -->
-            <ul class="display">
-                <!-- List of new users -->
-                    <!-- Each user contains fullname and is pathologist when closed and fields for username and password when open (default) -->
-                <!-- Button to add new users (Make this an item in the list?) -->
-                <li class="user" v-for="user in users" :key="user.username">{{ user.username }}</li>
-                <li class="user"><button class="new" @onClick="createUserTemplate()">Add new user</button></li>
-            </ul>
-            <!-- Submit button -->
-        </div>
-
-    </div>
-</template>
 
 <style>
 </style>

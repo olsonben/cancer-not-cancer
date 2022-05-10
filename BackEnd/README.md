@@ -58,13 +58,13 @@ Redirects back to the origin after autherntication.
 
 ## POST
 
-- [/archive]
+- [/hotornot]
 - [/users]
 - [/images]
 
-### /archive
+### /hotornot
 
-Archive responses from the pathologist. Only pathologists can archive.
+Archive responses from the pathologist.
 
 Example request body:
 ```json
@@ -77,7 +77,7 @@ Example request body:
 
 ### /users
 
-Add a user. Only admins can add users.
+Add a user.
 
 Example request body:
 ```json
@@ -93,7 +93,7 @@ Note that username is a unique key for users.
 
 ### /images
 
-Add an image. Anyone can add an image.
+Add an image.
 
 ```json
 {

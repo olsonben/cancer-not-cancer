@@ -22,6 +22,8 @@ passport.use(new GoogleStrategy({
         // Anything involved with tracking the info on the user should go here
 
         // NOTE: permissions is a Buffer object
+        console.log(request.originalUrl)
+
         let query = `SELECT * FROM users WHERE username = "${profile.email}";`
         
         pool.query(query, (err, rows, fields) => {
