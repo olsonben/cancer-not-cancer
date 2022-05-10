@@ -21,6 +21,12 @@ export default {
     ]
   },
 
+  watchers: {
+    webpack: {
+      ignored: /node_modules/
+    }
+  },
+
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
   ],

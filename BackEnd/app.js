@@ -25,9 +25,9 @@ const imageBaseURL = env.url.image
 const baseURL = env.url.base
 
 // This is vital to parsing the json requests
-// app.use(bodyParser.json({           // to support JSON-encoded bodies
-//     type: 'application/json'
-// }));
+app.use(bodyParser.json({           // to support JSON-encoded bodies
+    type: 'application/json'
+}));
 
 // This is for connecting to the MariaDB db
 const pool = mysql.createConnection({
@@ -42,45 +42,66 @@ pool.connect()
 const multer = require('multer')
 
 const upload = multer({
-    dest: "./uploads/"
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, './uploads/')
+        },
+
+        filename: (req, file, cb) => {
+            cb(null, file.originalname)
+        }
+    }),
+
+    fileFilter: (req, file, cb) => {
+        const ext = file.originalname.split('.').pop()
+        if ([ 'png', 'jpg', 'jpeg' ].includes(ext)) {
+            cb (null, true)
+        } else {
+            cb(null, false)
+        }
+    }
     // you might also want to set some limits: https://github.com/expressjs/multer#limits
 });
 
 app.post('/upload', upload.single('file'), (req, res) => {
-        console.log(req.file, req.body)
-    }
-);
+    console.log(req.headers);
+    console.log(req.file, req.body)
+//     req.headers = {
+//   host: '127.0.0.1:5000',
+//   connection: 'close',
+//   'content-length': '7718',
+//   'cache-control': 'max-age=0',
+//   'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="101", "Google Chrome";v="101"',
+//   'sec-ch-ua-mobile': '?0',
+//   'sec-ch-ua-platform': '"macOS"',
+//   'upgrade-insecure-requests': '1',
+//   origin: 'https://api.milmed.ai',
+//   'content-type': 'multipart/form-data; boundary=----WebKitFormBoundarygzAJepAaVMCT8BsZ',
+//   'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.41 Safari/537.36',
+//   accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+//   'sec-fetch-site': 'same-origin',
+//   'sec-fetch-mode': 'navigate',
+//   'sec-fetch-user': '?1',
+//   'sec-fetch-dest': 'document',
+//   referer: 'https://api.milmed.ai/admin',
+//   'accept-encoding': 'gzip, deflate, br',
+//   'accept-language': 'en-US,en;q=0.9',
+//   cookie: 'auth.strategy=google; auth.redirect=%2Fprotected; connect.sid=s%3Ax1qYljsFuoUChX2kK81PKYwpQDDT5Nlq.WZLp89eni3x29jS9LHjj29qjXw1Fy6B8rqh%2BNpwKR%2Fo'
+// }
+// req.file = {
+//   fieldname: 'file',
+//   originalname: 'book.png',
+//   encoding: '7bit',
+//   mimetype: 'image/png',
+//   destination: './uploads/',
+//   filename: 'a307efd2abf7bcac1992fd28d465ce46',
+//   path: 'uploads/a307efd2abf7bcac1992fd28d465ce46',
+//   size: 7537
+// } [Object: null prototype]; req.body = {}
+});
 
-/*
-app.use('/a',express.static('/b'));
-Above line would serve all files/folders inside of the 'b' directory
-And make them accessible through http://localhost:3000/a.
-*/
 app.use(express.static(__dirname + '/public'));
 app.use('/uploads', express.static('uploads'));
-
-app.post('/profile-upload-single', upload.single('profile-file'), function (req, res, next) {
-    // req.file is the `profile-file` file
-    // req.body will hold the text fields, if there were any
-    console.log(JSON.stringify(req.file))
-    var response = '<a href="/">Home</a><br>'
-    response += "Files uploaded successfully.<br>"
-    response += `<img src="${req.file.path}" /><br>`
-    return res.send(response)
-})
-
-app.post('/profile-upload-multiple', upload.array('profile-files', 12), function (req, res, next) {
-    // req.files is array of `profile-files` files
-    // req.body will contain the text fields, if there were any
-    var response = '<a href="/">Home</a><br>'
-    response += "Files uploaded successfully.<br>"
-    for(var i=0;i<req.files.length;i++){
-        response += `<img src="${req.files[i].path}" /><br>`
-    }
-    
-    return res.send(response)
-})
-
 
 // Google OAuth 2.0 stuff
 // This was done with this video: https://youtu.be/Q0a0594tOrc
