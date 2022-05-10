@@ -4,7 +4,7 @@
         <!-- NOTE:: Just make these things components -->
 
         <!-- Tabs: images, users -->
-        <form method="post" enctype="multipart/form-data" action="/upload">
+        <form method="post" enctype="multipart/form-data" action="/images">
             <input type="file" name="file">
             <input type="submit" value="Submit">
         </form>
