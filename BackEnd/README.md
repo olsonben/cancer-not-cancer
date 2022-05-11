@@ -17,17 +17,17 @@ All requests must pass the credentialling of `isValid` (see `HELPER FUNCTIONS` o
 
 - [/nextImage]
 - [/auth]
+    - [/auth/success]
     - [/auth/failure]
+    - [/auth/logout]
     - [/auth/google]
         - [/auth/google/callback]
-- [/logout]
-- [/bouncer]
 
 ### /nextImage
 
-Randomly select the next image to display. Returns static path to the image.
+Randomly select the next image to display. Returns path to the image.
 
-Example return: `"https://static.milmed.ai/images/bridge.jpeg"`.
+Example return: `"https://api.milmed.ai/images/bridge.jpeg"`.
 
 ### /auth
 
@@ -36,9 +36,17 @@ Base page for authorization and where you can login. Protected pages are reroute
 Current methods of authorization:
 - Google
 
+### /auth/success
+
+Redirection route for successful authorization.
+
 #### /auth/failure
 
 Page to show when authorization fails.
+
+### /auth/logout
+
+Logout of the session. The session will automatically logout after enough time but this is instantaneous and cleaner than deleting the cookie.
 
 #### /auth/google
 
@@ -47,14 +55,6 @@ Authorize with Google
 ##### /auth/google/callback
 
 Callback for authorizing with google
-
-### /logout
-
-Logout of the session. The session will automatically logout after enough time but this is instantaneous and cleaner than deleting the cookie.
-
-### /bouncer
-
-Redirects back to the origin after autherntication.
 
 ## POST
 

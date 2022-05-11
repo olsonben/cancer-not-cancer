@@ -41,7 +41,9 @@ const pool = mysql.createConnection({
 }) 
 pool.connect()
 
-// For file uploads with multer
+/**
+ * MULTER FILE UPLOADS
+ */
 
 const upload = multer({
     storage: multer.diskStorage({
@@ -99,13 +101,13 @@ app.get('/auth/success', (req, res) => {
     res.redirect(origin || '/pathapp') // NOTE: After setting up index page on frontend, send to '/'
 })
 
-// Falied authorization
+// Failed authorization
 app.get('/auth/failure', (req, res) => {
     res.send("Something went wrong...")
 })
 
-// Requirments for a user to log out
-app.get('/logout', (req, res) => {
+// Log out the user
+app.get('/auth/logout', (req, res) => {
     req.logout()            // Log out the user
     req.session.destroy()   // kill their session
     res.send('Goodbye!')
@@ -114,10 +116,10 @@ app.get('/logout', (req, res) => {
 /**
  * GOOGLE AUTHENTICATION
  */
-//                                                 Interested in: email and profile (name, id, language, profile pic)
+//                                                 Interested in: email
 app.get('/auth/google',passport.authenticate('google', { scope: ['email'] }))
 
-// You need to tell google where to go for successul and failed authorizations
+// You need to tell google where to go for successful and failed authorizations
 app.get('/auth/google/callback',
     passport.authenticate('google', {
         failureRedirect: '/auth/failure',

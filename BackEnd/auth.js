@@ -14,16 +14,10 @@ pool.connect()
 passport.use(new GoogleStrategy({
         clientID:     env.google.clientID,
         clientSecret: env.google.clientSecret,
-        callbackURL: "https://api.milmed.ai/auth/google/callback",
+        callbackURL: env.url.base + "/auth/google/callback",
         passReqToCallback   : true
     },
     (request, accessToken, refreshToken, profile, done) => {
-        // If they have logged in before, find them in the DB, if they haven't, create a new user
-        // Anything involved with tracking the info on the user should go here
-
-        // NOTE: permissions is a Buffer object
-        console.log(request.originalUrl)
-
         let query = `SELECT * FROM users WHERE username = "${profile.email}";`
         
         pool.query(query, (err, rows, fields) => {

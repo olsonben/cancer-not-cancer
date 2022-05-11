@@ -29,6 +29,7 @@ Moved to `BackEnd/README.md`
 # TODO
 
 1. Set up index page
+2. Seperate frontend (pathapp.milmed.ai) from backend (api.milmed.ai)
 
 ## Urgent
 

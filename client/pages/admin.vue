@@ -13,26 +13,29 @@
             </b-tab>
             <b-tab v-if="true" title="Users">
                 <!-- This is just the basic idea -->
+                <!-- User info -->
                 <label for="fullname">Fullname</label>
-                <input v-model="user.fullname" id="fullname" placeholder="Fullname" />
+                <input id="fullname" placeholder="Fullname" v-model="user.fullname" />
 
                 <label for="email">Email</label>
-                <input v-model="user.email" id="email" placeholder="Email" />
+                <input id="email" placeholder="Email" v-model="user.email" />
 
                 <label for="password">Password</label>
-                <input v-model="user.password" id="password" placeholder="Password" />
+                <input id="password" placeholder="Password" v-model="user.password" />
 
+                <!-- Permissions -->
+                <!-- NOTE: values for permissions MUST be `value='1'` -->
                 <label for="enabled">Is Enabled</label>
-                <input type="checkbox" id="enabled" v-model="user.permissions.enabled" />
+                <input type="checkbox" id="enabled" value='1' v-model="user.permissions.enabled" />
 
                 <label for="uploader">Is Uploader</label>
-                <input type="checkbox" id="uploader" v-model="user.permissions.uploader" />
+                <input type="checkbox" id="uploader" value='1' v-model="user.permissions.uploader" />
 
                 <label for="pathologist">Is Pathologist</label>
-                <input type="checkbox" id="pathologist" v-model="user.permissions.pathologist" />
+                <input type="checkbox" id="pathologist" value='1' v-model="user.permissions.pathologist" />
 
                 <label for="admin">Is Admin</label>
-                <input type="checkbox" id="admin" v-model="user.permissions.admin" />
+                <input type="checkbox" id="admin" value='1' v-model="user.permissions.admin" />
 
                 <button @click='submitUser()'>Submit</button>
             </b-tab>
@@ -51,43 +54,31 @@ export default {
                 email: '',
                 password: '',
                 permissions: {
-                    enabled: false,
-                    uploader: false,
-                    pathologist: false,
-                    admin: false
+                    enabled: 0,
+                    uploader: 0,
+                    pathologist: 0,
+                    admin: 0
                 }
             }
         }
     },
 
     methods: {
-        submitUser() {
-            const data = {
-                fullname: this.user.fullname,
-                email: this.user.email,
-                password: this.user.password,
-                // We have to adjust permissions to be 1 or 0 instead of true or false
-                permissions: {
-                    enabled: this.user.permissions.enabled ? 1 : 0,
-                    uploader: this.user.permissions.uploader ? 1 : 0,
-                    pathologist: this.user.permissions.pathologist ? 1 : 0,
-                    admin: this.user.permissions.admin ? 1 : 0
-                }
-            }
-            
-            let axiosData = JSON.stringify(data)
+        // Submit new user (activated on clicking Submit button in Users tab)
+        async submitUser() {
+            let axiosData = JSON.stringify(this.user)
             const axiosConfig = {
                 headers: {
                     "Content-Type": "application/json",
                 }
             }
-
-            console.log("Attempting user submition")
             
-            axios.post(env.url.api + '/users', axiosData, axiosConfig)
-                .then((res, err) => {
-                    if (err) console.error(err)
-                })
+            try {
+                const res = await axios.post(env.url.api + '/users', axiosData, axiosConfig)
+
+            } catch (err) {
+                console.error(err)
+            }
         }
     }
 }
