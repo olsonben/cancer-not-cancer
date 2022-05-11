@@ -2,18 +2,19 @@
  * IMPORTS
  **********************************************/
 // Basic stuff for the server
-const express = require('express')
-const path = require('path')
-const env = require('./.env') // js will still include this even though it doesn't specify file ending 
+const express = require('express')              // We have an express server (https://expressjs.com/)
+const env = require('./.env')                   // Hidden information not to be tracked by github (passwords and such)
 
-// Features
-const bodyParser = require('body-parser')
-const mysql = require('mysql')
+/// Features
+const bodyParser = require('body-parser')       // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
+const mysql = require('mysql')                  // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
+const multer = require('multer')                // Need to upload images (https://www.npmjs.com/package/multer)
 
-require('./auth')                           // This needs to be loaded for passport.authenticate
-const passport = require('passport')        // Authentication procedure
-const session = require('express-session')  // Session gives us cookies
-const cookieParser = require('cookie-parser')
+// These four all all for authentication
+require('./auth')                               // This needs to be loaded for passport.authenticate
+const passport = require('passport')            // Authentication procedure (https://www.passportjs.org/)
+const session = require('express-session')      // Session gives us cookies (https://www.npmjs.com/package/express-session)
+const cookieParser = require('cookie-parser')   // We need to track things about the session (https://www.npmjs.com/package/cookie-parser)
 
 /**********************************************
  * SERVER SETUP
@@ -29,7 +30,9 @@ app.use(bodyParser.json({           // to support JSON-encoded bodies
     type: 'application/json'
 }));
 
-// This is for connecting to the MariaDB db
+/**
+ * MariaDB DATABASE
+ */
 const pool = mysql.createConnection({
     host: 'localhost',
     user: env.db.user,
@@ -39,21 +42,23 @@ const pool = mysql.createConnection({
 pool.connect()
 
 // For file uploads with multer
-const multer = require('multer')
 
 const upload = multer({
     storage: multer.diskStorage({
+        // Where to files
         destination: (req, file, cb) => {
-            cb(null, './images/')
+            cb(null, './images/') // We are only interested in images
         },
 
         filename: (req, file, cb) => {
+            // TODO: mandate unique filename
             cb(null, file.originalname)
         }
     }),
 
     fileFilter: (req, file, cb) => {
         const ext = file.originalname.split('.').pop()
+        // Only allow png, jpg, and jpeg
         if ([ 'png', 'jpg', 'jpeg' ].includes(ext)) {
             cb (null, true)
         } else {
@@ -63,56 +68,40 @@ const upload = multer({
     // you might also want to set some limits: https://github.com/expressjs/multer#limits
 });
 
-// app.post('/upload', upload.single('file'), (req, res) => {
-//     console.log(req.headers);
-//     console.log(req.file, req.body)
-// });
+app.use('/images', express.static('images'));   // This is REQUIRED for displaying images
 
-app.use(express.static(__dirname + '/public'));
-app.use('/images', express.static('images'));
+/**
+ * USER AUTHENTICATION
+ */
 
-// Google OAuth 2.0 stuff
 // This was done with this video: https://youtu.be/Q0a0594tOrc
 app.use(
-    cookieParser(),
-    session({ secret: env.session.secret }),
-    passport.initialize(),
-    passport.session()
+    cookieParser(),                             // Use cookies to track the session         :: req.session
+    session({ secret: env.session.secret }),    // Encrypted session
+    passport.initialize(),                      // Google OAuth2 is a passport protocol
+    passport.session()                          // Need to track the user as a session      :: req.user
 )
+
+/**
+ * GENERAL AUTHENTICATION ROUTES
+ */
 
 // Authorization options page
 app.get('/auth', (req, res) => {
     res.send('<a href="/auth/google">Authenticate with Google</a>')
 })
 
+// Handle successful authentications
+app.get('/auth/success', (req, res) => {
+    // Bounce back to origin
+    const origin = req.session.origin
+    delete req.session.origin
+    res.redirect(origin || '/pathapp') // NOTE: After setting up index page on frontend, send to '/'
+})
+
 // Falied authorization
 app.get('/auth/failure', (req, res) => {
     res.send("Something went wrong...")
-})
-
-// Authenticate the session with google
-app.get('/auth/google',
-    //                        Interested in: email and profile (name, id, language, profile pic)
-    passport.authenticate('google', { scope: ['email', 'profile'] })
-)
-// Same for post
-app.post('/auth/google', passport.authenticate('google', { scope: ['email', 'profile'] }))
-
-// You need to tell google where to go for successul and failed authorizations
-app.get('/auth/google/callback',
-    passport.authenticate('google', {
-        failureRedirect: '/auth/failure',
-        successRedirect: '/auth/success'
-    })
-)
-
-// Handle successful authentications
-app.get('/auth/success', (req, res) => {
-    // Store the user id from the DB
-    const origin = req.session.origin
-    delete req.session.origin;
-    // NOTE: After setting up index page on frontend, send to '/'
-    res.redirect(origin || '/pathapp');
 })
 
 // Requirments for a user to log out
@@ -122,6 +111,20 @@ app.get('/logout', (req, res) => {
     res.send('Goodbye!')
 })
 
+/**
+ * GOOGLE AUTHENTICATION
+ */
+//                                                 Interested in: email and profile (name, id, language, profile pic)
+app.get('/auth/google',passport.authenticate('google', { scope: ['email'] }))
+
+// You need to tell google where to go for successul and failed authorizations
+app.get('/auth/google/callback',
+    passport.authenticate('google', {
+        failureRedirect: '/auth/failure',
+        successRedirect: '/auth/success'
+    })
+)
+
 /**********************************************
  * HELPER FUNCTIONS
  **********************************************/
@@ -130,7 +133,7 @@ function isLoggedIn(req, res, next) {
     if (req.user) {
         next()
     } else {
-        req.session.origin = req.originalUrl
+        req.session.origin = req.originalUrl // Remember the original url to bounce back to
         res.redirect('/auth')
     } 
 }
@@ -144,6 +147,7 @@ function getIP(req) {
 // Checking if a user is allowed to make a specific request
 function isValid(req, res, next) {
     // Each method and source has specific requirements to be valid
+    const perms = req.user.database.permissions
     if (req.route.methods.get) {
         if (req.route.path === '/nextImage') {
             // Anyone can get images
@@ -152,15 +156,11 @@ function isValid(req, res, next) {
     } else if (req.route.methods.post) {
         // checking enabled is redundant but safe
         if (req.route.path === '/hotornot') {
-            // Only pathologists can hotornot
-            req.user.database.permissions.pathologist && req.user.database.permissions.enabled ? next() : res.sendStatus(401)
+            perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
         } else if (req.route.path === '/images') {
-            // Anyone can add images
-            console.log("Uploader: " + req.user.database.permissions.uploader + ". Enabled: " + req.user.database.permissions.enabled);
-            req.user.database.permissions.uploader && req.user.database.permissions.enabled ? next() : res.sendStatus(401)
+            perms.uploader && perms.enabled ? next() : res.sendStatus(401)
         } else if (req.route.path === '/users') {
-            // Only admins can add users
-            req.user.database.permissions.admin && req.user.database.permissions.enabled ? next() : res.sendStatus(401)
+            perms.admin && perms.enabled ? next() : res.sendStatus(401)
         }
     }
     

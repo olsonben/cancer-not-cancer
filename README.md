@@ -28,26 +28,12 @@ Moved to `BackEnd/README.md`
 
 # TODO
 
-1. ~~Cleanup client html.~~
-2. ~~Implement Google OAuth2.0~~
-    - ~~Filter authentication to require being a user in the database.~~
-    - ~~Set up user_id for posting images.~~
-    - ~~Adjust permissions stuff~~
-3. ~~Insert users.    :: post request scaffolded~~
-    a. ~~Figure out a good way to do tabs.~~
-    b. ~~Add components: display box, display bar + open/close function~~
-4. ~~Insert images.   :: post request scaffolded~~
-    a. ~~How to add images?~~
-    b. ~~"Upload" component~~
-5. Set up index page
+1. Set up index page
 
 ## Urgent
-1. ~~Re-route all http calls to api.milmed.ai to https~~
-2. Get client pages locked under authorization
+
+1. Get client pages locked under authorization
 
 # Discuss
 
-1. ~~Should I have seperate READMEs for the back and front ends?~~
-2. How to choose the next image?
-3. ~~Who can add users, images, and archive?        :: enabled: admins, uploaders, pathologists~~
-4. ~~How does credentialling work?                  :: Google OAuth2~~
+1. How to choose the next image?
