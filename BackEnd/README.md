@@ -83,13 +83,20 @@ Example request body:
 ```json
 {
     fullname: "Maria Doe"
-    username: "mar.doe@gmail.com",
+    email: "mar.doe@gmail.com",
     password: "i_like2DB",
-    is_pathologies: true
+    permissions: {
+        enabled: 1,
+        uploader: 1,
+        pathologist: 1,
+        admin: 1
+    }
 }
 ```
 
-Note that username is a unique key for users.
+The values to `permissions` fields MUST be either `1` or `0`, this is strongly compared (`===`).
+
+Note that email is a unique key for users.
 
 ### /images
 

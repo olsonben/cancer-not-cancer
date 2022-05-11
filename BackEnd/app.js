@@ -213,29 +213,48 @@ app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
 })
 
 app.post('/users', isLoggedIn, isValid, (req, res) => {
-    console.log("post /users");
+    console.log("Post /users");
 
-    // this should test if person adding new users has permission
-    if (false) {
-        // Insert new user
-        query = `INSERT INTO users (fullname, username, password, is_pathologist) VALUES ("${req.body.fullname}", "${req.body.username}", "${req.body.password}", ${req.body.is_pathologist ? 1 : 0});` // insert user
-        pool.query(query, (err, rows, fields) => {
-            if (err) throw err
+    // Insert new user
+    query = 'INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES '
+    query += `("${req.body.fullname}", "${req.body.email}", "${req.body.password}", 
+        ${req.body.permissions.enabled === 1 ? 1 : 0}, 
+        ${req.body.permissions.pathologist === 1 ? 1 : 0}, 
+        ${req.body.permissions.uploader === 1 ? 1 : 0}, 
+        ${req.body.permissions.admin === 1 ? 1 : 0});`
+
+    pool.query(query, (err, rows, fields) => {
+        if (err) {
+            // No duplicate users
+            if (err.code === 'ER_DUP_ENTRY') {
+                res.status(409).send("Email already exists in database.")
+            } else {
+                throw err
+            }
+        } else {
             console.log("Successful user insert query");
             res.sendStatus(200)
-        })
-    }
+        }
+    })
 })
 
 app.post('/images', isLoggedIn, isValid, upload.single('file'), (req, res) => {
-    console.log("post /images");
+    console.log("Post /images");
 
     // Insert new image
     query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.file.path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.database.id});` // insert image
     pool.query(query, (err, rows, fields) => {
-        if (err) throw err
-        console.log("Successful image insert query");
-        res.sendStatus(200)
+        if (err) {
+            // No duplicate images
+            if (err.code === 'ER_DUP_ENTRY') {
+                res.status(409).send("Path already exists in database.")
+            } else {
+                throw err
+            }
+        } else {
+            console.log("Successful image insert query");
+            res.sendStatus(200)
+        }
     })
 })
 
@@ -257,6 +276,6 @@ app.listen(port, () => {
  * EXTRA
  **********************************************/
 
-// User this to reduce the request for logging
+// User this to reduce the request for logging json
 // const { route, user, _sessionManager, isUnauthenticated, isAuthenticated, logout, logOut, login, logIn, _passport, session, sessionID, sessionStore, _parsedOriginalUrl, signedCookies, cookies, secret, res, query, params, _parsedUrl, originalUrl, baseUrl, next, _dumped, _consuming, client, statusMessage, statusCode, method, url, upgrade, aborted, rawTrailers, trailers, rawHeaders, headers, complete, httpVersion, httpVersionMinor, httpVersionMajor, connection, socket, _maxListeners, _eventsCount, _events, readable, _readableState, body, ...qux } = req
 // console.log(qux)

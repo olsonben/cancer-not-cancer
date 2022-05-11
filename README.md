@@ -33,12 +33,12 @@ Moved to `BackEnd/README.md`
     - ~~Filter authentication to require being a user in the database.~~
     - ~~Set up user_id for posting images.~~
     - ~~Adjust permissions stuff~~
-3. Insert users.    :: post request scaffolded
-    a. Figure out a good way to do tabs.
-    b. Add components: display box, display bar + open/close function
-4. Insert images.   :: post request scaffolded
-    a. How to add images?
-    b. "Upload" component
+3. ~~Insert users.    :: post request scaffolded~~
+    a. ~~Figure out a good way to do tabs.~~
+    b. ~~Add components: display box, display bar + open/close function~~
+4. ~~Insert images.   :: post request scaffolded~~
+    a. ~~How to add images?~~
+    b. ~~"Upload" component~~
 5. Set up index page
 
 ## Urgent
