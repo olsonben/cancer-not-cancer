@@ -117,7 +117,8 @@ app.get('/auth/logout', (req, res) => {
  * GOOGLE AUTHENTICATION
  */
 //                                                 Interested in: email
-app.get('/auth/google',passport.authenticate('google', { scope: ['email'] }))
+app.get('/auth/google', passport.authenticate('google', { scope: ['email'] }))
+app.post('/auth/google', passport.authenticate('google', { scope: ['email'] }))
 
 // You need to tell google where to go for successful and failed authorizations
 app.get('/auth/google/callback',
@@ -239,9 +240,12 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
         }
     })
 })
-
-app.post('/images', isLoggedIn, isValid, upload.single('file'), (req, res) => {
+// upload.single('file')
+app.post('/images', isLoggedIn, isValid, (req, res) => {
     console.log("Post /images");
+
+    console.log("Request = ")
+    console.log(req)
 
     // Insert new image
     query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.file.path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.database.id});` // insert image

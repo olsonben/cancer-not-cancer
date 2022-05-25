@@ -49,24 +49,6 @@ export default {
     '@nuxtjs/axios'
   ],
 
-  auth: {
-    strategies: {
-      google: {
-        clientId: env.google.clientID,
-        codeChallengeMethod: '',
-        responseType: 'code',
-        endpoints: {
-          token: 'https://api.milmed.ai/auth/google/',
-          userInfo: 'https://api.milmed.ai/auth/google/callback'
-        }
-      }
-    }
-  },
-
-  // router: {
-  //   middleware: ['auth']
-  // },
-
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
   }

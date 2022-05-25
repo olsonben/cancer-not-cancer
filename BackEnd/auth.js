@@ -12,10 +12,10 @@ const pool = mysql.createConnection({
 pool.connect()
 
 passport.use(new GoogleStrategy({
-        clientID:     env.google.clientID,
+        clientID: env.google.clientID,
         clientSecret: env.google.clientSecret,
         callbackURL: env.url.base + "/auth/google/callback",
-        passReqToCallback   : true
+        passReqToCallback: true
     },
     (request, accessToken, refreshToken, profile, done) => {
         let query = `SELECT * FROM users WHERE username = "${profile.email}";`
