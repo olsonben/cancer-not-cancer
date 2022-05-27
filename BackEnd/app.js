@@ -118,7 +118,6 @@ app.get('/auth/logout', (req, res) => {
  */
 //                                                 Interested in: email
 app.get('/auth/google', passport.authenticate('google', { scope: ['email'] }))
-app.post('/auth/google', passport.authenticate('google', { scope: ['email'] }))
 
 // You need to tell google where to go for successful and failed authorizations
 app.get('/auth/google/callback',
@@ -201,7 +200,7 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
 
 app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
     console.log("post /hotornot")
-    
+    console.log(req.headers)
     // REMEMBER: the data in body is in JSON format
     
     // Insert the hotornots
@@ -241,27 +240,31 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
     })
 })
 // upload.single('file')
-app.post('/images', isLoggedIn, isValid, (req, res) => {
+app.post('/images', isLoggedIn, isValid, upload.any('files'), (req, res) => {
     console.log("Post /images");
-
-    console.log("Request = ")
-    console.log(req)
+    console.log("Request files = ")
+    console.log(req.files)
+    console.log("Body = ")
+    console.log(req.body)
+    console.log("Headers = ")
+    console.log(req.headers)
 
     // Insert new image
-    query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.file.path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.database.id});` // insert image
-    pool.query(query, (err, rows, fields) => {
-        if (err) {
-            // No duplicate images
-            if (err.code === 'ER_DUP_ENTRY') {
-                res.status(409).send("Path already exists in database.")
-            } else {
-                throw err
-            }
-        } else {
-            console.log("Successful image insert query");
-            res.sendStatus(200)
-        }
-    })
+    // query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.file.path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.database.id});` // insert image
+    // pool.query(query, (err, rows, fields) => {
+    //     if (err) {
+    //         // No duplicate images
+    //         if (err.code === 'ER_DUP_ENTRY') {
+    //             res.status(409).send("Path already exists in database.")
+    //         } else {
+    //             throw err
+    //         }
+    //     } else {
+    //         console.log("Successful image insert query");
+    //         res.sendStatus(200)
+    //     }
+    // })
+    res.send('OK')
 })
 
 /**********************************************

@@ -6,11 +6,28 @@
         <!-- Tabs: images, users -->
         <b-tabs content-class="mt-3">
             <b-tab v-if="true" title="Images">
-                <p> This is posting with html form tab</p>
-                <form method="post" enctype="multipart/form-data" action="/images">
-                    <input type="file" name="file", accept="image/*" />
-                    <input type="submit" value="Submit" />
-                </form>
+            <section v-if="false">
+                    <p>This is posting via html form</p>
+                    <form method="post" enctype="multipart/form-data" action='/images'>
+                        <input type="file" name="files" multiple accept="image/*" />
+                        <input type="submit" value="Submit" />
+                    </form>
+                    <br/>
+                </section>
+                <section v-if="true">
+                    <div>
+                        <form @submit.prevent="uploadImage()">
+                            <input type="file" name="files" multiple accept="image/*" ref="fileInput" @change="newImage"/>
+                            <input type="submit" value="Submit" />
+                        </form>
+                    </div>
+                    <br/>
+                    <div v-if="formSubmitted">
+                        <span v-for="file in files">
+                            {{file.name}} submitted <br/>
+                        </span>
+                    </div>
+                </section>
             </b-tab>
             <b-tab v-if="true" title="Users">
                 <!-- This is just the basic idea -->
@@ -47,9 +64,14 @@
 <script>
 import * as env from '../.env.js';
 import axios from 'axios';
+import FormData from 'form-data';
+
 export default {
     data() {
         return {
+            files: [],
+            responseData: '',
+            formSubmitted: false,
             user: {
                 fullname: '',
                 email: '',
@@ -76,10 +98,56 @@ export default {
             
             try {
                 const res = await axios.post(env.url.api + '/users', axiosData, axiosConfig)
-
             } catch (err) {
                 console.error(err)
             }
+        },
+
+        newImage(event) {
+            this.formSubmitted=false
+            // let files = event.target.files
+            // if (files.length) this.files = files
+            //  this.files = event.target.files
+            
+            // this.files = new FormData()
+            for (let i = 0; i < event.target.files.length; i++) {
+                this.files.push(event.target.files[i])
+            }
+        },
+
+         uploadImage() {       
+            // prevent 
+            // this.$refs.fileInput.value = null; 
+            const data = new FormData()
+            data.append('files', this.files)
+            this.files.forEach(file => {
+                data.append('files', file, file.name)
+            });
+
+            // data.append('message', 'This is my message.')
+            const axiosConfig = {
+                headers: {
+                    'accept': 'application/json',
+                    'Accept-Language': 'en-US,en;q=0.8',
+                    'Content-Type': 'multipart/form-data; boundary=----WebKitFormBoundary6WdsOfH9jap8BZnH; charset=utf-8'
+                }
+            }
+            // console.log(data.getHeaders())
+            // console.log(axiosConfig)
+             axios.post(env.url.api + '/images', data)
+                .then(response => {
+                    this.responseData = response.data; this.formSubmitted = true
+                })
+                .catch(error => {
+                    console.log(error.message)
+                })
+            console.log(this.responseData)
+            // try {
+            //     const response =  axios.post(env.url.api + '/images', data)
+            //     console.log(response)
+            // } catch (err) {
+            //     console.error(err)
+            // }
         }
     }
 }
