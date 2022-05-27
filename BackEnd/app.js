@@ -242,29 +242,24 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
 // upload.single('file')
 app.post('/images', isLoggedIn, isValid, upload.any('files'), (req, res) => {
     console.log("Post /images");
-    console.log("Request files = ")
-    console.log(req.files)
-    console.log("Body = ")
-    console.log(req.body)
-    console.log("Headers = ")
-    console.log(req.headers)
 
-    // Insert new image
-    // query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.file.path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.database.id});` // insert image
-    // pool.query(query, (err, rows, fields) => {
-    //     if (err) {
-    //         // No duplicate images
-    //         if (err.code === 'ER_DUP_ENTRY') {
-    //             res.status(409).send("Path already exists in database.")
-    //         } else {
-    //             throw err
-    //         }
-    //     } else {
-    //         console.log("Successful image insert query");
-    //         res.sendStatus(200)
-    //     }
-    // })
-    res.send('OK')
+    // Insert new images
+    for (let file in req.files) {
+        query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${file.path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.database.id});` // insert image
+        pool.query(query, (err, rows, fields) => {
+            if (err) {
+                // No duplicate images
+                if (err.code === 'ER_DUP_ENTRY') {
+                    res.status(409).send("Path already exists in database.")
+                } else {
+                    throw err
+                }
+            } else {
+                console.log(`Successful image insert query: ${file.path}`);
+                res.send('OK')
+            }
+        })
+    }
 })
 
 /**********************************************
