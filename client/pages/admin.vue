@@ -14,8 +14,10 @@
                     </form>
                     <br/>
                 </section>
+                
                 <section v-if="true">
                     <div>
+                        <p>This is posting via axios</p>
                         <form @submit.prevent="uploadImage()">
                             <input type="file" name="files" multiple accept="image/*" ref="fileInput" @change="newImage"/>
                             <input type="submit" value="Submit" />
@@ -29,6 +31,7 @@
                     </div>
                 </section>
             </b-tab>
+            
             <b-tab v-if="true" title="Users">
                 <!-- This is just the basic idea -->
                 <!-- User info -->
@@ -105,49 +108,33 @@ export default {
 
         newImage(event) {
             this.formSubmitted=false
-            // let files = event.target.files
-            // if (files.length) this.files = files
-            //  this.files = event.target.files
             
-            // this.files = new FormData()
+            // Fill this.files with the files added at ref=fileInput
             for (let i = 0; i < event.target.files.length; i++) {
                 this.files.push(event.target.files[i])
             }
         },
 
          uploadImage() {       
-            // prevent 
-            // this.$refs.fileInput.value = null; 
+            // Called upon images submition
+
+            // Add the files
             const data = new FormData()
-            data.append('files', this.files)
+            data.append('files', this.files)            // Add the files array object
             this.files.forEach(file => {
-                data.append('files', file, file.name)
+                data.append('files', file, file.name)   // put each file into the files array in the form
             });
 
-            // data.append('message', 'This is my message.')
-            const axiosConfig = {
-                headers: {
-                    'accept': 'application/json',
-                    'Accept-Language': 'en-US,en;q=0.8',
-                    'Content-Type': 'multipart/form-data; boundary=----WebKitFormBoundary6WdsOfH9jap8BZnH; charset=utf-8'
-                }
-            }
-            // console.log(data.getHeaders())
-            // console.log(axiosConfig)
-             axios.post(env.url.api + '/images', data)
+            // axios autmatically handles the headers for FormData object
+            axios.post(env.url.api + '/images', data)
                 .then(response => {
-                    this.responseData = response.data; this.formSubmitted = true
+                    this.responseData = response.data
+                    this.formSubmitted = true
                 })
                 .catch(error => {
                     console.log(error.message)
                 })
             console.log(this.responseData)
-            // try {
-            //     const response =  axios.post(env.url.api + '/images', data)
-            //     console.log(response)
-            // } catch (err) {
-            //     console.error(err)
-            // }
         }
     }
 }
