@@ -1,4 +1,5 @@
-# BackEnd
+# API
+(As of 30 May 2022)
 
 # Setup
 
@@ -94,22 +95,31 @@ Example request body:
 }
 ```
 
-The values to `permissions` fields MUST be either `1` or `0`, this is strongly compared (`===`).
+The values to `permissions` fields must be either `1` or `0`, this is strongly compared (`===`).
 
 Note that email is a unique key for users.
 
 ### /images
 
-Add an image.
+Add an image. The request must include `multipart/form-data` or the image uploading will not work, the server will responde with status code `415` if this is not set.
 
-```json
-{
-    path: "/images/bridge.jpeg",
-    hash: NULL
-}
+Using plain html, the form should resemble this:
+```html
+<form method="post" enctype="multipart/form-data" action='/images'>
+    <input type="file" name="files" accept="image/*" multiple/> <!-- Note: multiple is optional to allow multiple image uploads -->
+    <input type="submit" value="Submit" />
+</form>
 ```
 
-Note that `path` should be the local path to the location of the image on the server (ie. accessible by `"https://static.milmed.ai" + path`).
+Using `axios` you can use `import FormData from form-data`:
+```js
+const data = new FormData()
+data.append('files', this.files)            // Add the files array object
+this.files.forEach(file => {
+    data.append('files', file, file.name)   // put each file into the files array in the form
+});
+axios.post(env.url.api + '/images', data)
+```
 
 # Keys for `rating`
 

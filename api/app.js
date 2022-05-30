@@ -239,26 +239,31 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
         }
     })
 })
-// upload.single('file')
-app.post('/images', isLoggedIn, isValid, upload.any('files'), (req, res) => {
+
+app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
     console.log("Post /images");
 
-    // Insert new images
-    for (let file in req.files) {
-        query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${file.path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.database.id});` // insert image
-        pool.query(query, (err, rows, fields) => {
-            if (err) {
-                // No duplicate images
-                if (err.code === 'ER_DUP_ENTRY') {
-                    res.status(409).send("Path already exists in database.")
+    // Check for proper content-type: multer only checks requests with multipart/form-data
+    if (!req.headers['content-type'].includes('multipart/form-data')) {
+        req.sendStatus(415).send('Content-Type must be multipart/form-data')
+    } else {
+        // Insert new images
+        for (let file in req.files) {
+            query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${file.path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.database.id});` // insert image
+            pool.query(query, (err, rows, fields) => {
+                if (err) {
+                    // No duplicate images
+                    if (err.code === 'ER_DUP_ENTRY') {
+                        res.status(409).send("Path already exists in database.")
+                    } else {
+                        throw err
+                    }
                 } else {
-                    throw err
+                    console.log(`Successful image insert query: ${file.path}`);
+                    res.send('OK')
                 }
-            } else {
-                console.log(`Successful image insert query: ${file.path}`);
-                res.send('OK')
-            }
-        })
+            })
+        }
     }
 })
 

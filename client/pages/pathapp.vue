@@ -4,14 +4,14 @@
         <div class="app">
             <div class="picture"><img :src="this.image.url" :alt="image.url"></div>
 
+            <div class="comment-field">
+                <textarea v-model="comment" placeholder="Add a comment to this image or leave blank."></textarea>
+            </div>
+
             <div class="button-row">
                 <div class="button a"><button @click="onClick('yes-cancer')">Yes Cancer</button></div>
                 <div class="button b"><button @click="onClick('no-cancer')">No Cancer</button></div>
                 <div class="button c"><button @click="onClick('maybe-cancer')">Maybe Cancer</button></div>
-            </div>
-            
-            <div class="comment-field">
-                <textarea v-model="comment" placeholder="Add a comment to this image or leave blank."></textarea>
             </div>
         </div>
     </div>
@@ -124,9 +124,15 @@ export default {
         display: flex;
         justify-content: center;
     }
-    .button-row {
+    .comment-field {
         grid-column: 1;
         grid-row: 2;
+        display: flex;
+        justify-content: center;
+    }
+    .button-row {
+        grid-column: 1;
+        grid-row: 3;
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         grid-template-rows: 1fr;
@@ -152,10 +158,4 @@ export default {
             grid-column: 4;
             grid-row: 1;
         }
-    .comment-field {
-        grid-column: 1;
-        grid-row: 3;
-        display: flex;
-        justify-content: center;
-    }
 </style>
