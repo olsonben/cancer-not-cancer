@@ -1,7 +1,5 @@
 <template>
     <div class="container">
-        <!-- NOTE:: Just use bootstrap + components -->
-        <!-- NOTE:: Just make these things components -->
 
         <!-- Tabs: images, users -->
         <b-tabs content-class="mt-3">
