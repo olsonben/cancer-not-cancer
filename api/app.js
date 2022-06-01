@@ -136,7 +136,7 @@ function isLoggedIn(req, res, next) {
         next()
     } else {
         req.session.origin = req.originalUrl // Remember the original url to bounce back to
-        res.redirect('/auth')
+        res.status(401).send('<a href="/auth"><a/>')
     } 
 }
 
@@ -246,24 +246,33 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
     // Check for proper content-type: multer only checks requests with multipart/form-data
     if (!req.headers['content-type'].includes('multipart/form-data')) {
         req.sendStatus(415).send('Content-Type must be multipart/form-data')
-    } else {
-        // Insert new images
-        for (let file in req.files) {
-            query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${file.path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.database.id});` // insert image
-            pool.query(query, (err, rows, fields) => {
-                if (err) {
-                    // No duplicate images
-                    if (err.code === 'ER_DUP_ENTRY') {
-                        res.status(409).send("Path already exists in database.")
-                    } else {
-                        throw err
-                    }
+    }
+    
+    // Insert new images
+    let uploaded = 0
+    let count = 0
+    for (let file of req.files) {
+        query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${file.path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.database.id});` // insert image
+
+        pool.query(query, (err, rows, fields) => {
+            count++
+            if (err) {
+                // No duplicate images
+                if (err.code === 'ER_DUP_ENTRY') {
+                    res.status(409).send("Path already exists in database.")
                 } else {
-                    console.log(`Successful image insert query: ${file.path}`);
-                    res.send('OK')
+                    throw err
                 }
-            })
-        }
+            }
+            console.log(`Successful image insert query: ${file.path}`)
+            uploaded++
+            if (count === req.files.length) {
+                res.send({
+                    message: 'OK',
+                    uploaded: uploaded
+                })
+            }
+        })
     }
 })
 

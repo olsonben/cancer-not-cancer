@@ -101,7 +101,7 @@ Note that email is a unique key for users.
 
 ### /images
 
-Add an image. The request must include `multipart/form-data` or the image uploading will not work, the server will responde with status code `415` if this is not set.
+Add an image. The request must include `multipart/form-data` or the image uploading will not work, the server will responde with status code `415` if this is not set. The api will safely handle all requests to ensure only images (specifically images of type `png`, `jpg`, or `jpeg`) are uploaded.
 
 Using plain html, the form should resemble this:
 ```html
