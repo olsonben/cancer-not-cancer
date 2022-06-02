@@ -12,11 +12,28 @@ Fill in the `.env.js.bk` with the relavant values and rename the file to `.env.j
 
 # HTTP Requests
 
-All requests must pass the credentialling of `isValid` (see `HELPER FUNCTIONS` of `app.js`).
+All requests must pass the credentialling of `isValid` (see `HELPER FUNCTIONS` of `app.js`). It is recommended to reroute to a login page which links to `/auth` for any route requiring authentication (indicated with an `*`). This routing can be checked with the following code snippet wherever you catch errors from POST/GET:
+
+```js
+if (error.response.status === 401) window.location.replace(`api.example.com/login`)
+```
+
+For example:
+
+```js
+axios.get('api.example.com/nextImage')
+    .then(response => {
+        this.image = response.data
+    })
+    .catch(error => {
+        if (error.response.status === 401) window.location.replace(`api.example.com/login`)
+        console.error(error)
+    })
+```
 
 ## GET
 
-- [/nextImage]
+- [/nextImage] *
 - [/auth]
     - [/auth/success]
     - [/auth/failure]
@@ -24,7 +41,7 @@ All requests must pass the credentialling of `isValid` (see `HELPER FUNCTIONS` o
     - [/auth/google]
         - [/auth/google/callback]
 
-### /nextImage
+### /nextImage *
 
 Randomly select the next image to display. Returns path to the image.
 
@@ -59,9 +76,9 @@ Callback for authorizing with google
 
 ## POST
 
-- [/hotornot]
-- [/users]
-- [/images]
+- [/hotornot] *
+- [/users] *
+- [/images] *
 
 ### /hotornot
 

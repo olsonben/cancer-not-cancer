@@ -1,6 +1,7 @@
 <template>
     <div class="container">
         <!-- This is the main app: the current picture + buttons + comment field -->
+        
         <div class="app">
             <div class="picture"><img :src="this.image.url" :alt="image.url"></div>
 
@@ -87,6 +88,7 @@ export default {
                 const response = await axios.get(env.url.api + '/nextImage');
                 this.image = response.data
             } catch (error) {
+                if (error.response.status === 401) window.location.replace(`${env.url.base}/login`)
                 console.error(error);
             }
         },
@@ -115,7 +117,7 @@ export default {
 .app {
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: 9fr repeat(2, 1fr);
+    grid-template-rows: fit-content repeat(2, 1fr);
     gap: 10px;
 }
     .picture {
@@ -123,6 +125,12 @@ export default {
         grid-row: 1;
         display: flex;
         justify-content: center;
+
+        height: fit-content;
+        width: fit-content;
+    }
+    img {
+        min-width: 50vw;
     }
     .comment-field {
         grid-column: 1;

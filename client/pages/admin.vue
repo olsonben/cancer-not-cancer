@@ -30,29 +30,30 @@
                 
                 <div class="container">
                     <!--UPLOAD-->
-                    <h1>Upload images</h1>
+                    <div v-if="isInitial || isSaving">
+                        <h1>Upload images</h1>
+                        <b-button variant='outline-primary' size='sm' @click='reset()'>Clear Choices</b-button>
 
-                    <b-button variant='outline-primary' size='sm' @click='reset()'>Clear Choices</b-button>
-
-                    <form enctype="multipart/form-data" @submit.prevent="saveImages()" novalidate v-if="isInitial || isSaving">
-                        <div class="dropbox">
-                            <input type="file" multiple :name="uploadFieldName" :disabled="isSaving" 
-                                    @change="newImage"
-                                    accept="image/*" class="input-file">
-                            <p v-if="isInitial">
-                                <ul>
-                                    <li v-for="file in files">{{ file.name }}</li>
-                                </ul>
-                                </li>
-                                Drag your file(s) here to begin<br> or click to browse
-                            </p>
-                            <p v-if="isSaving">
-                                Uploading {{ fileCount }} files...
-                            </p>
-                        </div>
-                        <br>
-                        <input class='btn btn-outline-primary btn-sm' type="submit" value="Submit" />
-                    </form>
+                        <form enctype="multipart/form-data" @submit.prevent="saveImages()" novalidate>
+                            <div class="dropbox">
+                                <input type="file" multiple name="images" :disabled="isSaving" 
+                                        @change="newImage"
+                                        accept="image/*" class="input-file">
+                                <p v-if="isInitial">
+                                    <ul>
+                                        <li v-for="file in files">{{ file.name }}</li>
+                                    </ul>
+                                    </li>
+                                    Drag your file(s) here to begin<br> or click to browse
+                                </p>
+                                <p v-if="isSaving">
+                                    Uploading {{ fileCount }} files...
+                                </p>
+                            </div>
+                            <br>
+                            <input class='btn btn-outline-primary btn-sm' type="submit" value="Submit" />
+                        </form>
+                    </div>
                     <!--SUCCESS-->
                     <div v-if="isSuccess">
                         <h2>Uploaded {{ uploadedFiles }} file(s) successfully.</h2>
@@ -74,55 +75,35 @@
             <b-tab v-if="true" title="Users">
                 <!-- This is just the basic idea -->
                 <!-- User info -->
-                <label for="fullname">Fullname</label>
-                <input id="fullname" placeholder="Fullname" v-model="user.fullname" />
+                <form @submit.prevent='submitUser()'>
+                    <b-row>
+                        <label for="fullname">Fullname</label>
+                        <input id="fullname" placeholder="Fullname" v-model="user.fullname" />
+                    </b-row>
+                    <b-row>
+                        <label for="email">Email</label>
+                        <input id="email" placeholder="Email" v-model="user.email" />
+                    </b-row>
+                    <b-row>
+                        <label for="password">Password</label>
+                        <input id="password" placeholder="Password" v-model="user.password" />
+                    </b-row>
+                    <!-- Permissions -->
+                    <!-- NOTE: values for permissions MUST be `value='1'` -->
+                    <label for="enabled">Is Enabled</label>
+                    <input type="checkbox" id="enabled" value='1' v-model="user.permissions.enabled" />
 
-                <label for="email">Email</label>
-                <input id="email" placeholder="Email" v-model="user.email" />
+                    <label for="uploader">Is Uploader</label>
+                    <input type="checkbox" id="uploader" value='1' v-model="user.permissions.uploader" />
 
-                <label for="password">Password</label>
-                <input id="password" placeholder="Password" v-model="user.password" />
+                    <label for="pathologist">Is Pathologist</label>
+                    <input type="checkbox" id="pathologist" value='1' v-model="user.permissions.pathologist" />
 
-                <!-- Permissions -->
-                <!-- NOTE: values for permissions MUST be `value='1'` -->
-                <label for="enabled">Is Enabled</label>
-                <input type="checkbox" id="enabled" value='1' v-model="user.permissions.enabled" />
+                    <label for="admin">Is Admin</label>
+                    <input type="checkbox" id="admin" value='1' v-model="user.permissions.admin" />
 
-                <label for="uploader">Is Uploader</label>
-                <input type="checkbox" id="uploader" value='1' v-model="user.permissions.uploader" />
-
-                <label for="pathologist">Is Pathologist</label>
-                <input type="checkbox" id="pathologist" value='1' v-model="user.permissions.pathologist" />
-
-                <label for="admin">Is Admin</label>
-                <input type="checkbox" id="admin" value='1' v-model="user.permissions.admin" />
-
-                <button @click='submitUser()'>Submit</button>
-            </b-tab>
-            <b-tab title='Testing'>
-                <b-form-checkbox
-                    id="checkbox-1"
-                    v-model="checked"
-                    name="checkbox-1"
-                    value="accepted"
-                    unchecked-value="not_accepted"
-                >
-                    I accept the terms and use
-                </b-form-checkbox>
-                <b-button v-b-modal.modal-1>Launch demo modal</b-button>
-
-                <b-modal id="modal-1" title="BootstrapVue">
-                <p class="my-4">Hello from modal!</p>
-
-                <b-dropdown id="dropdown-1" text="Dropdown Button" class="m-md-2">
-                    <b-dropdown-item>First Action</b-dropdown-item>
-                    <b-dropdown-item>Second Action</b-dropdown-item>
-                    <b-dropdown-item>Third Action</b-dropdown-item>
-                    <b-dropdown-divider></b-dropdown-divider>
-                    <b-dryopdown-item active>Active action</b-dryopdown-item>
-                    <b-dropdown-item disabled>Disabled action</b-dropdown-item>
-                </b-dropdown>
-                </b-modal>
+                    <input class='btn btn-outline-primary btn-sm' type="submit" value="Submit" />
+                </form>
             </b-tab>
         </b-tabs>
     </div>
@@ -156,10 +137,7 @@ export default {
             uploadedFiles: 0,
             uploadError: null,
             currentStatus: null,
-            uploadFieldName: 'photos',
-            fileCount: 0,
-
-            checked: false
+            fileCount: 0
         }
     },
 
@@ -183,20 +161,13 @@ export default {
     },
 
     methods: {
-        // Submit new user (activated on clicking Submit button in Users tab)
-        async submitUser() {
-            let axiosData = JSON.stringify(this.user)
-            const axiosConfig = {
-                headers: {
-                    "Content-Type": "application/json",
-                }
-            }
-            
-            try {
-                const res = await axios.post(env.url.api + '/users', axiosData, axiosConfig)
-            } catch (err) {
-                console.error(err)
-            }
+        reset() {
+            // reset form to initial state
+            this.currentStatus = STATUS_INITIAL
+            this.uploadedFiles = 0
+            this.uploadError = null
+            this.files = []
+            this.fileCount = 0
         },
 
         newImage(event) {
@@ -209,16 +180,7 @@ export default {
             }
         },
 
-        reset() {
-            // reset form to initial state
-            this.currentStatus = STATUS_INITIAL
-            this.uploadedFiles = 0
-            this.uploadError = null
-            this.files = []
-            this.fileCount = 0
-        },
-
-        saveImages() {
+        async saveImages() {
             this.currentStatus = STATUS_SAVING
 
             const data = new FormData()
@@ -226,50 +188,80 @@ export default {
             this.files.forEach(file => {
                 data.append('files', file, file.name)   // put each file into the files array in the form
             });
+            
+            try {
+                const response = await axios.post(env.url.api + '/images', data)
 
-            axios.post(env.url.api + '/images', data)
-                .then(response => {
-                    console.log(response.data)
-                    this.uploadedFiles = response.data.uploaded
-                    this.currentStatus = STATUS_SUCCESS
-                })
-                .catch(error => {
-                    console.log(error.message)
+                console.log(response.data)
+                this.uploadedFiles = response.data.uploaded
+                this.currentStatus = STATUS_SUCCESS
 
+            } catch (error) {
+                if (error.response.status === 401) {
+                    window.location.replace(`${env.url.base}/login`)
+                } else {
                     this.uploadError = error.response
                     this.currentStatus = STATUS_FAILED
-                })
+                }
+                console.log(error.message)
 
+            }
         },
 
+        // Submit new user (activated on clicking Submit button in Users tab)
+        async submitUser() {
+            let axiosData = JSON.stringify(this.user)
+            const axiosConfig = {
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            }
+            
+            try {
+                const response = await axios.post(env.url.api + '/users', axiosData, axiosConfig)
 
-        uploadImage() {       
-            // Called upon images submition
+            } catch (error) {
+                if (error.response.status === 401) window.location.replace(`${env.url.base}/login`)
+                console.error(error)
+            }
+        },
 
-            // Add the files
-            const data = new FormData()
-            data.append('files', this.files)            // Add the files array object
-            this.files.forEach(file => {
-                data.append('files', file, file.name)   // put each file into the files array in the form
-            });
+        // uploadImage() {       
+        //     // Called upon images submition
 
-            // axios autmatically handles the headers for FormData object
-            axios.post(env.url.api + '/images', data)
-                .then(response => {
-                    this.responseData = response.data
-                    this.formSubmitted = true
-                })
-                .catch(error => {
-                    console.log(error.message)
-                })
-            console.log(this.responseData)
-        }
+        //     // Add the files
+        //     const data = new FormData()
+        //     data.append('files', this.files)            // Add the files array object
+        //     this.files.forEach(file => {
+        //         data.append('files', file, file.name)   // put each file into the files array in the form
+        //     });
+
+        //     // axios autmatically handles the headers for FormData object
+        //     axios.post(env.url.api + '/images', data)
+        //         .then(response => {
+        //             this.responseData = response.data
+        //             this.formSubmitted = true
+        //         })
+        //         .catch(error => {
+        //             if (error.response.status === 401) window.location.replace(`${env.url.base}/login`)
+        //             console.log(error.message)
+        //         })
+        //     console.log(this.responseData)
+        // }
     }
 }
 </script>
 
 <style lang="scss">
-  .dropbox {
+input {
+    display:inline;
+}
+input:after {
+    content:"\a";
+    white-space: pre;
+}
+
+.dropbox {
     outline: 2px dashed grey; /* the dash box */
     outline-offset: -10px;
     background: lightcyan;
@@ -278,23 +270,23 @@ export default {
     min-height: 200px; /* minimum height */
     position: relative;
     cursor: pointer;
-  }
-  
-  .input-file {
+}
+
+.input-file {
     opacity: 0; /* invisible but it's there! */
     width: 100%;
     height: 200px;
     position: absolute;
     cursor: pointer;
-  }
-  
-  .dropbox:hover {
+}
+
+.dropbox:hover {
     background: lightblue; /* when mouse over to the drop zone, change color */
-  }
-  
-  .dropbox p {
+}
+
+.dropbox p {
     font-size: 1.2em;
     text-align: center;
     padding: 50px 0;
-  }
+}
 </style>

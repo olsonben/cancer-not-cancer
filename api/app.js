@@ -135,8 +135,9 @@ function isLoggedIn(req, res, next) {
     if (req.user) {
         next()
     } else {
-        req.session.origin = req.originalUrl // Remember the original url to bounce back to
-        res.status(401).send('<a href="/auth"><a/>')
+        req.session.origin = req.headers.referer // Remember the original url to bounce back to
+        console.log("Origin: " + req.session.origin)
+        res.status(401).send('/auth')
     } 
 }
 

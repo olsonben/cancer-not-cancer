@@ -1,5 +1,3 @@
-const env = require('./.env.js')
-
 export default {
   // Target: https://go.nuxtjs.dev/config-target
   target: 'static',
@@ -40,12 +38,17 @@ export default {
 
   // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules
   buildModules: [
+    // https://go.nuxtjs.dev/bootstrap
+    'bootstrap-vue/nuxt'
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
-    'bootstrap-vue/nuxt'
   ],
+  
+  bootstrapVue: {
+    icons: true
+  },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
