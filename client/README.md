@@ -1,69 +1,34 @@
-# client
+# Client
+(As of 30 May 2022)
 
-## Build Setup
+# Table of Contents
+1. [Pages](#pages)
+    1. [Admin](#pages-admin)
+    2. [Pathapp](#pages-pathapp)
+2. [Usage](#usage)
+    1. [Admin](#usage-admin)
+    2. [Pathapp](#usage-pathapp)
 
-```bash
-# install dependencies
-$ npm install
+# Pages
 
-# serve with hot reload at localhost:3000
-$ npm run dev
+This section describes the general purpose of each page. For detailed explanations, see [Usage](#usage).
 
-# build for production and launch server
-$ npm run build
-$ npm run start
+## <a name='pages-admin'></a>Admin
 
-# generate static project
-$ npm run generate
-```
+This is for adding images and users, each type in seperate tabs.
 
-For detailed explanation on how things work, check out the [documentation](https://nuxtjs.org).
+## <a name='pages-pathapp'></a>Pathapp
 
-## Special Directories
+This is for grading hot-or-nots on images.
 
-You can create the following extra directories, some of which have special behaviors. Only `pages` is required; you can delete them if you don't want to use their functionality.
+# Usage
 
-### `assets`
+## <a name='usage-admin'></a>Admin
 
-The assets directory contains your uncompiled assets such as Stylus or Sass files, images, or fonts.
+### Images
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/assets).
+For uploading images. Click the `Choose Files` button to open a pop-up window to your filesystem. You will only be permitted to choose image files. You can choose multiple images by dragging the mouse over the images or by holding `shift` or `control` and clicking on individual images.
 
-### `components`
+## <a name='usage-pathapp'></a>Pathapp
 
-The components directory contains your Vue.js components. Components make up the different parts of your page and can be reused and imported into your pages, layouts and even other components.
-
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/components).
-
-### `layouts`
-
-Layouts are a great help when you want to change the look and feel of your Nuxt app, whether you want to include a sidebar or have distinct layouts for mobile and desktop.
-
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/layouts).
-
-
-### `pages`
-
-This directory contains your application views and routes. Nuxt will read all the `*.vue` files inside this directory and setup Vue Router automatically.
-
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/get-started/routing).
-
-### `plugins`
-
-The plugins directory contains JavaScript plugins that you want to run before instantiating the root Vue.js Application. This is the place to add Vue plugins and to inject functions or constants. Every time you need to use `Vue.use()`, you should create a file in `plugins/` and add its path to plugins in `nuxt.config.js`.
-
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/plugins).
-
-### `static`
-
-This directory contains your static files. Each file inside this directory is mapped to `/`.
-
-Example: `/static/robots.txt` is mapped as `/robots.txt`.
-
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/static).
-
-### `store`
-
-This directory contains your Vuex store files. Creating a file in this directory automatically activates Vuex.
-
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/store).
+For grading hot-or-nots. At the top of the page is the image to grade. Under the image is a text field for the pathologist to optionally leave a comment on that grading. Under the comment field is three buttons to grade the image as simply cancer, not cancer, or possibly cancer (labeled "Yes Cancer", "No Cancer", and "Maybe Cancer" respectfully). The grading will go through to the api and be recorded upon grading the image (pressing a button) and a new image will be selected and displayed to repeat the process again.

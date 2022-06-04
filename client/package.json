@@ -3,14 +3,23 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "nuxt --port 3000",
+    "dev": "kill-port 3000; nuxt --port 3000",
     "build": "nuxt build",
     "start": "nuxt start",
     "generate": "nuxt generate"
   },
+  "devDependencies": {
+    "bootstrap": "^5.1.3",
+    "bootstrap-icons": "^1.8.3",
+    "bootstrap-vue": "^2.22.0",
+    "kill-port": "^2.0.0",
+    "sass": "^1.52.1",
+    "sass-loader": "10.1.1"
+  },
   "dependencies": {
-    "axios": "^0.27.1",
+    "axios": "^0.27.2",
     "core-js": "^3.19.3",
+    "form-data": "^4.0.0",
     "nuxt": "^2.15.8",
     "vue": "^2.6.14",
     "vue-server-renderer": "^2.6.14",
