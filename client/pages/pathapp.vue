@@ -1,19 +1,13 @@
 <template>
-    <div class="container">
-        <!-- This is the main app: the current picture + buttons + comment field -->
-        
-        <div class="app">
-            <div class="picture"><img :src="this.image.url" :alt="image.url"></div>
+    <div class='container stacked'>
+        <img class='block' :src='this.image.url' :alt='image.url' />
 
-            <div class="comment-field">
-                <textarea v-model="comment" placeholder="Add a comment to this image or leave blank."></textarea>
-            </div>
+        <textarea class='textarea block' placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
 
-            <div class="button-row">
-                <div class="button a"><button @click="onClick('yes-cancer')">Yes Cancer</button></div>
-                <div class="button b"><button @click="onClick('no-cancer')">No Cancer</button></div>
-                <div class="button c"><button @click="onClick('maybe-cancer')">Maybe Cancer</button></div>
-            </div>
+        <div class='container block buttons'>
+            <button class='button' @click="onClick('yes-cancer')">Yes Cancer</button>
+            <button class='button' @click="onClick('maybe-cancer')">Maybe Cancer</button>
+            <button class='button' @click="onClick('no-cancer')">No Cancer</button>
         </div>
     </div>
 </template>
@@ -32,7 +26,7 @@ export default {
     },
 
     // Get the next image before rendering the page for the first time
-    beforeMount() {
+    created() {
         this.nextImage()
     },
 
@@ -88,82 +82,25 @@ export default {
                 const response = await axios.get(env.url.api + '/nextImage');
                 this.image = response.data
             } catch (error) {
-                if (error.response.status === 401) window.location.replace(`${env.url.base}/login`)
+                if (error.response.status === 401) window.location.replace(`${window.location.origin}/login`)
                 console.error(error);
             }
-        },
-
-        /**********************************************
-        * User Authentication
-        **********************************************/
-
-        
+        }
     }
 }
 </script>
 
 <style>
-#app {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-}
 .container {
-    justify-content: center;
+    width: fit-content;
+}
+.stacked {
     display: flex;
-    width: 100%;
+    flex-direction: column;
 }
-/* I am using indentation to roughly match the indentation of the html template */
-.app {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: fit-content repeat(2, 1fr);
-    gap: 10px;
+img {
+    object-fit: contain;
+    width: 50vw;
+    max-height: 50vh;
 }
-    .picture {
-        grid-column: 1;
-        grid-row: 1;
-        display: flex;
-        justify-content: center;
-
-        height: fit-content;
-        width: fit-content;
-    }
-    img {
-        min-width: 50vw;
-    }
-    .comment-field {
-        grid-column: 1;
-        grid-row: 2;
-        display: flex;
-        justify-content: center;
-    }
-    .button-row {
-        grid-column: 1;
-        grid-row: 3;
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        grid-template-rows: 1fr;
-        gap: 10px;
-    }
-        .button {
-            display: flex;
-            justify-content: center;
-        }
-        .a {
-            grid-column: 1;
-            grid-row: 1;
-        }
-        .b {
-            grid-column: 2;
-            grid-row: 1;
-        }
-        .c {
-            grid-column: 3;
-            grid-row: 1;
-        }
-        .d {
-            grid-column: 4;
-            grid-row: 1;
-        }
 </style>
