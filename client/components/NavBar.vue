@@ -47,7 +47,7 @@
     </nav>
 </template>
 
-<style>
+<style lang="scss" scoped>
 img.logo {
     width: fit-content;
 }
