@@ -5,5 +5,4 @@ log/*
 
 client/.nuxt/*
 client/dist/*
-
-client_bk/dist/*
+client/assets/css/main.css

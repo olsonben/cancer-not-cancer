@@ -1,9 +1,9 @@
 <template>
     <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
-            <a class="navbar-item" href="https://bulma.io">
-                <img class='logo' src="https://bulma.io/images/bulma-logo.png">
-            </a>
+            <nuxt-link class="navbar-item" to="/home">
+                <img class='logo' src="/logo.svg" alt='milmed logo'>
+            </nuxt-link>
 
             <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
                 <span aria-hidden="true"></span>
@@ -14,9 +14,9 @@
 
         <div id="navbarBasicExample" class="navbar-menu">
             <div class="navbar-start">
-                <a class="navbar-item">
+                <nuxt-link class="navbar-item" to='/home'>
                     Home
-                </a>
+                </nuxt-link>
 
                 <nuxt-link to='/pathapp' class="navbar-item">
                     HotOrNot

@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "kill-port 3000; nuxt --port 3000",
+    "dev": "kill-port 3000 ; npm run css-watch & nuxt --port 3000 && fg",
     "build": "nuxt build",
+    "css-build": "sass --no-source-map assets/scss/main.scss assets/css/main.css",
+    "css-watch": "npm run css-build -- --watch",
     "start": "nuxt start",
     "generate": "nuxt generate"
   },

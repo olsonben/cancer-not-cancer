@@ -7,7 +7,7 @@ $orange: #DC6415;
 $magenta: #AA4499;
 $rouge: #882255;
 
-$primary: $yellow;
+$primary: $magenta;
 $link: $blue;
 $info: $purple;
 $success: $green;
@@ -16,4 +16,4 @@ $danger: $rouge;
 // $dark: $grey-darker;
 // $text: $grey-dark;
 
-@import '~bulma';
+@import '../../node_modules/bulma/bulma.sass';
