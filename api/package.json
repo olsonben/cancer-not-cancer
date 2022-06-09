@@ -1,11 +1,11 @@
 {
-  "name": "backend",
+  "name": "api",
   "version": "1.0.0",
-  "description": "Backend to cnc",
+  "description": "API to CancerNotCancer",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "kill-port 5000; nodemon app.js > ../log/express-log.txt"
+    "dev": "kill-port 5000; nodemon app.js > ../log/express-log.js"
   },
   "author": "",
   "license": "ISC",
@@ -20,6 +20,7 @@
     "nodemon": "^2.0.15",
     "passport": "^0.5.2",
     "passport-google-oauth2": "^0.2.0",
+    "passport-oauth2": "^1.6.1",
     "path": "^0.12.7"
   }
 }

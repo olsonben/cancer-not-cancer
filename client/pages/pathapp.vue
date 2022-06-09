@@ -26,7 +26,7 @@ export default {
     },
 
     // Get the next image before rendering the page for the first time
-    created() {
+    mounted() {
         this.nextImage()
     },
 

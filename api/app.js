@@ -95,10 +95,14 @@ app.get('/auth', (req, res) => {
 
 // Handle successful authentications
 app.get('/auth/success', (req, res) => {
+    // Check to make sure they were allowed
+    if (!req.user.allowed) {
+        res.status(403)
+    }
     // Bounce back to origin
     const origin = req.session.origin
     delete req.session.origin
-    res.redirect(origin || '/pathapp') // NOTE: After setting up index page on frontend, send to '/'
+    res.redirect(origin || '/home') // NOTE: After setting up index page on frontend, send to '/'
 })
 
 // Failed authorization
@@ -116,7 +120,7 @@ app.get('/auth/logout', (req, res) => {
 /**
  * GOOGLE AUTHENTICATION
  */
-//                                                 Interested in: email
+//                                                  Interested in: email
 app.get('/auth/google', passport.authenticate('google', { scope: ['email'] }))
 
 // You need to tell google where to go for successful and failed authorizations
@@ -132,7 +136,7 @@ app.get('/auth/google/callback',
  **********************************************/
 function isLoggedIn(req, res, next) {
     // has user ? move on : unauthorized status
-    if (req.user) {
+    if (req.user && req.user.allowed) {
         next()
     } else {
         req.session.origin = req.headers.referer // Remember the original url to bounce back to

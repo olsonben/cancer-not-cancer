@@ -100,7 +100,7 @@ export default {
                 const response = await axios.post(env.url.api + '/users', axiosData, axiosConfig)
 
             } catch (error) {
-                if (error.response.status === 401) window.location.replace(`${env.url.base}/login`)
+                if ([401, 403].includes(error.response.status)) window.location.replace(`${env.url.base}/login`)
                 console.error(error)
             }
         }

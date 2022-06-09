@@ -1,7 +1,8 @@
 const env = require('./.env')
 const mysql = require('mysql')
 const passport = require('passport')
-const GoogleStrategy = require('passport-google-oauth2').Strategy;
+const GoogleStrategy = require('passport-google-oauth2').Strategy
+const InternalOAuthError = require('passport-oauth2').InternalOAuthError
 
 const pool = mysql.createConnection({
     host: 'localhost',
@@ -21,9 +22,14 @@ passport.use(new GoogleStrategy({
         let query = `SELECT * FROM users WHERE username = "${profile.email}";`
         
         pool.query(query, (err, rows, fields) => {
+            console.log(request.origin)
             if (err) console.log(err)
-            if (rows.length != 1 || !rows[0].is_enabled) return done(err, null)
-
+            if (rows.length != 1 || !rows[0].is_enabled) {
+                profile.allowed = false
+                return done(null, profile)
+            }
+            
+            profile.allowed = true
             profile.database = {
                 id: rows[0].id,
                 permissions: {

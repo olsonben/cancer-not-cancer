@@ -137,7 +137,7 @@ export default {
                 this.currentStatus = STATUS_SUCCESS
 
             } catch (error) {
-                if (error.response.status === 401) {
+                if ([401, 403].includes(error.response.status)) {
                     window.location.replace(`${env.url.base}/login`)
 
                 } else {
