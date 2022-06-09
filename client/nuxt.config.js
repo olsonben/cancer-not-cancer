@@ -27,7 +27,6 @@ export default {
 
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
-    // 'bulma',
     '~assets/css/main.css'
   ],
 
@@ -53,7 +52,7 @@ export default {
 
   styleResources: {
     scss: [
-      // './assets/scss/main.scss'
+      './assets/scss/colors.scss'
     ]
   },
 

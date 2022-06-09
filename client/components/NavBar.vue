@@ -1,5 +1,5 @@
 <template>
-    <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+    <nav class="navbar is-primary block" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
             <nuxt-link class="navbar-item" to="/home">
                 <img class='logo' src="/logo.svg" alt='milmed logo'>
@@ -14,7 +14,7 @@
 
         <div id="navbarBasicExample" class="navbar-menu">
             <div class="navbar-start">
-                <nuxt-link class="navbar-item" to='/home'>
+                <nuxt-link to='/home' class="navbar-item">
                     Home
                 </nuxt-link>
 
@@ -50,5 +50,6 @@
 <style lang="scss" scoped>
 img.logo {
     width: fit-content;
+    max-height: 3rem;
 }
 </style>

@@ -22,9 +22,9 @@ export default {
 }
 </script>
 
-<style>
+<style lang='scss' scoped>
 a.nuxt-link-exact-active {
-    border-bottom-color: #00d1b2;
-    color: #00d1b2;
+    color: $info;
+    border-bottom-color: $info;
 }
 </style>

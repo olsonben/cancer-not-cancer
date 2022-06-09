@@ -1,19 +1,2 @@
-$purple: #332288;
-$green: #117733;
-$teal: #44AA99;
-$blue: #2292C9;
-$yellow: #FFB000;
-$orange: #DC6415;
-$magenta: #AA4499;
-$rouge: #882255;
-
-$primary: $magenta;
-$link: $blue;
-$info: $purple;
-$success: $green;
-$warning: $orange;
-$danger: $rouge;
-// $dark: $grey-darker;
-// $text: $grey-dark;
-
+@import 'colors.scss';
 @import '../../node_modules/bulma/bulma.sass';

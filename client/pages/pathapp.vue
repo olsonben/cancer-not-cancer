@@ -82,7 +82,7 @@ export default {
                 const response = await axios.get(env.url.api + '/nextImage');
                 this.image = response.data
             } catch (error) {
-                if (error.response.status === 401) window.location.replace(`${window.location.origin}/login`)
+                if ([401, 403].includes(error.response.status)) window.location.replace(`${window.location.origin}/login`)
                 console.error(error);
             }
         }
