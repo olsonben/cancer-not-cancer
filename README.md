@@ -31,13 +31,15 @@ This is what handles all the data. Storing and logging images and hotornots as w
 
 # TODO
 
-1. Set up index page
-2. Seperate frontend (pathapp.milmed.ai) from backend (api.milmed.ai)
+1. Set up home page.
+2. Set up login page.
+4. Set up new image selection method.
+5. Seperate frontend (pathapp.milmed.ai) from backend (api.milmed.ai).
 
 ## Urgent
 
-1. Get client pages locked under authorization
+1. Get client pages locked under authorization. Does this actually need to happen?
 
 # Discuss
 
-1. How to choose the next image?
+1. ~~How to choose the next image?~~ Select first in first out.

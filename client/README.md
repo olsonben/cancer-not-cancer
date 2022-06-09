@@ -5,6 +5,8 @@
 1. [Pages](#pages)
     1. [Admin](#pages-admin)
     2. [Pathapp](#pages-pathapp)
+    3. [Home](#home)
+    4. [Login](#ages-login)
 2. [Usage](#usage)
     1. [Admin](#usage-admin)
     2. [Pathapp](#usage-pathapp)
@@ -20,6 +22,16 @@ This is for adding images and users, each type in seperate tabs.
 ## <a name='pages-pathapp'></a>Pathapp
 
 This is for grading hot-or-nots on images.
+
+## Home
+
+This is the home page for the client.
+
+## Login
+
+This is the login page. You can select from one of the following methods of authentication:
+
+- Google
 
 # Usage
 

@@ -52,15 +52,16 @@ Example return: `"https://api.milmed.ai/images/bridge.jpeg"`.
 Base page for authorization and where you can login. Protected pages are rerouted here for authorization.
 
 Current methods of authorization:
+
 - Google
 
 ### /auth/success
 
-Redirection route for successful authorization.
+Redirection route for successful authorization. Users that authenticate correctly but are not allowed by the user database also go through here but are redirected to origin with a `403` status code. 
 
 #### /auth/failure
 
-Page to show when authorization fails.
+Page to show when authorization has an error.
 
 ### /auth/logout
 
