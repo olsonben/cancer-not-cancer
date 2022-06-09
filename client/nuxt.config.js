@@ -15,12 +15,23 @@ export default {
       { name: 'format-detection', content: 'telephone=no' }
     ],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }
     ]
+  },
+
+  watchers: {
+    webpack: {
+      ignored: /node_modules/
+    }
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
+    '~assets/css/main.css'
+  ],
+
+  watch: [
+    '~assets/css/main.css'
   ],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
@@ -36,7 +47,14 @@ export default {
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
+    '@nuxtjs/style-resources'
   ],
+
+  styleResources: {
+    scss: [
+      './assets/scss/colors.scss'
+    ]
+  },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {

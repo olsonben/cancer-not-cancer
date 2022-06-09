@@ -3,18 +3,28 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "nuxt --port 3000",
+    "dev": "kill-port 3000 ; npm run css-watch & nuxt --port 3000 && fg",
     "build": "nuxt build",
+    "css-build": "sass --no-source-map assets/scss/main.scss assets/css/main.css",
+    "css-watch": "npm run css-build -- --watch",
     "start": "nuxt start",
     "generate": "nuxt generate"
   },
+  "devDependencies": {
+    "@nuxtjs/style-resources": "^1.2.1",
+    "kill-port": "^2.0.0",
+    "sass": "^1.52.1",
+    "sass-loader": "10.1.1",
+    "webpack": "^4.46.0"
+  },
   "dependencies": {
-    "axios": "^0.27.1",
+    "axios": "^0.27.2",
+    "bulma": "^0.9.4",
     "core-js": "^3.19.3",
+    "form-data": "^4.0.0",
     "nuxt": "^2.15.8",
     "vue": "^2.6.14",
     "vue-server-renderer": "^2.6.14",
-    "vue-template-compiler": "^2.6.14",
-    "webpack": "^4.46.0"
+    "vue-template-compiler": "^2.6.14"
   }
 }

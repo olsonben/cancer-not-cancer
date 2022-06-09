@@ -1,0 +1,2 @@
+ALTER TABLE users
+ADD UNIQUE email varchar(254) NOT NULL AFTER id;
