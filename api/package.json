@@ -11,10 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.0",
-<<<<<<< HEAD:BackEnd/package.json
-=======
     "cookie-parser": "^1.4.6",
->>>>>>> dev:api/package.json
     "express": "^4.17.3",
     "express-session": "^1.17.2",
     "kill-port": "^1.6.1",
