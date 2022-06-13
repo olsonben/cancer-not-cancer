@@ -157,8 +157,7 @@ function isValid(req, res, next) {
     const perms = req.user.database.permissions
     if (req.route.methods.get) {
         if (req.route.path === '/nextImage') {
-            // Anyone can get images
-            next()
+            perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
         }
     } else if (req.route.methods.post) {
         // checking enabled is redundant but safe

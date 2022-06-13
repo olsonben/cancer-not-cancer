@@ -5,14 +5,22 @@
                 <img class='logo' src="/logo.svg" alt='milmed logo'>
             </nuxt-link>
 
-            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+            <a 
+              role="button" 
+              class="navbar-burger" 
+              v-on:click="showNav = !showNav" 
+              v-bind:class="{ 'is-active' : showNav }" 
+              aria-label="menu" 
+              aria-expanded="false" 
+              data-target="navContent"
+            >
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
             </a>
         </div>
 
-        <div id="navbarBasicExample" class="navbar-menu">
+        <div id="navContent" class="navbar-menu" v-bind:class="{ 'is-active' : showNav }">
             <div class="navbar-start">
                 <nuxt-link to='/home' class="navbar-item">
                     Home
@@ -46,6 +54,16 @@
         </div>
     </nav>
 </template>
+
+<script>
+export default {
+    data() {
+        return {
+            showNav: false
+        }
+    }
+}
+</script>
 
 <style lang="scss" scoped>
 img.logo {
