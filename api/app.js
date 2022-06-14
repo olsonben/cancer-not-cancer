@@ -37,7 +37,8 @@ const pool = mysql.createConnection({
     host: 'localhost',
     user: env.db.user,
     password: env.db.password,
-    database: env.db.database
+    database: env.db.database,
+    multipleStatements: true
 }) 
 pool.connect()
 
@@ -186,7 +187,7 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
     // Get random row
     // NOTE: this is not very efficient, but it works
     // TODO: only consider rows with a rule - eg. least # of hotornot entries
-    query = `SELECT id, path FROM images ORDER BY RAND() LIMIT 1;`
+    query = `SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;`
     
     pool.query(query, (err, rows, fields) => {
         if (err) throw err
@@ -204,14 +205,16 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
 
 app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
     console.log("post /hotornot")
-    console.log(req.headers)
     // REMEMBER: the data in body is in JSON format
     
     // Insert the hotornots
-    query = 'INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) VALUES '
-    query += `(${req.user.database.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});`
+    query = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) 
+    VALUES (${req.user.database.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});
+    UPDATE images 
+    SET times_graded = times_graded + 1 
+    WHERE id = ${req.body.id};`
     
-    pool.query(query, (err, rows, fields) => {
+    pool.query(query, (err, results, fields) => {
         if (err) throw err
         console.log("Successful hotornot insert query");
         res.sendStatus(200)
