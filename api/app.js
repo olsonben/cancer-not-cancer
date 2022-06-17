@@ -103,7 +103,7 @@ app.get('/auth/success', (req, res) => {
     // Bounce back to origin
     const origin = req.session.origin
     delete req.session.origin
-    res.redirect(origin || '/home') // NOTE: After setting up index page on frontend, send to '/'
+    res.redirect(origin || '/') // NOTE: After setting up index page on frontend, send to '/'
 })
 
 // Failed authorization
@@ -197,6 +197,14 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
         })
         console.log("Successful image get query");
     })
+})
+
+app.get('/isLoggedIn', (req, res) => {
+    if (req.user && req.user.allowed) {
+        res.send('OK')
+    } else {
+        res.status(401).send('/auth')
+    }
 })
 
 /**********************************************

@@ -33,9 +33,13 @@ This is what handles all the data. Storing and logging images and hotornots as w
 
 1. Set up home page.
 2. Set up login page.
-3. Set up new image selection method.
+3. ~~Set up new image selection method.~~ :: NOTE does not support multiple pathologists working simultaneously.
 4. Seperate frontend (pathapp.milmed.ai) from backend (api.milmed.ai).
 5. Update tools.
+
+Cookies for login button to dissapear
+Skip button
+History toggle (limit 10 grades with show more)
 
 ## Urgent
 

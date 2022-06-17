@@ -61,8 +61,6 @@ import FormData from 'form-data'
 const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED = 3, STATUS_LOADED = 4
 
 export default {
-    layout: 'admin',
-
     data() {
         return {
             files: [],

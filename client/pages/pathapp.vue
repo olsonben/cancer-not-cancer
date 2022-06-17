@@ -9,12 +9,15 @@
             <button class='button' @click="onClick('maybe-cancer')">Maybe Cancer</button>
             <button class='button' @click="onClick('no-cancer')">No Cancer</button>
         </div>
+
+        <button @click="rememberMe()">Remember Me</button>
     </div>
 </template>
 
 <script>
-import axios from 'axios';
-import * as env from '../.env.js';
+import axios from 'axios'
+import * as env from '../.env.js'
+import * as tnyc from 'tiny-cookie'
 export default {
     data() {
         return {
@@ -31,6 +34,20 @@ export default {
     },
 
     methods: {
+        rememberMe() {
+            console.log(this.$nuxt.$route)
+            tnyc.setCookie(
+                'test' + env.url.base + 'data',
+                JSON.stringify({
+                    message: "This is a test",
+                    favNum: 3
+                }),
+                { expires: '5Y'}
+            )
+            console.log("saved")
+        },
+
+
         /**********************************************
         * App Control
         **********************************************/
@@ -56,7 +73,7 @@ export default {
             this.nextImage()
         },
 
-        postData(pathHistory) {
+        async postData(pathHistory) {
             console.log("In postdata from App.vue");
             console.log(pathHistory)
             // axiosData MUST be in JSON format before going into the API call
@@ -68,10 +85,12 @@ export default {
                 }
             }
 
-            axios.post(env.url.api + '/hotornot', axiosData, axiosConfig)
-                .then((res, err) => {
-                    if (err) console.error(err)
-                })
+            try {
+                axios.post(env.url.api + '/hotornot', axiosData, axiosConfig)
+            } catch (error) {
+                if ([401, 403].includes(error.response.status)) window.location.replace(`${window.location.origin}/login`)
+                console.error(error);
+            }
         },
 
         async nextImage() {

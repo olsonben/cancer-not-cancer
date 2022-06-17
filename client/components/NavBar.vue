@@ -1,7 +1,7 @@
 <template>
     <nav class="navbar is-primary block" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
-            <nuxt-link class="navbar-item" to="/home">
+            <nuxt-link class="navbar-item" to="/">
                 <img class='logo' src="/logo.svg" alt='milmed logo'>
             </nuxt-link>
 
@@ -22,7 +22,7 @@
 
         <div id="navContent" class="navbar-menu" v-bind:class="{ 'is-active' : showNav }">
             <div class="navbar-start">
-                <nuxt-link to='/home' class="navbar-item">
+                <nuxt-link to='/' class="navbar-item">
                     Home
                 </nuxt-link>
 
@@ -45,8 +45,8 @@
             <div class="navbar-end">
                 <div class="navbar-item">
                     <div class="buttons">
-                        <nuxt-link to='/login' class="button is-light">
-                            Log in
+                        <nuxt-link :to="isLoggedIn ? '/logout' : '/login'" class="button is-light">
+                            {{ isLoggedIn ? 'Log Out' : 'Log In' }}
                         </nuxt-link>
                     </div>
                 </div>
@@ -56,12 +56,28 @@
 </template>
 
 <script>
+import { setCookie, getCookie } from 'tiny-cookie'
+import * as env from '../.env.js'
+
 export default {
     data() {
         return {
-            showNav: false
+            showNav: false,
+            isLoggedIn: false
         }
-    }
+    },
+
+    // async asyncData({ store }) {
+    //     return {
+    //         isLoggedIn: store.state.isLoggedIn
+    //     }
+    // }
+
+    // computed: {
+    //     isLoggedIn() {
+    //         return this.$store.state.isLoggedIn
+    //     }
+    // }
 }
 </script>
 

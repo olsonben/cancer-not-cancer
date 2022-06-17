@@ -68,8 +68,6 @@ import env from '../../.env'
 import axios from 'axios'
 
 export default {
-    layout: 'admin',
-
     data() {
         return {
             user: {

@@ -1,9 +1,17 @@
 <template>
     <div>
-        This is some test code
-
-        This is a new line
-
-        <button>This button is a new line button</button>
+        {{ fruits }}
     </div>
 </template>
+
+<script>
+export default {
+    layout: '',
+
+    computed: {
+        fruits() {
+            // return this.$store.fruits.state.fruits
+        },
+    }
+}
+</script>
