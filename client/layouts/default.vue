@@ -18,18 +18,18 @@ export default {
         }
     },
 
-    beforeMount() {
-        let cookie = getCookie('isLoggedIn')
-        if (cookie !== 'true') {
-            axios.get(env.url.api + '/isLoggedIn')
-                .then(res => {
-                    this.$store.commit('login')
-                })
-                .catch(err => {
-                    if ([401, 403].includes(error.response.status)) window.location.replace(`${env.url.base}/login`)
-                    console.error(error);
-                })
-        }
-    }
+    // beforeMount() {
+    //     let cookie = getCookie('isLoggedIn')
+    //     if (cookie !== 'true') {
+    //         axios.get(env.url.api + '/isLoggedIn')
+    //             .then(res => {
+    //                 this.$store.commit('login')
+    //             })
+    //             .catch(err => {
+    //                 if ([401, 403].includes(error.response.status)) window.location.replace(`${env.url.base}/login`)
+    //                 console.error(error);
+    //             })
+    //     }
+    // }
 }
 </script>
