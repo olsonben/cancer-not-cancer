@@ -7,13 +7,13 @@
                 </nuxt-link>
 
                 <a 
-                role="button" 
-                class="navbar-burger" 
-                v-on:click="showNav = !showNav" 
-                v-bind:class="{ 'is-active' : showNav }" 
-                aria-label="menu" 
-                aria-expanded="false" 
-                data-target="navContent"
+                  role="button" 
+                  class="navbar-burger" 
+                  v-on:click="showNav = !showNav" 
+                  v-bind:class="{ 'is-active' : showNav }" 
+                  aria-label="menu" 
+                  aria-expanded="false" 
+                  data-target="navContent"
                 >
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
@@ -27,8 +27,11 @@
                         Home
                     </nuxt-link>
 
-                    <nuxt-link to='/pathapp' class="navbar-item">
+                    <nuxt-link to='/pathapp' v-if='this.permissions.pathologist' class="navbar-item">
                         HotOrNot
+                    </nuxt-link>
+                    <nuxt-link to='/admin' v-if='this.permissions.uploader || this.permissions.admin' class="navbar-item">
+                        Admin
                     </nuxt-link>
 
                     <div class="navbar-item has-dropdown is-hoverable">
@@ -36,9 +39,8 @@
 
                         <div class="navbar-dropdown">
                             <nuxt-link to='/about' class="navbar-item">About</nuxt-link>
-                            <nuxt-link to='/admin/images' class="navbar-item">Admin</nuxt-link>
                             <hr class="navbar-divider">
-                            <a class="navbar-item">Report an issue</a>
+                            <nuxt-link to='/issues' class="navbar-item">Report an issue</nuxt-link>
                         </div>
                     </div>
                 </div>
@@ -70,6 +72,9 @@ export default {
     computed: {
         isLoggedIn() {
             return this.$store.state.user.isLoggedIn
+        },
+        permissions() {
+            return this.$store.state.user.permissions
         }
     },
 

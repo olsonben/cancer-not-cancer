@@ -2,8 +2,8 @@
     <div>
         <div class='tabs'>
             <ul>
-                <li><nuxt-link to='/admin/images'>Images</nuxt-link></li>
-                <li><nuxt-link to='/admin/users'>Users</nuxt-link></li>
+                <li><nuxt-link v-if='this.$store.state.user.permissions.uploader' to='/admin/images'>Images</nuxt-link></li>
+                <li><nuxt-link v-if='this.$store.state.user.permissions.admin' to='/admin/users'>Users</nuxt-link></li>
             </ul>
         </div>
         <nuxt-child />
@@ -15,7 +15,8 @@ export default {
     beforeMount() {
         if (this.$nuxt.$route.path === '/admin') {
             window.location.replace(
-                `${window.location.origin}/admin/images`
+                `${window.location.origin}/admin/${this.$store.state.user.permissions.uploader ? 'images'
+                                                    : this.$store.state.user.permissions.admin ? 'users' : '..'}`
             )
         }
     }

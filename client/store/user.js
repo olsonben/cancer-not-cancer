@@ -5,6 +5,12 @@ import * as env from '../.env.js'
 // Only setable through mutations; get with this.$store.state[.module].myStateItem
 export const state = () => ({
     isLoggedIn: false,
+    permissions: {
+        admin: false,
+        uploader: false,
+        pathologist: false,
+        enabled: false
+    }
 })
 
 // For special types of getters (eg. a list without a certain item)
@@ -14,24 +20,43 @@ export const getters = {}
 export const mutations = {
     isLoggedIn(state, value) {
         state.isLoggedIn = value
+    },
+    permissions(state, key, value) {
+        state.permissions[key] = value
+    },
+    permissions(state, value) {
+        state.permissions = value
     }
 }
 
 // Actions do a thing and can make many changes to the state THROUGH MUTATIONS; accesible with this.$store.dispatch('myAction'[, params...])
 export const actions = {
-    async onload(context) {
+    async onload({ commit, dispatch }) {
         try {
             let response = await axios.get(env.url.api + '/isLoggedIn')
             
-            context.commit('isLoggedIn', true)
-        } catch (error) {
+            console.log(response)
+            commit('isLoggedIn', true)
+            commit('permissions', response.data.database.permissions)
+        } catch(error) {
             if (error.response.status === 401) {
                 console.log('Caught 401 error in user/onload')
-                context.commit('isLoggedIn', false)
+                dispatch('logout')
+
             } else if (error.response.status === 403) {
             } else {
                 console.error(error)
             }
         }
+    },
+
+    logout({ commit }) {
+        commit('isLoggedIn', false)
+        commit('permissions', {
+            admin: false,
+            uploader: false,
+            pathologist: false,
+            enabled: false  
+        })
     }
 }
