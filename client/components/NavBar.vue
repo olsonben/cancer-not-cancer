@@ -46,9 +46,7 @@
                 <div class="navbar-end">
                     <div class="navbar-item">
                         <div class="buttons">
-                        <client-only>
                             <nuxt-link :to="isLoggedIn ? '/logout' : '/login'" @click="setIsLoggedIn(!isLoggedIn); console.log(isLoggedIn)" class="button is-light">{{ isLoggedIn ? 'Log Out' : 'Log In' }}</nuxt-link>
-                        </client-only>
                         </div>
                     </div>
                 </div>

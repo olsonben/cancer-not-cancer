@@ -9,8 +9,6 @@
             <button class='button' @click="onClick('maybe-cancer')">Maybe Cancer</button>
             <button class='button' @click="onClick('no-cancer')">No Cancer</button>
         </div>
-
-        <button @click="rememberMe()">Remember Me</button>
     </div>
 </template>
 
@@ -34,20 +32,6 @@ export default {
     },
 
     methods: {
-        rememberMe() {
-            console.log(this.$nuxt.$route)
-            tnyc.setCookie(
-                'test' + env.url.base + 'data',
-                JSON.stringify({
-                    message: "This is a test",
-                    favNum: 3
-                }),
-                { expires: '5Y'}
-            )
-            console.log("saved")
-        },
-
-
         /**********************************************
         * App Control
         **********************************************/

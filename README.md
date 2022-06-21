@@ -47,4 +47,4 @@ History toggle (limit 10 grades with show more)
 
 # Discuss
 
-1. Do we want to register a skip in the hotornot table?
+1. Do we want to register a skip in the hotornot table? Should this be handled with mysql or express. Noting a skip is simple, getting the next image with skips is less so. If we want to check out blocks of images, this is simply moving the current image to the end of the list. All of this depends on how skipping works.
