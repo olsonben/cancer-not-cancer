@@ -35,12 +35,10 @@ export const actions = {
         try {
             let response = await axios.get(env.url.api + '/isLoggedIn')
             
-            console.log(response)
             commit('isLoggedIn', true)
             commit('permissions', response.data.database.permissions)
         } catch(error) {
             if (error.response.status === 401) {
-                console.log('Caught 401 error in user/onload')
                 dispatch('logout')
 
             } else if (error.response.status === 403) {
