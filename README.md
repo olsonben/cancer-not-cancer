@@ -37,7 +37,7 @@ This is what handles all the data. Storing and logging images and hotornots as w
 4. Seperate frontend (pathapp.milmed.ai) from backend (api.milmed.ai).
 5. Update tools.
 
-Cookies for login button to dissapear
+~~Cookies for login button to dissapear~~ :: NOTE using store; redundantly checks every page change; slow loading of button comes from v-html
 Skip button
 History toggle (limit 10 grades with show more)
 
@@ -47,4 +47,4 @@ History toggle (limit 10 grades with show more)
 
 # Discuss
 
-1. ~~How to choose the next image?~~ Select first in first out.
+1. Do we want to register a skip in the hotornot table?

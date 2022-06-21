@@ -22,7 +22,6 @@ passport.use(new GoogleStrategy({
         let query = `SELECT * FROM users WHERE username = "${profile.email}";`
         
         pool.query(query, (err, rows, fields) => {
-            console.log(request.origin)
             if (err) console.log(err)
             if (rows.length != 1 || !rows[0].is_enabled) {
                 profile.allowed = false

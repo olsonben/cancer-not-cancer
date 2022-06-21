@@ -5,6 +5,10 @@
         <button @click='recallMe()'>Recall Me</button>
         {{cookieResponse}}
         {{message}}
+
+        <br>
+
+        <button @click='isLoggedIn()'>isLoggedIn: {{ this.$store.state.user.isLoggedIn }}</button>
     </div>
 </template>
 
@@ -25,6 +29,10 @@ export default {
         recallMe() {
             this.cookieResponse = JSON.parse(getCookie('test' + env.url.base + 'data'))
             this.message = this.cookieResponse.message
+        },
+
+        isLoggedIn() {
+            this.$store.commit('user/isLoggedIn', !this.$store.state.user.isLoggedIn)
         }
     }
 }

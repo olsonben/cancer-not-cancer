@@ -200,8 +200,10 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
 })
 
 app.get('/isLoggedIn', (req, res) => {
+    console.log('checking is logged in')
+    console.log(res.status)
     if (req.user && req.user.allowed) {
-        res.send('OK')
+        res.send(req.user)
     } else {
         res.status(401).send('/auth')
     }

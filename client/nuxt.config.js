@@ -56,6 +56,10 @@ export default {
     ]
   },
 
+  router: {
+    middleware: ['onload']
+  },
+
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
   }

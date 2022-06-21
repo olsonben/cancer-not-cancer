@@ -1,6 +1,5 @@
 <template>
     <section>
-        {{loadPage()}}
         <nav class="navbar is-primary block" role="navigation" aria-label="main navigation">
             <div class="navbar-brand">
                 <nuxt-link class="navbar-item" to="/">
@@ -48,7 +47,7 @@
                     <div class="navbar-item">
                         <div class="buttons">
                         <client-only>
-                            <nuxt-link :to="isLoggedIn ? '/logout' : '/login'" @click="console.log(isLoggedIn)" class="button is-light" v-html="isLoggedIn ? 'Log Out' : 'Log In'"/>
+                            <nuxt-link :to="isLoggedIn ? '/logout' : '/login'" @click="setIsLoggedIn(!isLoggedIn); console.log(isLoggedIn)" class="button is-light">{{ isLoggedIn ? 'Log Out' : 'Log In' }}</nuxt-link>
                         </client-only>
                         </div>
                     </div>
@@ -67,29 +66,22 @@ export default {
     data() {
         return {
             showNav: false,
-            isLoggedIn: false
         }
     },
 
-    beforeMount() {
-        this.loadPage()
+    computed: {
+        isLoggedIn() {
+            return this.$store.state.user.isLoggedIn
+        }
     },
+
+    created() {
+       this.$store.dispatch('user/onload')
+    },
+
     methods: {
-        loadPage() {
-            console.log('Checking')
-            axios.get(env.url.api + '/isLoggedIn')
-                .then(res => {
-                    this.isLoggedIn = true
-                    console.log("Logged in: " + this.isLoggedIn)
-                })
-                .catch(err => {
-                    if ([401, 403].includes(err.response.status)){
-                        console.log('hello')
-                        this.isLoggedIn = false
-                    } else {
-                        console.error(err)
-                    }
-                })
+        setIsLoggedIn(value) {
+            this.$store.commit('user/isLoggedIn', value)
         }
     }
 }
