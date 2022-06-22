@@ -136,7 +136,7 @@ export default {
 
             } catch (error) {
                 if ([401, 403].includes(error.response.status)) {
-                    window.location.replace(`${env.url.base}/login`)
+                    window.location.replace(`${env.url.client}/login`)
 
                 } else {
                     this.uploadError = error.response

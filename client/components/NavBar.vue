@@ -30,7 +30,11 @@
                     <nuxt-link to='/pathapp' v-if='this.permissions.pathologist' class="navbar-item">
                         HotOrNot
                     </nuxt-link>
-                    <nuxt-link to='/admin' v-if='this.permissions.uploader || this.permissions.admin' class="navbar-item">
+                    <nuxt-link 
+                      :to='`/admin/${this.permissions.uploader ? "images" : "users"}`' 
+                      v-if='this.permissions.uploader || this.permissions.admin' 
+                      class="navbar-item"
+                    >
                         Admin
                     </nuxt-link>
 

@@ -38,8 +38,8 @@ This is what handles all the data. Storing and logging images and hotornots as w
 5. Update tools.
 
 ~~Cookies for login button to dissapear~~ :: NOTE using store; redundantly checks every page change; slow loading of button comes from v-html
-Skip button
-History toggle (limit 10 grades with show more)
+Skip button :: Future
+History toggle (limit 10 grades with show more) :: Future
 
 ## Urgent
 

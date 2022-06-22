@@ -3,7 +3,8 @@
  **********************************************/
 // Basic stuff for the server
 const express = require('express')              // We have an express server (https://expressjs.com/)
-const env = require('./.env')                   // Hidden information not to be tracked by github (passwords and such)
+const env = require('./.env')
+const envLocal = require('./.env.local')        // Hidden information not to be tracked by github (passwords and such)
 
 /// Features
 const bodyParser = require('body-parser')       // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
@@ -35,9 +36,9 @@ app.use(bodyParser.json({           // to support JSON-encoded bodies
  */
 const pool = mysql.createConnection({
     host: 'localhost',
-    user: env.db.user,
-    password: env.db.password,
-    database: env.db.database,
+    user: envLocal.db.user,
+    password: envLocal.db.password,
+    database: envLocal.db.database,
     multipleStatements: true
 }) 
 pool.connect()
@@ -80,7 +81,7 @@ app.use('/images', express.static('images'));   // This is REQUIRED for displayi
 // This was done with this video: https://youtu.be/Q0a0594tOrc
 app.use(
     cookieParser(),                             // Use cookies to track the session         :: req.session
-    session({ secret: env.session.secret }),    // Encrypted session
+    session({ secret: envLocal.session.secret }),    // Encrypted session
     passport.initialize(),                      // Google OAuth2 is a passport protocol
     passport.session()                          // Need to track the user as a session      :: req.user
 )

@@ -1,4 +1,5 @@
 const env = require('./.env')
+const envLocal = require('./.env.local')
 const mysql = require('mysql')
 const passport = require('passport')
 const GoogleStrategy = require('passport-google-oauth2').Strategy
@@ -6,15 +7,15 @@ const InternalOAuthError = require('passport-oauth2').InternalOAuthError
 
 const pool = mysql.createConnection({
     host: 'localhost',
-    user: env.db.user,
-    password: env.db.password,
-    database: env.db.database
+    user: envLocal.db.user,
+    password: envLocal.db.password,
+    database: envLocal.db.database
 }) 
 pool.connect()
 
 passport.use(new GoogleStrategy({
-        clientID: env.google.clientID,
-        clientSecret: env.google.clientSecret,
+        clientID: envLocal.google.clientID,
+        clientSecret: envLocal.google.clientSecret,
         callbackURL: env.url.base + "/auth/google/callback",
         passReqToCallback: true
     },
