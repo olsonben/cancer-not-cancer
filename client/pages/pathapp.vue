@@ -104,6 +104,7 @@ export default {
 img {
     object-fit: contain;
     width: 50vw;
+    min-width: 100%;
     max-height: 50vh;
 }
 </style>
