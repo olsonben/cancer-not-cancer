@@ -2,10 +2,6 @@
     <section>
         <nav class="navbar is-primary block" role="navigation" aria-label="main navigation">
             <div class="navbar-brand">
-                <nuxt-link class="navbar-item" to="/">
-                    <img class='logo' src="/logo.svg" alt='milmed logo'>
-                </nuxt-link>
-
                 <a 
                   role="button" 
                   class="navbar-burger" 
@@ -95,8 +91,17 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-img.logo {
-    width: fit-content;
-    max-height: 3rem;
+.navbar, .navbar-brand {
+    background-image: url(/logo.svg);
+    background-position: left;
+    background-position-x: 1rem;
+    background-size: 2rem auto;
+    background-repeat: no-repeat;
+}
+.navbar-brand, .navbar-tabs {
+    display: block;
+}
+.navbar-start {
+    margin-left: 3.4rem;
 }
 </style>
