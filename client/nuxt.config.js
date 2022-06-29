@@ -52,7 +52,8 @@ export default {
 
   styleResources: {
     scss: [
-      './assets/scss/colors.scss'
+      './assets/scss/colors.scss',
+      './assets/scss/variables.scss'
     ]
   },
 

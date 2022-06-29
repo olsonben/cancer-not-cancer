@@ -5,8 +5,8 @@
                 <a 
                   role="button" 
                   class="navbar-burger" 
-                  v-on:click="showNav = !showNav" 
-                  v-bind:class="{ 'is-active' : showNav }" 
+                  v-on:click="showNav = !showNav; showAnimation = !showAnimation" 
+                  v-bind:class="{ 'is-active' : showAnimation }" 
                   aria-label="menu" 
                   aria-expanded="false" 
                   data-target="navContent"
@@ -67,6 +67,7 @@ export default {
     data() {
         return {
             showNav: false,
+            showNav: false,
             api: env.url.api
         }
     },
@@ -82,6 +83,17 @@ export default {
 
     created() {
        this.$store.dispatch('user/onload')
+    },
+
+    watch:{
+        $route: {
+            handler(to, from) {
+                this.showAnimation = false
+                setTimeout(() => {
+                    this.showNav = false
+                }, "86")
+            },
+        }
     },
 
     methods: {
@@ -107,7 +119,7 @@ export default {
     margin-left: 3.4rem;
 }
 .navbar-burger {
-    height: 3.45rem;
-    width: 3.45rem;
+    height: $navbar-height;
+    width: $navbar-height; /* I want it square */
 }
 </style>

@@ -57,7 +57,6 @@ export default {
         },
 
         async postData(pathHistory) {
-            console.log("In postdata from App.vue");
             console.log(pathHistory)
             // axiosData MUST be in JSON format before going into the API call
             let axiosData = JSON.stringify(pathHistory)
@@ -77,8 +76,6 @@ export default {
         },
 
         async nextImage() {
-            console.log("In nextImage from App.vue"); // keeping track of location
-
             // try-catch is needed for async/await
             try {
                 const response = await axios.get(env.url.api + '/nextImage');

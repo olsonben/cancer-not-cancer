@@ -6,7 +6,7 @@
                 <li><nuxt-link v-if='this.$store.state.user.permissions.admin' to='/admin/users'>Users</nuxt-link></li>
             </ul>
         </div>
-        <nuxt-child />
+        <nuxt-child class='nuxt-child'/>
     </div>
 </template>
 
@@ -20,12 +20,12 @@ export default {
 }
 </script>
 
-<style lang='scss' scoped>
+<style lang='scss'>
 a.nuxt-link-exact-active {
     color: $info;
     border-bottom-color: $info;
 }
-.tabs {
-    margin-top: -1.5rem;
+.tabs, section.section {
+    margin-top: calc(-1 * $block-margin);
 }
 </style>

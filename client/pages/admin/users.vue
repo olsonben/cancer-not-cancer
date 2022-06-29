@@ -106,7 +106,7 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 label.checkbox {
     display: block;
 }

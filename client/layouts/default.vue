@@ -1,18 +1,22 @@
 <template>
     <div>
         <NavBar class='main-nav' />
-        <nuxt class='element' />
+        <nuxt class='nuxt-tag' />
     </div>
 </template>
 
-<style scoped>
+<style lang='scss'>
 .main-nav {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
+    z-index: 9999;
 }
-.element {
-    margin-top: calc(3.4rem + 1.5rem);
+.nuxt-tag {
+    margin-top: calc($navbar-height + $block-margin);
+}
+.nuxt-tag.section {
+    margin-top: $navbar-height;
 }
 </style>
