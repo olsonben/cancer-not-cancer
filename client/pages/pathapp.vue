@@ -93,9 +93,17 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .container {
     width: fit-content;
+}
+.buttons {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    justify-content: center;
 }
 .stacked {
     display: flex;
@@ -106,5 +114,16 @@ img {
     width: 50vw;
     min-width: 100%;
     max-height: 50vh;
+}
+@media screen and (max-width: 1024px) {
+    img {
+        width: 100vw;
+        min-width: 100%;
+        max-height: 50vh;
+    }
+    .container:not(.buttons) {
+        margin-left: 1.5rem;
+        margin-right: 1.5rem;
+    }
 }
 </style>

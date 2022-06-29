@@ -104,4 +104,8 @@ export default {
 .navbar-start {
     margin-left: 3.4rem;
 }
+.navbar-burger {
+    height: 3.45rem;
+    width: 3.45rem;
+}
 </style>
