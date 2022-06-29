@@ -13,7 +13,7 @@
 <script>
 export default {
     mounted() {
-        if (/admin/.test(this.$nuxt.$route.path)) {
+        if (["/admin", "/admin/"].includes(this.$nuxt.$route.path)) {
             window.location.replace('/')
         }
     }
@@ -24,5 +24,8 @@ export default {
 a.nuxt-link-exact-active {
     color: $info;
     border-bottom-color: $info;
+}
+.tabs {
+    margin-top: -1.5rem;
 }
 </style>
