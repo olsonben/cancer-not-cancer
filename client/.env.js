@@ -4,11 +4,12 @@ const protocols = {
 }
 
 const base = 'milmed.ai'
+const client_subDomain = 'api.'
 
 module.exports = {
     url: {
         base: base,
         api: protocols.https + 'api.' + base,
-        client: 'api.' + base
+        client: protocols.https + client_subDomain + base
     }
 }

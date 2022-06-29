@@ -9,6 +9,7 @@ import axios from 'axios'
 import * as env from '../.env.js'
 
 export default {
+    // Automatically logout when coming to this page
     created() {
         axios.get(env.url.api + '/auth/logout')
             .then(res => {

@@ -12,12 +12,9 @@
 
 <script>
 export default {
-    beforeMount() {
-        if (this.$nuxt.$route.path === '/admin') {
-            window.location.replace(
-                `${window.location.origin}/admin/${this.$store.state.user.permissions.uploader ? 'images'
-                                                    : this.$store.state.user.permissions.admin ? 'users' : '..'}`
-            )
+    mounted() {
+        if (/admin/.test(this.$nuxt.$route.path)) {
+            window.location.replace('/')
         }
     }
 }

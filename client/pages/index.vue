@@ -1,5 +1,5 @@
 <template>
     <div>
-        This is the home
+        <h1>I AM MILMED!</h1>
     </div>
 </template>

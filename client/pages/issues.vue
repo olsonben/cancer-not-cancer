@@ -1,5 +1,5 @@
 <template>
     <div>
-        This is for issues
+        There are no issues.
     </div>
 </template>

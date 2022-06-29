@@ -48,7 +48,9 @@
                 <div class="navbar-end">
                     <div class="navbar-item">
                         <div class="buttons">
-                            <nuxt-link :to="isLoggedIn ? '/logout' : '/login'" @click="setIsLoggedIn(!isLoggedIn); console.log(isLoggedIn)" class="button is-light">{{ isLoggedIn ? 'Log Out' : 'Log In' }}</nuxt-link>
+                            <!-- <nuxt-link :to="isLoggedIn ? '/logout' :  '/login'" @click="setIsLoggedIn(!isLoggedIn);" class="button is-light">{{ isLoggedIn ? 'Log Out' : 'Log In' }}</nuxt-link> -->
+                            <nuxt-link v-if='isLoggedIn' to='/logout' class='button is-light'>Log Out</nuxt-link>
+                            <a v-else :href='api + "/auth/google"' class='button is-light'>Log In</a>
                         </div>
                     </div>
                 </div>
@@ -58,7 +60,6 @@
 </template>
 
 <script>
-import { setCookie, getCookie } from 'tiny-cookie'
 import axios from 'axios'
 import * as env from '../.env.js'
 
@@ -66,6 +67,7 @@ export default {
     data() {
         return {
             showNav: false,
+            api: env.url.api
         }
     },
 

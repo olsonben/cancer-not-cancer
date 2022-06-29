@@ -15,7 +15,6 @@
 <script>
 import axios from 'axios'
 import * as env from '../.env.js'
-import * as tnyc from 'tiny-cookie'
 export default {
     data() {
         return {
