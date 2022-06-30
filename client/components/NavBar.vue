@@ -67,7 +67,7 @@ export default {
     data() {
         return {
             showNav: false,
-            showNav: false,
+            showAnimation: false,
             api: env.url.api
         }
     },

@@ -2,12 +2,19 @@
     <div class='container stacked'>
         <img class='block' :src='this.image.url' :alt='image.url' />
 
-        <textarea class='textarea block' placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
+        <div class='response-area'>
+            <button class='button icon-button'@click='commenting = !commenting'>
+                <span class='icon'>
+                    <img src="~assets/icons/pencil.svg" alt="pencil" width="32" height="32">
+                </span>
+            </button>
+            <textarea v-if='commenting'class='textarea block' placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
 
-        <div class='container block buttons'>
-            <button class='button' @click="onClick('yes-cancer')">Yes Cancer</button>
-            <button class='button' @click="onClick('maybe-cancer')">Maybe Cancer</button>
-            <button class='button' @click="onClick('no-cancer')">No Cancer</button>
+            <div class='container block buttons'>
+                <button class='button' @click="onClick('yes-cancer')">Yes Cancer</button>
+                <button class='button' @click="onClick('maybe-cancer')">Maybe Cancer</button>
+                <button class='button' @click="onClick('no-cancer')">No Cancer</button>
+            </div>
         </div>
     </div>
 </template>
@@ -21,7 +28,8 @@ export default {
             image: {},
 
             rating: '',
-            comment: ''
+            comment: '',
+            commenting: false,
         }
     },
 
@@ -51,6 +59,7 @@ export default {
                 comment: this.comment
             })
             this.comment = '' // clear the last comment
+            this.commenting = false
 
             // move on to the next image
             this.nextImage()
@@ -89,16 +98,27 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang='scss' scoped>
 .container {
     width: fit-content;
 }
-.buttons {
+.response-area {
     position: fixed;
-    bottom: 0;
+    bottom: $button-margin;
     left: 0;
     right: 0;
     margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    width: fit-content;
+}
+.icon-button {
+    background-color: #fff;   
+    border-radius: 50%;
+    margin: 0 auto $button-margin auto;
+}
+.buttons {
     justify-content: center;
 }
 .stacked {
@@ -118,8 +138,13 @@ img {
         max-height: 50vh;
     }
     .container:not(.buttons) {
-        margin-left: 1.5rem;
-        margin-right: 1.5rem;
+        margin-left: $block-margin;
+        margin-right: $block-margin;
+    }
+}
+@media screen and (max-width: 381px) {
+    .response-area {
+        margin: 0 9px;
     }
 }
 </style>
