@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "kill-port 5000; nodemon app.js > ../log/express-log.js"
+    "dev": "kill-port 5000; nodemon app.js | tee ../log/express-log.js"
   },
   "author": "",
   "license": "ISC",
