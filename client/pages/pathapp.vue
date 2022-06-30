@@ -1,5 +1,5 @@
 <template>
-    <div class='container stacked'>
+    <div class='container app'>
         <img class='block' :src='this.image.url' :alt='image.url' />
 
         <div class='response-area'>
@@ -11,9 +11,9 @@
             <textarea v-if='commenting'class='textarea block' placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
 
             <div class='container block buttons'>
-                <button class='button' @click="onClick('yes-cancer')">Yes Cancer</button>
-                <button class='button' @click="onClick('maybe-cancer')">Maybe Cancer</button>
                 <button class='button' @click="onClick('no-cancer')">No Cancer</button>
+                <button class='button' @click="onClick('maybe-cancer')">Maybe Cancer</button>
+                <button class='button' @click="onClick('yes-cancer')">Yes Cancer</button>
             </div>
         </div>
     </div>
@@ -22,6 +22,7 @@
 <script>
 import axios from 'axios'
 import * as env from '../.env.js'
+
 export default {
     data() {
         return {
@@ -30,12 +31,17 @@ export default {
             rating: '',
             comment: '',
             commenting: false,
+
+            xDown: null,
+            yDown: null,
+            touching: false
         }
     },
 
-    // Get the next image before rendering the page for the first time
     mounted() {
         this.nextImage()
+        document.addEventListener('touchstart', this.handleTouchStart, false)
+        document.addEventListener('touchmove', this.handleTouchMove, false)
     },
 
     methods: {
@@ -93,12 +99,72 @@ export default {
                 if ([401, 403].includes(error.response.status)) window.location.replace(`${window.location.origin}/login`)
                 console.error(error);
             }
+        },
+
+        /**********************************************
+        * Swipes
+        * https://stackoverflow.com/a/23230280/16755079
+        **********************************************/
+
+        getTouches(event) {
+            return event.touches ||             // browser API
+                    event.originalEvent.touches; // jQuery
+        },
+
+        handleTouchStart(event) {
+            console.log("touch start")
+            this.touching = !this.touching
+            const firstTouch = this.getTouches(event)[0];                                      
+            this.xDown = firstTouch.clientX;                                      
+            this.yDown = firstTouch.clientY;                                      
+        },
+
+        handleTouchMove(event) {
+            if ( ! this.xDown || ! this.yDown ) {
+                return;
+            }
+
+            let xUp = event.touches[0].clientX;                                    
+            let yUp = event.touches[0].clientY;
+
+            let xDiff = this.xDown - xUp;
+            let yDiff = this.yDown - yUp;
+                                                                                
+            if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
+                if ( xDiff > 0 ) {
+                    /* right swipe */
+                    // No Cancer
+                    this.onClick('no-cancer')
+                } else {
+                    /* left swipe */
+                    // Yes Cancer
+                    this.onClick('yes-cancer')
+                }                       
+            } else {
+                if ( yDiff > 0 ) {
+                    /* down swipe */ 
+                    // Commenting
+                    this.commenting = true
+                } else { 
+                    /* up swipe */
+                    // Maybe Cancer?
+                    // this.onClick('maybe-cancer')
+                }                                                                 
+            }
+
+            /* reset values */
+            this.xDown = null;
+            this.yDown = null;                                             
         }
     }
 }
 </script>
 
 <style lang='scss' scoped>
+.app {
+    height: 100%;
+    overflow: hidden;
+}
 .container {
     width: fit-content;
 }
@@ -120,10 +186,6 @@ export default {
 }
 .buttons {
     justify-content: center;
-}
-.stacked {
-    display: flex;
-    flex-direction: column;
 }
 img {
     object-fit: contain;
