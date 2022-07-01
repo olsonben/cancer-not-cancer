@@ -233,7 +233,6 @@ app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
 
 app.post('/users', isLoggedIn, isValid, (req, res) => {
     console.log("Post /users");
-    console.log(req.body)
     // Insert new user
     query = 'INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES '
     query += `("${req.body.fullname}", "${req.body.email}", "${req.body.password}", 
@@ -246,13 +245,16 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
         if (err) {
             // No duplicate users
             if (err.code === 'ER_DUP_ENTRY') {
-                res.status(409).send("Email already exists in database.")
+                res.status(409).send({
+                    message: "Email already exists in database.",
+                    user: req.body
+                })
             } else {
                 throw err
             }
         } else {
             console.log("Successful user insert query");
-            res.sendStatus(200)
+            res.status(200).send(req.body)
         }
     })
 })

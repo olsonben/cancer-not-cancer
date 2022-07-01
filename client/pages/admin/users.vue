@@ -60,6 +60,17 @@
 
             <input class='button is-primary' type="submit" value="Submit" />
         </form>
+        <div v-for='user in submittedUsers'>
+            <div v-if="user.submittionSuccess != null && user.submittionSuccess === true" class='notification is-success is-light'>
+                User {{ user.fullname }} is successfully submitted.
+            </div>
+            <div v-else-if="user.submittionSuccess != null && user.submittionSuccess === false" class='notification is-danger is-light'>
+                User {{ user.fullname }} failed to submit: {{ user.message }}.
+            </div>
+            <div v-else-if="user.submittionSuccess != -1" class='notification is-warning is-light'>
+                User {{ user.fullname }} is submitted, awaiting response.
+            </div>
+        </div>
     </section>
 </template>
 
@@ -79,14 +90,22 @@ export default {
                     uploader: 0,
                     pathologist: 0,
                     admin: 0
-                }
-            }
+                },
+                submittionSuccess: null,
+                message: ''
+            },
+
+            submittedUsers: [],
+            notificationTime: "5000",
         }
     },
 
     methods: {
         // Submit new user (activated on clicking Submit button in Users tab)
-        async submitUser() {
+        submitUser() {
+            this.user.id = this.submittedUsers.length
+            this.submittedUsers.push(structuredClone(this.user))
+
             let axiosData = JSON.stringify(this.user)
             const axiosConfig = {
                 headers: {
@@ -94,13 +113,23 @@ export default {
                 }
             }
             
-            try {
-                const response = await axios.post(env.url.api + '/users', axiosData, axiosConfig)
+            axios.post(env.url.api + '/users', axiosData, axiosConfig)
+                // This is all for notifications of successful uploads
+                .then((res) => {
+                    this.submittedUsers[res.data.id].submittionSuccess = true
+                    setTimeout(() => { this.submittedUsers[res.data.id].submittionSuccess = -1 }, this.notificationTime)
+                })
 
-            } catch (error) {
-                if ([401, 403].includes(error.response.status)) window.location.replace(`${env.url.client}/login`)
-                console.error(error)
-            }
+                .catch((error) => {
+                    // Reroute if you aren't logged in
+                    if ([401, 403].includes(error.response.status)) { window.location.replace(`${env.url.client}/login`) }
+                    else { console.error(error) }
+
+                    this.submittedUsers[error.response.data.user.id].submittionSuccess = false
+                    this.submittedUsers[error.response.data.user.id].message = error.response.data.message
+
+                    setTimeout(() => { this.submittedUsers[error.response.data.user.id].submittionSuccess = -1 }, this.notificationTime)
+                })
         }
     }
 }
