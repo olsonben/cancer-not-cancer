@@ -1,21 +1,25 @@
 <template>
-    <div class='container app'>
-        <img class='block' :src='this.image.url' :alt='image.url' />
+    <div class='app'>
+        <span class='grade-bar no' :class="{ 'shown': moveLeft }"></span>
+        <div class='container app'>
+            <img class='block' :src='this.image.url' :alt='image.url' />
 
-        <div class='response-area'>
-            <button class='button icon-button'@click='commenting = !commenting'>
-                <span class='icon'>
-                    <img src="~assets/icons/pencil.svg" alt="pencil" width="32" height="32">
-                </span>
-            </button>
-            <textarea v-if='commenting'class='textarea block' placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
+            <div class='response-area'>
+                <button class='button icon-button' @click='commenting = !commenting'>
+                    <span class='icon'>
+                        <img src="~assets/icons/pencil.svg" alt="pencil" width="32" height="32">
+                    </span>
+                </button>
+                <textarea v-if='commenting' class='textarea block' placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
 
-            <div class='container block buttons'>
-                <button class='button' @click="onClick('no-cancer')">No Cancer</button>
-                <button class='button' @click="onClick('maybe-cancer')">Maybe Cancer</button>
-                <button class='button' @click="onClick('yes-cancer')">Yes Cancer</button>
+                <div class='container block buttons'>
+                    <button class='button no' :class="{ 'shown': moveLeft }" @click="onClick('no-cancer')">Not Cancer</button>
+                    <button class='button maybe' @click="onClick('maybe-cancer')">Maybe Cancer</button>
+                    <button class='button yes' :class="{ 'shown': moveRight }" @click="onClick('yes-cancer')">Yes, Cancer</button>
+                </div>
             </div>
         </div>
+        <span class='grade-bar yes' :class="{ 'shown': moveRight }"></span>
     </div>
 </template>
 
@@ -34,7 +38,9 @@ export default {
 
             xDown: null,
             yDown: null,
-            touching: false
+            moveLeft: false,
+            moveRight: false,
+            touchEvent: null
         }
     },
 
@@ -42,6 +48,7 @@ export default {
         this.nextImage()
         document.addEventListener('touchstart', this.handleTouchStart, false)
         document.addEventListener('touchmove', this.handleTouchMove, false)
+        document.addEventListener('touchend', this.handleTouchEnd, false)
     },
 
     methods: {
@@ -112,49 +119,72 @@ export default {
         },
 
         handleTouchStart(event) {
-            console.log("touch start")
-            this.touching = !this.touching
-            const firstTouch = this.getTouches(event)[0];                                      
-            this.xDown = firstTouch.clientX;                                      
-            this.yDown = firstTouch.clientY;                                      
+            const firstTouch = this.getTouches(event)[0]
+            this.xDown = firstTouch.clientX
+            this.yDown = firstTouch.clientY
+        },
+
+        touchMacro(event, up=() => {}, right=() => {}, down=() => {}, left=() => {}) {
+            if ( !this.xDown || !this.yDown ) {
+                return
+            }
+
+            let xUp = event.touches[0].clientX
+            let yUp = event.touches[0].clientY
+
+            let xDiff = this.xDown - xUp
+            let yDiff = this.yDown - yUp
+
+            if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
+                if ( xDiff > 0 ) {
+                    /* left swipe */
+                    left()
+                } else {
+                    /* right swipe */
+                    right()
+                }
+            } else {
+                if ( yDiff > 0 ) {
+                    /* up swipe */ 
+                    up()
+                } else { 
+                    /* down swipe */
+                    down()
+                }
+            }
         },
 
         handleTouchMove(event) {
-            if ( ! this.xDown || ! this.yDown ) {
-                return;
-            }
+            this.touchEvent = event
+            this.touchMacro(event, () => {
 
-            let xUp = event.touches[0].clientX;                                    
-            let yUp = event.touches[0].clientY;
+            }, () => {
+                this.moveLeft = false
+                this.moveRight = true
+            }, () => {
 
-            let xDiff = this.xDown - xUp;
-            let yDiff = this.yDown - yUp;
-                                                                                
-            if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
-                if ( xDiff > 0 ) {
-                    /* right swipe */
-                    // No Cancer
-                    this.onClick('no-cancer')
-                } else {
-                    /* left swipe */
-                    // Yes Cancer
-                    this.onClick('yes-cancer')
-                }                       
-            } else {
-                if ( yDiff > 0 ) {
-                    /* down swipe */ 
-                    // Commenting
-                    this.commenting = true
-                } else { 
-                    /* up swipe */
-                    // Maybe Cancer?
-                    // this.onClick('maybe-cancer')
-                }                                                                 
-            }
+            }, () => {
+                this.moveLeft = true
+                this.moveRight = false
+            })
+        },
+
+        handleTouchEnd(event) {
+            this.touchMacro(this.touchEvent, () => {
+                this.commenting = true
+            }, () => {
+                this.onClick('yes-cancer')
+            }, () => {
+                // this.onClick('maybe-cancer')
+            }, () => {
+                this.onClick('no-cancer')
+            })
 
             /* reset values */
-            this.xDown = null;
-            this.yDown = null;                                             
+            this.moveLeft = false
+            this.moveRight = false
+            this.xDown = null
+            this.yDown = null
         }
     }
 }
@@ -162,9 +192,46 @@ export default {
 
 <style lang='scss' scoped>
 .app {
+    /* To prevent scrolling */
     height: 100%;
     overflow: hidden;
+
+    display: flex;
 }
+
+$grade-bar-width: 1rem;
+$grade-bar-speed: 200ms;
+$yes-cancer-color: #5A46B9;
+$no-cancer-color: #ff6184;
+.grade-bar {
+    position: fixed;
+    bottom: 0;
+    height: calc(100vh - $navbar-height - $block-margin); /* top of app to bottom of screen */
+    width: $grade-bar-width;
+    z-index: -1;
+
+    &.yes {
+        right: -$grade-bar-width;
+        background-color: $yes-cancer-color;
+        border-top-left-radius: $grade-bar-width;
+        transition: right $grade-bar-speed;
+
+        &.shown {
+            right: 0;
+        }
+    }
+    &.no {
+        left: -$grade-bar-width;
+        background-color: $no-cancer-color;
+        border-top-right-radius: $grade-bar-width;
+        transition: left $grade-bar-speed;
+
+        &.shown {
+            left: 0;
+        }  
+    }
+}
+
 .container {
     width: fit-content;
 }
@@ -186,6 +253,20 @@ export default {
 }
 .buttons {
     justify-content: center;
+}
+.button {
+    &.no {
+        background-color: lighten($no-cancer-color, 20%);
+        &.shown {
+            background-color: $no-cancer-color;
+        }
+    }
+    &.yes {
+        background-color: lighten($yes-cancer-color, 30%);
+        &.shown {
+            background-color: $yes-cancer-color;
+        }
+    }
 }
 img {
     object-fit: contain;

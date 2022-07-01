@@ -21,7 +21,7 @@ This is for adding images and users, each type in seperate tabs.
 
 ## <a name='pages-pathapp'></a>Pathapp
 
-This is for grading hot-or-nots on images.
+This is for grading hot-or-nots on images. 
 
 ## Home
 
@@ -43,4 +43,4 @@ For uploading images. Click the `Choose Files` button to open a pop-up window to
 
 ## <a name='usage-pathapp'></a>Pathapp
 
-For grading hot-or-nots. At the top of the page is the image to grade. Under the image is a text field for the pathologist to optionally leave a comment on that grading. Under the comment field is three buttons to grade the image as simply cancer, not cancer, or possibly cancer (labeled "Yes Cancer", "No Cancer", and "Maybe Cancer" respectfully). The grading will go through to the api and be recorded upon grading the image (pressing a button) and a new image will be selected and displayed to repeat the process again.
+For grading hot-or-nots. At the top of the page is the image to grade. Under the image is a text field for the pathologist to optionally leave a comment on that grading. Under the comment field is a button for the comment box and three buttons to grade the image as simply cancer, not cancer, or possibly cancer (labeled "Yes Cancer", "No Cancer", and "Maybe Cancer" respectfully). You can also swipe right-to-left (No Cancer) or left-to-right (Yes Cancer) to grade an image (swiping bottom-to-top will bring up the comment box) The grading will go through to the api and be recorded upon grading the image (pressing a button) and a new image will be selected and displayed to repeat the process again.

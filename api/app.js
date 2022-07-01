@@ -233,14 +233,14 @@ app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
 
 app.post('/users', isLoggedIn, isValid, (req, res) => {
     console.log("Post /users");
-
+    console.log(req.body)
     // Insert new user
     query = 'INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES '
     query += `("${req.body.fullname}", "${req.body.email}", "${req.body.password}", 
-        ${req.body.permissions.enabled === 1 ? 1 : 0}, 
-        ${req.body.permissions.pathologist === 1 ? 1 : 0}, 
-        ${req.body.permissions.uploader === 1 ? 1 : 0}, 
-        ${req.body.permissions.admin === 1 ? 1 : 0});`
+        ${req.body.permissions.enabled ? 1 : 0}, 
+        ${req.body.permissions.pathologist ? 1 : 0}, 
+        ${req.body.permissions.uploader ? 1 : 0}, 
+        ${req.body.permissions.admin ? 1 : 0});`
 
     pool.query(query, (err, rows, fields) => {
         if (err) {
