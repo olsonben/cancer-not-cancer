@@ -102,7 +102,7 @@ export default {
 
     methods: {
         // Submit new user (activated on clicking Submit button in Users tab)
-        submitUser() {
+        async submitUser() {
             this.user.id = this.submittedUsers.length
             this.submittedUsers.push(structuredClone(this.user))
 
@@ -113,23 +113,23 @@ export default {
                 }
             }
             
-            axios.post(env.url.api + '/users', axiosData, axiosConfig)
+            try {
+                const response = await axios.post(env.url.api + '/users', axiosData, axiosConfig)
+                
                 // This is all for notifications of successful uploads
-                .then((res) => {
-                    this.submittedUsers[res.data.id].submittionSuccess = true
-                    setTimeout(() => { this.submittedUsers[res.data.id].submittionSuccess = -1 }, this.notificationTime)
-                })
+                this.submittedUsers[response.data.id].submittionSuccess = true
+                setTimeout(() => { this.submittedUsers[response.data.id].submittionSuccess = -1 }, this.notificationTime)
 
-                .catch((error) => {
-                    // Reroute if you aren't logged in
-                    if ([401, 403].includes(error.response.status)) { window.location.replace(`${env.url.client}/login`) }
-                    else { console.error(error) }
+            } catch (error) {
+                // Reroute if you aren't logged in
+                if ([401, 403].includes(error.response.status)) { window.location.replace(`${env.url.client}/login`) }
+                else { console.error(error) }
 
-                    this.submittedUsers[error.response.data.user.id].submittionSuccess = false
-                    this.submittedUsers[error.response.data.user.id].message = error.response.data.message
+                this.submittedUsers[error.response.data.user.id].submittionSuccess = false
+                this.submittedUsers[error.response.data.user.id].message = error.response.data.message
 
-                    setTimeout(() => { this.submittedUsers[error.response.data.user.id].submittionSuccess = -1 }, this.notificationTime)
-                })
+                setTimeout(() => { this.submittedUsers[error.response.data.user.id].submittionSuccess = -1 }, this.notificationTime)
+            }
         }
     }
 }

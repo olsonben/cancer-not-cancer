@@ -1,7 +1,7 @@
 <template>
     <div>
         <!--UPLOAD-->
-        <section class='section' v-if="isInitial || isSaving || isLoaded">
+        <section class='section'>
             <h1 class='title'>Upload images</h1>
 
             <form enctype="multipart/form-data" @submit.prevent="saveImages()" novalidate>
@@ -37,19 +37,17 @@
                 </div>
             </form>
         </section>
-        <!--SUCCESS-->
-        <section class='section' v-if="isSuccess">
-            <h1 class='title'>Uploaded {{ uploadedFiles }} file(s) successfully.</h1>
-            <p>
-                <a href="javascript:void(0)" @click="reset()">Upload again</a>
-            </p>
-        </section>
-        <!--FAILED-->
-        <section class='title' v-if="isFailed">
-            <h2>Upload failed.</h2>
-            <p><a href="javascript:void(0)" @click="reset()">Try again</a></p>
-            <pre>{{ uploadError }}</pre>
-        </section>
+        <div v-for='file in submittedFiles'>
+            <div v-if="file.submittionSuccess != null && file.submittionSuccess === true" class='notification is-success is-light'>
+                File {{ file.name }} is successfully submitted.
+            </div>
+            <div v-else-if="file.submittionSuccess != null && file.submittionSuccess === false" class='notification is-danger is-light'>
+                File {{ file.name }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
+            </div>
+            <div v-else-if="file.submittionSuccess != -1" class='notification is-warning is-light'>
+                File {{ file.name }} is submitted, awaiting response.
+            </div>
+        </div>
     </div>
 </template>
 
@@ -70,7 +68,10 @@ export default {
             uploadedFiles: 0,
             uploadError: null,
             currentStatus: null,
-            fileCount: 0
+            fileCount: 0,
+
+            submittedFiles: [],
+            notificationTime: "5000"
         }
     },
 
@@ -121,17 +122,25 @@ export default {
         async saveImages() {
             this.currentStatus = STATUS_SAVING
 
+            const offset = this.submittedFiles.length
+
             const data = new FormData()
             data.append('files', this.files)            // Add the files array object
-            this.files.forEach(file => {
+            this.files.forEach((file, index) => {
                 data.append('files', file, file.name)   // put each file into the files array in the form
+
+                file.submittionSuccess = null
+                this.submittedFiles.push(file)
             })
             
             try {
                 const response = await axios.post(env.url.api + '/images', data)
-
-                console.log(response.data)
-                this.uploadedFiles = response.data.uploaded
+                
+                for (const id in response.data) {
+                    this.submittedFiles[Number(id) + offset].submittionSuccess = true
+                    setTimeout(() => { this.submittedFiles[Number(id) + offset].submittionSuccess = -1 }, this.notificationTime)
+                }
+                console.log(response)
                 this.currentStatus = STATUS_SUCCESS
 
             } catch (error) {
@@ -139,11 +148,15 @@ export default {
                     window.location.replace(`${env.url.client}/login`)
 
                 } else {
-                    this.uploadError = error.response
-                    this.currentStatus = STATUS_FAILED
-                }
+                    for (const id in error.response.data) {
+                        this.submittedFiles[Number(id) + offset].submittionSuccess = false
+                        this.submittedFiles[Number(id) + offset].message = error.response.data[id].message
 
-                console.log(error.message)
+                        setTimeout(() => { this.submittedFiles[Number(id) + offset].submittionSuccess = -1 }, this.notificationTime)
+                    }
+                }
+            } finally {
+                this.reset()
             }
         }
     }

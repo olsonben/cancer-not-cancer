@@ -264,32 +264,35 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
 
     // Check for proper content-type: multer only checks requests with multipart/form-data
     if (!req.headers['content-type'].includes('multipart/form-data')) {
-        req.sendStatus(415).send('Content-Type must be multipart/form-data')
+        res.sendStatus(415).send('Content-Type must be multipart/form-data')
     }
     
     // Insert new images
-    let uploaded = 0
     let count = 0
-    for (let file of req.files) {
-        query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${file.path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.database.id});` // insert image
+    let failFlag = false
+    for (let file in req.files) {
+        query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.files[file].path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.database.id});` // insert image
 
         pool.query(query, (err, rows, fields) => {
             count++
             if (err) {
                 // No duplicate images
                 if (err.code === 'ER_DUP_ENTRY') {
-                    res.status(409).send("Path already exists in database.")
+                    req.files[file].message = "Path already exists in database."
+                    failFlag = true
                 } else {
                     throw err
                 }
+            } else {
+                console.log(`Successful image insert query: ${req.files[file].path}`)
             }
-            console.log(`Successful image insert query: ${file.path}`)
-            uploaded++
+
             if (count === req.files.length) {
-                res.send({
-                    message: 'OK',
-                    uploaded: uploaded
-                })
+                try {
+                    res.status(failFlag ? 409 : 200).send(req.files)
+                } catch (err) {
+                    if (err.code !== 'ERR_HTTP_HEADERS_SENT') throw err
+                }
             }
         })
     }
