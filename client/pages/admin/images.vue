@@ -32,22 +32,22 @@
                         <input class='level-item button is-primary'type="submit" value="Submit" />
                     </div>
                     <div class='level-right'>
-                        <button class='level-item button is-light' @click='reset()'>Clear Choices</button>
+                        <button class='level-item button is-light' @click='reset'>Clear Choices</button>
                     </div>
                 </div>
             </form>
         </section>
-        <div v-for='file in submittedFiles'>
-            <div v-if="file.submittionSuccess != null && file.submittionSuccess === true" class='notification is-success is-light'>
-                File {{ file.name }} is successfully submitted.
-            </div>
-            <div v-else-if="file.submittionSuccess != null && file.submittionSuccess === false" class='notification is-danger is-light'>
-                File {{ file.name }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
-            </div>
-            <div v-else-if="file.submittionSuccess != -1" class='notification is-warning is-light'>
+        <template v-for='file in submittedFiles'>
+            <div v-if="file.submittionSuccess === null" class='notification is-warning is-light'>
                 File {{ file.name }} is submitted, awaiting response.
             </div>
-        </div>
+            <div v-else-if="file.submittionSuccess === true" class='notification is-success is-light'>
+                File {{ file.name }} is successfully submitted.
+            </div>
+            <div v-else-if="file.submittionSuccess === false" class='notification is-danger is-light'>
+                File {{ file.name }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
+            </div>
+        </template>
     </div>
 </template>
 
@@ -62,11 +62,7 @@ export default {
     data() {
         return {
             files: [],
-            responseData: '',
-            formSubmitted: false,
 
-            uploadedFiles: 0,
-            uploadError: null,
             currentStatus: null,
             fileCount: 0,
 
@@ -101,15 +97,11 @@ export default {
         reset() {
             // reset form to initial state
             this.currentStatus = STATUS_INITIAL
-            this.uploadedFiles = 0
-            this.uploadError = null
             this.files = []
             this.fileCount = 0
         },
 
         newImage(event) {
-            this.formSubmitted=false
-            
             // Fill this.files with the files added at ref=fileInput
             for (let i = 0; i < event.target.files.length; i++) {
                 this.files.push(event.target.files[i])
@@ -121,6 +113,10 @@ export default {
 
         async saveImages() {
             this.currentStatus = STATUS_SAVING
+            if (this.files.length === 0) {
+                this.reset()
+                return
+            }
 
             const offset = this.submittedFiles.length
 
@@ -129,8 +125,12 @@ export default {
             this.files.forEach((file, index) => {
                 data.append('files', file, file.name)   // put each file into the files array in the form
 
-                file.submittionSuccess = null
-                this.submittedFiles.push(file)
+                const i = {
+                    submittionSuccess: null,
+                    message: null,
+                    name: file.name
+                }
+                this.submittedFiles.push(i)
             })
             
             try {
@@ -138,7 +138,9 @@ export default {
                 
                 for (const id in response.data) {
                     this.submittedFiles[Number(id) + offset].submittionSuccess = true
-                    setTimeout(() => { this.submittedFiles[Number(id) + offset].submittionSuccess = -1 }, this.notificationTime)
+                    setTimeout(() => {
+                        this.submittedFiles[Number(id) + offset].submittionSuccess = -1
+                    }, this.notificationTime)
                 }
                 console.log(response)
                 this.currentStatus = STATUS_SUCCESS
@@ -148,11 +150,18 @@ export default {
                     window.location.replace(`${env.url.client}/login`)
 
                 } else {
+                    console.log(offset)
                     for (const id in error.response.data) {
-                        this.submittedFiles[Number(id) + offset].submittionSuccess = false
-                        this.submittedFiles[Number(id) + offset].message = error.response.data[id].message
+                        if (error.response.data[id].message !== undefined) {
+                            this.submittedFiles[Number(id) + offset].submittionSuccess = false
+                            this.submittedFiles[Number(id) + offset].message = error.response.data[id].message
+                        } else {
+                            this.submittedFiles[Number(id) + offset].submittionSuccess = true
+                        }
 
-                        setTimeout(() => { this.submittedFiles[Number(id) + offset].submittionSuccess = -1 }, this.notificationTime)
+                        setTimeout(() => {
+                            this.submittedFiles[Number(id) + offset].submittionSuccess = -1
+                        }, this.notificationTime)
                     }
                 }
             } finally {
@@ -180,6 +189,8 @@ export default {
     width: 100%;
     height: 200px;
     position: absolute;
+    left: 0;
+    top: 0;
     cursor: pointer;
 }
 

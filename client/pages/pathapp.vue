@@ -1,26 +1,28 @@
 <template>
-    <div class='app'>
-        <span class='grade-bar no' :class="{ 'shown': moveLeft }"></span>
-        <div class='container app'>
-            <img class='block' :src='this.image.url' :alt='image.url' />
+    <section>
+        <div class='app'>
+            <span class='grade-bar no' :class="{ 'shown': moveLeft }"></span>
+            <div class='container app'>
+                <img class='block' :src='this.image.url' :alt='image.url' />
 
-            <div class='response-area'>
-                <button class='button icon-button' @click='commenting = !commenting'>
-                    <span class='icon'>
-                        <img src="~assets/icons/pencil.svg" alt="pencil" width="32" height="32">
-                    </span>
-                </button>
-                <textarea v-if='commenting' class='textarea block' placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
+                <div class='response-area'>
+                    <button class='button icon-button' @click='commenting = !commenting'>
+                        <span class='icon'>
+                            <img src="~assets/icons/pencil.svg" alt="pencil" width="32" height="32">
+                        </span>
+                    </button>
+                    <textarea v-if='commenting' class='textarea block' placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
 
-                <div class='container block buttons'>
-                    <button class='button no' :class="{ 'shown': moveLeft }" @click="onClick('no-cancer')">Not Cancer</button>
-                    <button class='button maybe' @click="onClick('maybe-cancer')">Maybe Cancer</button>
-                    <button class='button yes' :class="{ 'shown': moveRight }" @click="onClick('yes-cancer')">Yes, Cancer</button>
+                    <div class='container block buttons'>
+                        <button class='button no' :class="{ 'shown': moveLeft }" @click="onClick('no-cancer')">Not Cancer</button>
+                        <button class='button maybe' @click="onClick('maybe-cancer')">Maybe Cancer</button>
+                        <button class='button yes' :class="{ 'shown': moveRight }" @click="onClick('yes-cancer')">Yes, Cancer</button>
+                    </div>
                 </div>
             </div>
+            <span class='grade-bar yes' :class="{ 'shown': moveRight }"></span>
         </div>
-        <span class='grade-bar yes' :class="{ 'shown': moveRight }"></span>
-    </div>
+    </section>
 </template>
 
 <script>
@@ -38,14 +40,17 @@ export default {
 
             xDown: null,
             yDown: null,
-            moveLeft: false,
+            xMove: null,
+            yMove: null,
+            touchEvent: null,
             moveRight: false,
-            touchEvent: null
+            moveLeft: false
         }
     },
 
     mounted() {
         this.nextImage()
+
         document.addEventListener('touchstart', this.handleTouchStart, false)
         document.addEventListener('touchmove', this.handleTouchMove, false)
         document.addEventListener('touchend', this.handleTouchEnd, false)
@@ -124,38 +129,13 @@ export default {
             this.yDown = firstTouch.clientY
         },
 
-        touchMacro(event, up=() => {}, right=() => {}, down=() => {}, left=() => {}) {
-            if ( !this.xDown || !this.yDown ) {
-                return
-            }
-
-            let xUp = event.touches[0].clientX
-            let yUp = event.touches[0].clientY
-
-            let xDiff = this.xDown - xUp
-            let yDiff = this.yDown - yUp
-
-            if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
-                if ( xDiff > 0 ) {
-                    /* left swipe */
-                    left()
-                } else {
-                    /* right swipe */
-                    right()
-                }
-            } else {
-                if ( yDiff > 0 ) {
-                    /* up swipe */ 
-                    up()
-                } else { 
-                    /* down swipe */
-                    down()
-                }
-            }
-        },
-
         handleTouchMove(event) {
+            console.log("move")
             this.touchEvent = event
+            const firstTouch = this.getTouches(event)[0]
+            this.xMove = firstTouch.clientX
+            this.yMove = firstTouch.clientY
+
             this.touchMacro(event, () => {
 
             }, () => {
@@ -170,7 +150,8 @@ export default {
         },
 
         handleTouchEnd(event) {
-            this.touchMacro(this.touchEvent, () => {
+            console.log("end")
+            this.touchMacro(this.touchEvent, 10, () => {
                 this.commenting = true
             }, () => {
                 this.onClick('yes-cancer')
@@ -185,6 +166,38 @@ export default {
             this.moveRight = false
             this.xDown = null
             this.yDown = null
+            this.xMove = null
+            this.yMove = null
+        },
+
+        touchMacro(event, margin=0, up=() => {}, right=() => {}, down=() => {}, left=() => {}) {
+            if ( !this.xDown || !this.yDown || event === null) {
+                return
+            }
+
+            let xUp = event.touches[0].clientX
+            let yUp = event.touches[0].clientY
+
+            let xDiff = this.xDown - xUp
+            let yDiff = this.yDown - yUp
+
+            if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
+                if ( xDiff > margin ) {
+                    /* left swipe */
+                    left()
+                } else if ( xDiff <= -margin ) {
+                    /* right swipe */
+                    right()
+                }
+            } else {
+                if ( yDiff > margin ) {
+                    /* up swipe */ 
+                    up()
+                } else if ( yDiff <= -margin ) { 
+                    /* down swipe */
+                    down()
+                }
+            }
         }
     }
 }

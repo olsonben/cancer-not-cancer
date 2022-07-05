@@ -147,13 +147,13 @@ Keys generally follow the pattern of `-` for "not"-ness while the absolute value
 |:------:|:----------:|
 | -1     | Not Cancer |
 | 0      | Unsure     |
-| 1      | Cancer     |
+| 1      | Yes Cancer |
 
 # Keys for `permissions`
 
 | Permission     |  Allows           |
 |:--------------:|:-----------------:|
-| is_enabled     | All actions       |
+| is_enabled     | Actions           |
 | is_uploader    | Uploading images  |
 | is_pathologist | Scoring hotornots |
 | is_admin       | Adding users      |
