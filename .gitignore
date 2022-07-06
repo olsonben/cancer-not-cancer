@@ -6,3 +6,5 @@ log/*
 client/.nuxt/*
 client/dist/*
 client/assets/css/main.css
+
+api/images/*
