@@ -38,13 +38,13 @@
             </form>
         </section>
         <template v-for='file in submittedFiles'>
-            <div v-if="file.submittionSuccess === null" class='notification is-warning is-light'>
+            <div v-if="file.submissionSuccess === null" class='notification is-warning is-light'>
                 File {{ file.name }} is submitted, awaiting response.
             </div>
-            <div v-else-if="file.submittionSuccess === true" class='notification is-success is-light'>
+            <div v-else-if="file.submissionSuccess === true" class='notification is-success is-light'>
                 File {{ file.name }} is successfully submitted.
             </div>
-            <div v-else-if="file.submittionSuccess === false" class='notification is-danger is-light'>
+            <div v-else-if="file.submissionSuccess === false" class='notification is-danger is-light'>
                 File {{ file.name }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
             </div>
         </template>
@@ -126,7 +126,7 @@ export default {
                 data.append('files', file, file.name)   // put each file into the files array in the form
 
                 const i = {
-                    submittionSuccess: null,
+                    submissionSuccess: null,
                     message: null,
                     name: file.name
                 }
@@ -137,9 +137,9 @@ export default {
                 const response = await axios.post(env.url.api + '/images', data)
                 
                 for (const id in response.data) {
-                    this.submittedFiles[Number(id) + offset].submittionSuccess = true
+                    this.submittedFiles[Number(id) + offset].submissionSuccess = true
                     setTimeout(() => {
-                        this.submittedFiles[Number(id) + offset].submittionSuccess = -1
+                        this.submittedFiles[Number(id) + offset].submissionSuccess = -1
                     }, this.notificationTime)
                 }
                 console.log(response)
@@ -153,14 +153,14 @@ export default {
                     console.log(offset)
                     for (const id in error.response.data) {
                         if (error.response.data[id].message !== undefined) {
-                            this.submittedFiles[Number(id) + offset].submittionSuccess = false
+                            this.submittedFiles[Number(id) + offset].submissionSuccess = false
                             this.submittedFiles[Number(id) + offset].message = error.response.data[id].message
                         } else {
-                            this.submittedFiles[Number(id) + offset].submittionSuccess = true
+                            this.submittedFiles[Number(id) + offset].submissionSuccess = true
                         }
 
                         setTimeout(() => {
-                            this.submittedFiles[Number(id) + offset].submittionSuccess = -1
+                            this.submittedFiles[Number(id) + offset].submissionSuccess = -1
                         }, this.notificationTime)
                     }
                 }

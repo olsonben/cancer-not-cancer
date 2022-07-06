@@ -1,7 +1,10 @@
 <template>
     <section>
+        <style>
+
+        </style>
         <div class='app'>
-            <span class='grade-bar no' :class="{ 'shown': moveLeft }"></span>
+            <span class='grade-bar no' :class="{ 'shown': moveLeft }" :style='cssVars'></span>
             <div class='container app'>
                 <img class='block' :src='this.image.url' :alt='image.url' />
 
@@ -20,7 +23,7 @@
                     </div>
                 </div>
             </div>
-            <span class='grade-bar yes' :class="{ 'shown': moveRight }"></span>
+            <span class='grade-bar yes' :class="{ 'shown': moveRight }" :style='cssVars'></span>
         </div>
     </section>
 </template>
@@ -51,9 +54,19 @@ export default {
     mounted() {
         this.nextImage()
 
+        // Required for touches
         document.addEventListener('touchstart', this.handleTouchStart, false)
         document.addEventListener('touchmove', this.handleTouchMove, false)
         document.addEventListener('touchend', this.handleTouchEnd, false)
+    },
+
+    computed: {
+        // give the attribute `:style='cssVars'` to anything that should have access to these variables
+        cssVars() {
+            return {
+                '--x-diff': (this.xMove !== null ? this.xMove - this.xDown : 0) + 'px'
+            }
+        }
     },
 
     methods: {
@@ -130,13 +143,13 @@ export default {
         },
 
         handleTouchMove(event) {
-            console.log("move")
             this.touchEvent = event
             const firstTouch = this.getTouches(event)[0]
+
             this.xMove = firstTouch.clientX
             this.yMove = firstTouch.clientY
 
-            this.touchMacro(event, () => {
+            this.touchMacro(event, 0, () => {
 
             }, () => {
                 this.moveLeft = false
@@ -150,7 +163,6 @@ export default {
         },
 
         handleTouchEnd(event) {
-            console.log("end")
             this.touchMacro(this.touchEvent, 10, () => {
                 this.commenting = true
             }, () => {
@@ -168,34 +180,44 @@ export default {
             this.yDown = null
             this.xMove = null
             this.yMove = null
+            this.touchEvent = null
         },
 
-        touchMacro(event, margin=0, up=() => {}, right=() => {}, down=() => {}, left=() => {}) {
+        touchMacro(event, margin = 0, top = undefined, right = undefined, bottom = undefined, left = undefined) {
             if ( !this.xDown || !this.yDown || event === null) {
                 return
             }
 
-            let xUp = event.touches[0].clientX
-            let yUp = event.touches[0].clientY
+            const touches = this.getTouches(event)
 
-            let xDiff = this.xDown - xUp
-            let yDiff = this.yDown - yUp
+            const xDiff = this.xDown - touches[0].clientX
+            const yDiff = this.yDown - touches[0].clientY
 
-            if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
+            // Interesting callbacks are not undefined and they are not empty functions
+            const interesting = {
+                top: top !== undefined && ''+top !== ''+(() => {}),
+                right: right !== undefined && ''+right !== ''+(() => {}),
+                bottom: bottom !== undefined && ''+bottom !== ''+(() => {}),
+                left: left !== undefined && ''+left !== ''+(() => {})
+            }
+            
+            // Basically, whichever axis is bigger, unless there is nothing to do on that axis
+            if (Math.abs(xDiff) > Math.abs(yDiff) && (interesting.right || interesting.left) || 
+                    !(interesting.top || interesting.bottom)) {                                      /*most significant*/
                 if ( xDiff > margin ) {
-                    /* left swipe */
+                    /* right-to-left swipe */
                     left()
                 } else if ( xDiff <= -margin ) {
-                    /* right swipe */
+                    /* left-to-right swipe */
                     right()
                 }
             } else {
                 if ( yDiff > margin ) {
-                    /* up swipe */ 
-                    up()
+                    /* bottom-to-top swipe */ 
+                    top()
                 } else if ( yDiff <= -margin ) { 
-                    /* down swipe */
-                    down()
+                    /* top-to-bottom swipe */
+                    bottom()
                 }
             }
         }
@@ -211,7 +233,6 @@ export default {
 
     display: flex;
 }
-
 $grade-bar-width: 1rem;
 $grade-bar-speed: 200ms;
 $yes-cancer-color: #5A46B9;
@@ -220,28 +241,21 @@ $no-cancer-color: #ff6184;
     position: fixed;
     bottom: 0;
     height: calc(100vh - $navbar-height - $block-margin); /* top of app to bottom of screen */
-    width: $grade-bar-width;
     z-index: -1;
 
-    &.yes {
-        right: -$grade-bar-width;
-        background-color: $yes-cancer-color;
-        border-top-left-radius: $grade-bar-width;
-        transition: right $grade-bar-speed;
-
-        &.shown {
-            right: 0;
-        }
-    }
     &.no {
-        left: -$grade-bar-width;
+        left: 0;
+        width: calc(-1 * var(--x-diff, 0));
         background-color: $no-cancer-color;
         border-top-right-radius: $grade-bar-width;
         transition: left $grade-bar-speed;
-
-        &.shown {
-            left: 0;
-        }  
+    }
+    &.yes {
+        right: 0;
+        width: var(--x-diff, 0);
+        background-color: $yes-cancer-color;
+        border-top-left-radius: $grade-bar-width;
+        transition: right $grade-bar-speed;
     }
 }
 
