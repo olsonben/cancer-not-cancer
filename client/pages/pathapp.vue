@@ -1,31 +1,26 @@
 <template>
-    <section>
-        <style>
-
-        </style>
-        <div class='app'>
-            <span class='grade-bar no' :class="{ 'shown': moveLeft }" :style='cssVars'></span>
-            <div class='container app'>
-                <img class='block' :src='this.image.url' :alt='image.url' />
-
-                <div class='response-area'>
-                    <button class='button icon-button' @click='commenting = !commenting'>
-                        <span class='icon'>
-                            <img src="~assets/icons/pencil.svg" alt="pencil" width="32" height="32">
-                        </span>
-                    </button>
-                    <textarea v-if='commenting' class='textarea block' placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
-
-                    <div class='container block buttons'>
-                        <button class='button no' :class="{ 'shown': moveLeft }" @click="onClick('no-cancer')">Not Cancer</button>
-                        <button class='button maybe' @click="onClick('maybe-cancer')">Maybe Cancer</button>
-                        <button class='button yes' :class="{ 'shown': moveRight }" @click="onClick('yes-cancer')">Yes, Cancer</button>
-                    </div>
-                </div>
-            </div>
-            <span class='grade-bar yes' :class="{ 'shown': moveRight }" :style='cssVars'></span>
+    <div class='app'>
+        <span class='grade-bar no' :class="{ 'shown': moveLeft }" :style='cssVars'></span>
+        <div class='prompt wrapper'>
+            <div class='prompt focus'></div>
+            <img class='prompt img' :src='this.image.url' :alt='image.url' />
         </div>
-    </section>
+        <div class='response-area'>
+            <button class='button icon-button' @click='commenting = !commenting'>
+                <span class='icon'>
+                    <img src="~assets/icons/pencil.svg" alt="pencil" width="32" height="32">
+                </span>
+            </button>
+            <textarea v-if='commenting' class='textarea block' placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
+
+            <div class='block buttons'>
+                <button class='button no' :class="{ 'shown': moveLeft }" @click="onClick('no-cancer')">Not Cancer</button>
+                <button class='button maybe' @click="onClick('maybe-cancer')">Maybe Cancer</button>
+                <button class='button yes' :class="{ 'shown': moveRight }" @click="onClick('yes-cancer')">Yes, Cancer</button>
+            </div>
+        </div>
+        <span class='grade-bar yes' :class="{ 'shown': moveRight }" :style='cssVars'></span>
+    </div>
 </template>
 
 <script>
@@ -259,9 +254,32 @@ $no-cancer-color: #ff6184;
     }
 }
 
-.container {
-    width: fit-content;
+.prompt {
+    &.wrapper {
+        margin: auto;
+        position: relative;
+    }
+    &.img {
+        object-fit: contain;
+        width: 50vw;
+        min-width: 100%;
+        max-height: 50vh;
+
+    }
+    &.focus {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+
+        width: 128px;
+        height: 128px;
+        margin: auto;
+        border: 1px solid white;
+    }
 }
+
 .response-area {
     position: fixed;
     bottom: $button-margin;
@@ -279,6 +297,7 @@ $no-cancer-color: #ff6184;
     margin: 0 auto $button-margin auto;
 }
 .buttons {
+    width: fit-content;
     justify-content: center;
 }
 .button {
@@ -295,22 +314,20 @@ $no-cancer-color: #ff6184;
         }
     }
 }
-img {
-    object-fit: contain;
-    width: 50vw;
-    min-width: 100%;
-    max-height: 50vh;
-}
-@media screen and (max-width: 1024px) {
-    img {
+@media screen and (min-width: 479px) and (max-width: 1024px) {
+    .prompt.img {
         width: 100vw;
         min-width: 100%;
         max-height: 50vh;
     }
-    .container:not(.buttons) {
-        margin-left: $block-margin;
-        margin-right: $block-margin;
+}
+@media screen and (max-width: 479px) {
+    .prompt.img {
+        object-fit: contain;
+        width: calc(100vw - 2 * $block-margin);
+
     }
+    
 }
 @media screen and (max-width: 381px) {
     .response-area {
