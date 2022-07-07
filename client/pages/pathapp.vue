@@ -6,7 +6,7 @@
 
         <!-- Image to grade -->
         <div class='prompt wrapper'>
-            <!-- <div class='prompt focus'></div> -->
+            <div class='prompt focus'></div>
             <img class='prompt img' :src='this.image.url' :alt='image.url' />
         </div>
 
@@ -287,9 +287,9 @@ $no-cancer-color: #ff6184;
     &.wrapper {
         margin: auto;
         /**
-         * Important for .focus
-         * `position: absolute` works off first parent with `position: relative`
-         */
+        * Important for .focus
+        * `position: absolute` works off first parent with `position: relative`
+        */
         position: relative;
     }
     /* Image sizing for large screens */
@@ -298,20 +298,20 @@ $no-cancer-color: #ff6184;
         width: 50vw;
         min-width: 100%;
         max-height: 50vh;
+
     }
     /* Focus is a white box + centered in the image */
     &.focus {
-        $focus-border-width: 1px;
-        width: 128px + 2*$focus-border-width;
-        height: 128px + 2*$focus-border-width;
-        margin: auto;
-        border: $focus-border-width solid #00ff00;
-
         position: absolute;
         left: 0;
         right: 0;
         top: 0;
         bottom: 0;
+
+        width: 128px;
+        height: 128px;
+        margin: auto;
+        border: 1px solid white;
     }
 }
 /* stuck to the bottom of the screen */
