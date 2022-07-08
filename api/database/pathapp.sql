@@ -1,3 +1,5 @@
+-- TODO: Update this to match the current, altered form of the database
+
 -- phpMyAdmin SQL Dump
 -- version 5.0.4deb2ubuntu5
 -- https://www.phpmyadmin.net/

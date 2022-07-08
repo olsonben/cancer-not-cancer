@@ -11,7 +11,7 @@ const bodyParser = require('body-parser')       // JSON parsing is NOT default w
 const mysql = require('mysql')                  // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
 const multer = require('multer')                // Need to upload images (https://www.npmjs.com/package/multer)
 
-// These four all all for authentication
+// These four are all for authentication
 require('./auth')                               // This needs to be loaded for passport.authenticate
 const passport = require('passport')            // Authentication procedure (https://www.passportjs.org/)
 const session = require('express-session')      // Session gives us cookies (https://www.npmjs.com/package/express-session)
@@ -26,14 +26,10 @@ const port = env.port || 5000;
 const imageBaseURL = env.url.image
 const baseURL = env.url.base
 
-// This is vital to parsing the json requests
-app.use(bodyParser.json({           // to support JSON-encoded bodies
-    type: 'application/json'
-}));
 
-/**
+/*****************
  * MariaDB DATABASE
- */
+ *****************/
 const pool = mysql.createConnection({
     host: 'localhost',
     user: envLocal.db.user,
@@ -42,6 +38,15 @@ const pool = mysql.createConnection({
     multipleStatements: true
 }) 
 pool.connect()
+
+/******************
+ * REQUEST PARSING
+ ******************/
+
+// This is vital to parsing the json requests
+app.use(bodyParser.json({           // to support JSON-encoded bodies
+    type: 'application/json'
+}));
 
 /**
  * MULTER FILE UPLOADS
@@ -74,9 +79,9 @@ const upload = multer({
 
 app.use('/images', express.static('images'));   // This is REQUIRED for displaying images
 
-/**
+/*****************
  * USER AUTHENTICATION
- */
+ *****************/
 
 // This was done with this video: https://youtu.be/Q0a0594tOrc
 app.use(
@@ -180,9 +185,9 @@ function isValid(req, res, next) {
  * Express REQUESTS
  **********************************************/
 
-/**********************************************
+/*****************
  * GET
- **********************************************/
+ *****************/
 app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
     console.log("Get /nextImage"); // tracking location
     
@@ -209,9 +214,9 @@ app.get('/isLoggedIn', (req, res) => {
     }
 })
 
-/**********************************************
+/*****************
  * POST
- **********************************************/
+ *****************/
 
 app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
     console.log("post /hotornot")
@@ -264,9 +269,11 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
 
     // Check for proper content-type: multer only checks requests with multipart/form-data
     if (!req.headers['content-type'].includes('multipart/form-data')) {
-        res.sendStatus(415).send('Content-Type must be multipart/form-data')
+        res.status(415).send('Content-Type must be multipart/form-data.')
     }
-    
+    if (req.files.length === 0) {
+        res.status(200).send('No files uploaded.')
+    }
     // Insert new images
     let count = 0
     let failFlag = false
@@ -277,9 +284,9 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
             count++
             if (err) {
                 // No duplicate images
+                failFlag = true
                 if (err.code === 'ER_DUP_ENTRY') {
                     req.files[file].message = "Path already exists in database."
-                    failFlag = true
                 } else {
                     throw err
                 }
@@ -289,6 +296,7 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
 
             if (count === req.files.length) {
                 try {
+                    // Respond as an error if any of the files failed
                     res.status(failFlag ? 409 : 200).send(req.files)
                 } catch (err) {
                     if (err.code !== 'ERR_HTTP_HEADERS_SENT') throw err
@@ -302,7 +310,7 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
  * LISTEN
  **********************************************/
 
-// listen to app
+// Listen to the port
 app.listen(port, () => {
     console.log(`CNC running on port ${port}`);
 })

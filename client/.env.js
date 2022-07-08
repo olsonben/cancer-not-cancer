@@ -1,3 +1,9 @@
+/**
+ * These are globally accessible values
+ * Accessible with:
+ * import * as env from '/.env'
+ */
+
 const protocols = {
     https: 'https://',
     http: 'http://'
