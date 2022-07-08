@@ -109,7 +109,7 @@ app.get('/auth/success', (req, res) => {
     // Bounce back to origin
     const origin = req.session.origin
     delete req.session.origin
-    res.redirect(origin || '/') // NOTE: After setting up index page on frontend, send to '/'
+    res.redirect(origin || '/')
 })
 
 // Failed authorization
@@ -142,7 +142,7 @@ app.get('/auth/google/callback',
  * HELPER FUNCTIONS
  **********************************************/
 function isLoggedIn(req, res, next) {
-    // has user ? move on : unauthorized status
+    // Has user ? move on : unauthorized status
     if (req.user && req.user.allowed) {
         next()
     } else {
@@ -168,7 +168,7 @@ function isValid(req, res, next) {
             perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
         }
     } else if (req.route.methods.post) {
-        // checking enabled is redundant but safe
+        // Checking enabled is redundant but safe
         if (req.route.path === '/hotornot') {
             perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
         } else if (req.route.path === '/images') {
@@ -193,7 +193,6 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
     
     // Get random row
     // NOTE: this is not very efficient, but it works
-    // TODO: only consider rows with a rule - eg. least # of hotornot entries
     query = `SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;`
     
     pool.query(query, (err, rows, fields) => {
@@ -218,11 +217,11 @@ app.get('/isLoggedIn', (req, res) => {
  * POST
  *****************/
 
+// Insert the hotornots
 app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
     console.log("post /hotornot")
     // REMEMBER: the data in body is in JSON format
     
-    // Insert the hotornots
     query = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) 
     VALUES (${req.user.database.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});
     UPDATE images 
@@ -236,9 +235,9 @@ app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
     })
 })
 
+// Insert new user
 app.post('/users', isLoggedIn, isValid, (req, res) => {
     console.log("Post /users");
-    // Insert new user
     query = 'INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES '
     query += `("${req.body.fullname}", "${req.body.email}", "${req.body.password}", 
         ${req.body.permissions.enabled ? 1 : 0}, 
@@ -264,6 +263,7 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
     })
 })
 
+// Insert new images
 app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
     console.log("Post /images");
 
@@ -274,7 +274,7 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
     if (req.files.length === 0) {
         res.status(200).send('No files uploaded.')
     }
-    // Insert new images
+    
     let count = 0
     let failFlag = false
     for (let file in req.files) {

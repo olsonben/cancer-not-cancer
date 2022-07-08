@@ -76,14 +76,21 @@ export const actions = {
     },
 
     // Register a logout
-    // TODO: Move logging out with the API to here as an action
-    logout({ commit }) {
-        commit('isLoggedIn', false)
-        commit('permissions', {
-            admin: false,
-            uploader: false,
-            pathologist: false,
-            enabled: false  
-        })
+    async logout({ commit }) {
+        try {
+            const response = await axios.get(env.url.api + '/auth/logout')
+
+            commit('isLoggedIn', false)
+            commit('permissions', {
+                admin: false,
+                uploader: false,
+                pathologist: false,
+                enabled: false  
+            })
+
+        } catch (error) {
+            console.error(err)
+
+        }
     }
 }

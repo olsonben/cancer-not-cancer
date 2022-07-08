@@ -4,6 +4,8 @@
  * ```
  * require('./auth')
  * ```
+ * 
+ * https://youtu.be/Q0a0594tOrc
  */
 
 const env = require('./.env')

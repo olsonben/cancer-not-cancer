@@ -11,13 +11,7 @@ import * as env from '../.env.js'
 export default {
     // Automatically logout when coming to this page
     created() {
-        axios.get(env.url.api + '/auth/logout')
-            .then(res => {
-                this.$store.dispatch('user/logout')
-            })
-            .catch(err => {
-                console.error(err)
-            })
+        this.$store.dispatch('user/logout')
     }
 }
 </script>
