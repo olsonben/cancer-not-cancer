@@ -107,7 +107,11 @@ app.get('/auth/success', (req, res) => {
         res.status(403)
     }
     // Bounce back to origin
+<<<<<<< HEAD
     bounce(req, res)
+=======
+    bounc(req, res)
+>>>>>>> 26c8ed821799d8f6871a95383f3f34cc28e131bc
 })
 
 // Failed authorization
