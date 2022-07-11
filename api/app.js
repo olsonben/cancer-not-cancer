@@ -107,14 +107,16 @@ app.get('/auth/success', (req, res) => {
         res.status(403)
     }
     // Bounce back to origin
-    const origin = req.session.origin
-    delete req.session.origin
-    res.redirect(origin || '/')
+    bounc(req, res)
 })
 
 // Failed authorization
 app.get('/auth/failure', (req, res) => {
-    res.send("Something went wrong...")
+    if (['User not in database.', 'User not enabled.'].some(item => req.session.messages.includes(item))) {
+        bounce(req, res)
+    } else {
+        res.send("Something went wrong...")
+    }
 })
 
 // Log out the user
@@ -133,7 +135,7 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['email'] }))
 // You need to tell google where to go for successful and failed authorizations
 app.get('/auth/google/callback',
     passport.authenticate('google', {
-        failureRedirect: '/auth/failure',
+        failureRedirect: '/auth/failure', failureMessage: true,
         successRedirect: '/auth/success'
     })
 )
@@ -141,6 +143,13 @@ app.get('/auth/google/callback',
 /**********************************************
  * HELPER FUNCTIONS
  **********************************************/
+function bounce(req, res, route='/') {
+    // Bounce back to origin
+    const origin = req.session.origin
+    delete req.session.origin
+    res.redirect(origin || route)
+}
+
 function isLoggedIn(req, res, next) {
     // Has user ? move on : unauthorized status
     if (req.user && req.user.allowed) {

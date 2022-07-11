@@ -35,10 +35,10 @@ passport.use(new GoogleStrategy({
         pool.query(query, (err, rows, fields) => {
             if (err) console.log(err)
             // User must be registered and enabled to be allowed in
-            if (rows.length != 1 || !rows[0].is_enabled) {
-                profile.allowed = false // We have to return the profile for the success route to trigger; make a note that they are not allowed
-                // TODO: find if I can handle this through the failure route
-                return done(null, profile)
+            if (rows.length != 1) {
+                return done(null, false, { message: 'User not in database.' })
+            } else if (!rows[0].is_enabled) {
+                return done(null, false, { message: 'User not enabled.' })
             }
             
             // Load the profile with permissions
