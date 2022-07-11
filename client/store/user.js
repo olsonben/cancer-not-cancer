@@ -63,7 +63,7 @@ export const actions = {
             
             // Since `context` only references this module and submodules, the 'user/' identifier should not be used
             commit('isLoggedIn', true)
-            commit('permissions', response.data.database.permissions)
+            commit('permissions', response.data.permissions)
         } catch(error) {
             if (error.response.status === 401) {
                 dispatch('logout')

@@ -30,7 +30,7 @@ passport.use(new GoogleStrategy({
         passReqToCallback: true
     },
     (request, accessToken, refreshToken, profile, done) => {
-        let query = `SELECT * FROM users WHERE username = "${profile.email}";`
+        const query = `SELECT id, is_enabled FROM users WHERE username = "${profile.email}";`
         
         pool.query(query, (err, rows, fields) => {
             if (err) console.log(err)
@@ -41,34 +41,34 @@ passport.use(new GoogleStrategy({
                 return done(null, false, { message: 'User not enabled.' })
             }
             
-            // Load the profile with permissions
-            profile.allowed = true
-            profile.database = {
-                id: rows[0].id,
-                permissions: {
-                    enabled: rows[0].is_enabled,
-                    uploader: rows[0].is_uploader,
-                    pathologist: rows[0].is_pathologist,
-                    admin: rows[0].is_admin,
-                }
-            }
+            profile.id = rows[0].id     // Only store id number in session
             return done(null, profile)
         })
-
     }
 ));
 
 /**
  * Since Passport works as middleware, this is used to reduce information the user has access to/could possibly edit
- * TODO: shift user permissions handling here
  */
 
 // Things actually saved in the session: req.session.passport.user = {id: '..'}
 passport.serializeUser((user, done) => {
-    done(null, user)
+    done(null, user.id)
 })
 
 // User object attaches to req as req.user (doesn't leave the server)
-passport.deserializeUser((user, done) => {
-    done(null, user)
+passport.deserializeUser((id, done) => {
+    const query = `SELECT * FROM users WHERE id = "${id}";`
+    pool.query(query, (err, rows, fields) => {
+        // Store permissions to req.user
+        done(null, {
+            id: rows[0].id,
+            permissions: {
+                enabled: rows[0].is_enabled,
+                uploader: rows[0].is_uploader,
+                pathologist: rows[0].is_pathologist,
+                admin: rows[0].is_admin,
+            }
+        })
+    })
 })

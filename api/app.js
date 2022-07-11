@@ -107,11 +107,7 @@ app.get('/auth/success', (req, res) => {
         res.status(403)
     }
     // Bounce back to origin
-<<<<<<< HEAD
     bounce(req, res)
-=======
-    bounc(req, res)
->>>>>>> 26c8ed821799d8f6871a95383f3f34cc28e131bc
 })
 
 // Failed authorization
@@ -156,7 +152,7 @@ function bounce(req, res, route='/') {
 
 function isLoggedIn(req, res, next) {
     // Has user ? move on : unauthorized status
-    if (req.user && req.user.allowed) {
+    if (req.user) {
         next()
     } else {
         req.session.origin = req.headers.referer // Remember the original url to bounce back to
@@ -175,7 +171,7 @@ function getIP(req) {
 // Checking if a user is allowed to make a specific request
 function isValid(req, res, next) {
     // Each method and source has specific requirements to be valid
-    const perms = req.user.database.permissions
+    const perms = req.user.permissions
     if (req.route.methods.get) {
         if (req.route.path === '/nextImage') {
             perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
@@ -219,7 +215,7 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
 })
 
 app.get('/isLoggedIn', (req, res) => {
-    if (req.user && req.user.allowed) {
+    if (req.user) {
         res.send(req.user)
     } else {
         res.status(401).send('/auth')
@@ -236,7 +232,7 @@ app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
     // REMEMBER: the data in body is in JSON format
     
     query = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) 
-    VALUES (${req.user.database.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});
+    VALUES (${req.user.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});
     UPDATE images 
     SET times_graded = times_graded + 1 
     WHERE id = ${req.body.id};`
@@ -291,7 +287,7 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
     let count = 0
     let failFlag = false
     for (let file in req.files) {
-        query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.files[file].path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.database.id});` // insert image
+        query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.files[file].path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
 
         pool.query(query, (err, rows, fields) => {
             count++
