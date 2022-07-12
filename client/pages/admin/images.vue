@@ -11,6 +11,7 @@
                     <input type="file"
                         multiple 
                         accept="image/*" 
+                        webkitdirectory
                         name="images" 
                         :disabled="isSaving" 
                         @change="newImage"
@@ -113,11 +114,14 @@ export default {
         // Fill this.files with the files added at ref=fileInput
         newImage(event) {
             for (let i = 0; i < event.target.files.length; i++) {
-                this.files.push(event.target.files[i])
-                this.fileCount++
+                let file = event.target.files[i]
+                if (/image\/*/.test(file.type)) {
+                    this.files.push(file)
+                    this.fileCount++
+                    this.currentStatus = STATUS_LOADED
+                }
             }
 
-            this.currentStatus = STATUS_LOADED
         },
 
         // Save the image to the api

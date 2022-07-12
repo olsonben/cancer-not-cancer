@@ -275,18 +275,19 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
 // Insert new images
 app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
     console.log("Post /images");
-
     // Check for proper content-type: multer only checks requests with multipart/form-data
     if (!req.headers['content-type'].includes('multipart/form-data')) {
         res.status(415).send('Content-Type must be multipart/form-data.')
     }
     if (req.files.length === 0) {
+        console.log("in empty")
         res.status(200).send('No files uploaded.')
     }
     
     let count = 0
     let failFlag = false
     for (let file in req.files) {
+        console.log("hello")
         query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.files[file].path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
 
         pool.query(query, (err, rows, fields) => {
