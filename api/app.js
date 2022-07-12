@@ -69,7 +69,7 @@ const upload = multer({
         const ext = file.originalname.split('.').pop()
         // Only allow png, jpg, and jpeg
         if ([ 'png', 'jpg', 'jpeg' ].includes(ext)) {
-            cb (null, true)
+            cb(null, true)
         } else {
             cb(null, false)
         }
@@ -198,7 +198,7 @@ function isValid(req, res, next) {
  * GET
  *****************/
 app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
-    console.log("Get /nextImage"); // tracking location
+    console.log("Get /nextImage"); // tracking location 
     
     // Get random row
     // NOTE: this is not very efficient, but it works
