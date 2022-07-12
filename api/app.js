@@ -60,7 +60,7 @@ const upload = multer({
         },
 
         filename: (req, file, cb) => {
-            // TODO: mandate unique filename
+            // Joe is setting the files to have unique names
             cb(null, file.originalname)
         }
     }),

@@ -55,7 +55,7 @@
                 File {{ file.name }} is successfully submitted.
             </div>
             <div v-else-if="file.submissionSuccess === false" class='notification is-danger is-light'>
-                                                            <!-- Don't add a period to messages ending w/ a period -->
+                <!--                                             Don't add a period to messages ending w/ a period -->
                 File {{ file.name }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
             </div>
         </template>
