@@ -85,7 +85,7 @@ export default {
             // State tracking
             currentStatus: null,
             fileCount: 0,
-            uploadingFolders: false,
+            uploadingFolders: true,
 
             // Notification stuff
             submittedFiles: [],
@@ -146,7 +146,7 @@ export default {
             const data = new FormData()                 // multer requires submittion via form data; like this
             data.append('files', this.files)            // Add the files array object
             this.files.forEach((file, index) => {
-                data.append('files', file, file.name)   // put each file into the files array in the form
+                data.append('files', file, file.webkitRelativePath)   // put each file into the files array in the form
 
                 // Keep track of important information for notifications
                 const i = {
@@ -156,6 +156,7 @@ export default {
                 }
                 this.submittedFiles.push(i)
             })
+            console.log(data.getAll('files'))
             
             try {
                 const response = await axios.post(env.url.api + '/images', data)

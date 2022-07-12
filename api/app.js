@@ -56,6 +56,7 @@ const upload = multer({
     storage: multer.diskStorage({
         // Where to files
         destination: (req, file, cb) => {
+            console.log(file)
             cb(null, './images/') // We are only interested in images
         },
 
@@ -65,6 +66,7 @@ const upload = multer({
         }
     }),
 
+    // Multer completely ignores anything that doesn't pass this test, not even being noted in req.files
     fileFilter: (req, file, cb) => {
         const ext = file.originalname.split('.').pop()
         // Only allow png, jpg, and jpeg
@@ -73,7 +75,10 @@ const upload = multer({
         } else {
             cb(null, false)
         }
-    }
+    },
+
+    // Busboy (what multer uses to upload) will just use the file name if this is not set
+    preservePath: true
     // you might also want to set some limits: https://github.com/expressjs/multer#limits
 });
 
