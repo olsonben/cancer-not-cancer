@@ -5,13 +5,19 @@
             <h1 class='title'>Upload images</h1>
 
             <!-- Upload box -->
+            <div class='tabs'>
+                <ul>
+                    <li :class="{ 'is-active': folderUpload }"><a @click='uploadingFolders = true'>Upload Folders</a></li>
+                    <li :class="{ 'is-active': fileUpload }"><a @click='uploadingFolders = false'>Upload Files</a></li>
+                </ul>
+            </div>
             <form enctype="multipart/form-data" @submit.prevent="saveImages()" novalidate>
                 <div class="dropbox">
                     <!-- File input -->
                     <input type="file"
                         multiple 
                         accept="image/*" 
-                        webkitdirectory
+                        v-bind="{ 'webkitdirectory': folderUpload }"
                         name="images" 
                         :disabled="isSaving" 
                         @change="newImage"
@@ -25,13 +31,13 @@
 
                     <!-- Various prompts -->
                     <p v-if="isInitial">
-                        Drag your file(s) here to begin<br> or click to browse
+                        Drag your {{ fileUpload ? 'file' : 'folder' }}(s) here to begin<br> or click to browse
                     </p>
                     <p v-else-if="isLoaded">
-                        Add more files or click submit.
+                        Add more {{ fileUpload ? 'file' : 'folder' }} or click submit.
                     </p>
                     <p v-if="isSaving">
-                        Uploading {{ fileCount }} files...
+                        Uploading {{ fileCount }} {{ fileUpload ? 'file' : 'folder' }}s...
                     </p>
                 </div>
                 <br>
@@ -79,6 +85,7 @@ export default {
             // State tracking
             currentStatus: null,
             fileCount: 0,
+            uploadingFolders: false,
 
             // Notification stuff
             submittedFiles: [],
@@ -96,6 +103,12 @@ export default {
         },
         isLoaded() {
             return this.currentStatus === STATUS_LOADED
+        },
+        folderUpload() {
+            return this.uploadingFolders
+        },
+        fileUpload() {
+            return !this.uploadingFolders
         }
     },
 
