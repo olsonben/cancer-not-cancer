@@ -10,6 +10,7 @@ const envLocal = require('./.env.local')        // Hidden information not to be 
 const bodyParser = require('body-parser')       // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
 const mysql = require('mysql')                  // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
 const multer = require('multer')                // Need to upload images (https://www.npmjs.com/package/multer)
+const fs = require('fs')
 
 // These four are all for authentication
 require('./auth')                               // This needs to be loaded for passport.authenticate
@@ -56,13 +57,18 @@ const upload = multer({
     storage: multer.diskStorage({
         // Where to files
         destination: (req, file, cb) => {
-            console.log(file)
-            cb(null, './images/') // We are only interested in images
+            const folderName = './images/' + file.originalname.match(/^.*[\\\/]/)[0]
+            fs.access(folderName, err => {
+                if (err) {
+                    fs.mkdirSync(folderName, { recursive: true })
+                }
+                cb(null, folderName) // We are only interested in images
+            })
         },
 
         filename: (req, file, cb) => {
             // Joe is setting the files to have unique names
-            cb(null, file.originalname)
+            cb(null, file.originalname.replace(/^.*[\\\/]/, ''))
         }
     }),
 
