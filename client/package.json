@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "kill-port 3000 ; npm run css-watch & nuxt --port 3000 && fg",
     "build": "nuxt build",
-    "css-build": "sass --no-source-map assets/scss/main.scss assets/css/main.css",
+    "css-build": "sass --no-source-map assets/scss/main.scss assets/css/main.css > ../log/sass.log",
     "css-watch": "npm run css-build -- --watch",
     "start": "nuxt start",
     "generate": "nuxt generate"

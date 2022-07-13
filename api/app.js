@@ -121,10 +121,6 @@ app.get('/auth', (req, res) => {
 
 // Handle successful authentications
 app.get('/auth/success', (req, res) => {
-    // Check to make sure they were allowed
-    if (!req.user.allowed) {
-        res.status(403)
-    }
     // Bounce back to origin
     bounce(req, res)
 })
