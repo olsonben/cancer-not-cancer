@@ -102,7 +102,6 @@ export default {
     },
 
     // Run onload as soon as this is created
-    // TODO: Does this need to be here? Where is a better place?
     created() {
        this.$store.dispatch('user/onload')
     },

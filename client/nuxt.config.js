@@ -67,8 +67,7 @@ export default {
   router: {
     // Middleware runs on every page
     // TODO: can we use this to pre-authenticate users?
-    // TODO: check if this make the onload call in NavBar redundant
-    middleware: ['onload']
+    middleware: []
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
