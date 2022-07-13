@@ -57,17 +57,25 @@ const upload = multer({
     storage: multer.diskStorage({
         // Where to files
         destination: (req, file, cb) => {
-            const folderName = './images/' + file.originalname.match(/^.*[\\\/]/)[0]
-            fs.access(folderName, err => {
+            // Get the directory path
+            console.log(file.originalname)
+            const paths = file.originalname.match(/^.*[\\\/]/)
+            const dirpath = './images/' + (paths !== null ? paths[0] : '')
+
+            // Check if it already exists
+            fs.access(dirpath, err => {
+                // If not, make the dir
                 if (err) {
-                    fs.mkdirSync(folderName, { recursive: true })
+                    fs.mkdirSync(dirpath, { recursive: true })
                 }
-                cb(null, folderName) // We are only interested in images
+                // Use the dir as the destination
+                cb(null, dirpath) // We are only interested in images
             })
         },
 
         filename: (req, file, cb) => {
             // Joe is setting the files to have unique names
+            // Just get the file name
             cb(null, file.originalname.replace(/^.*[\\\/]/, ''))
         }
     }),
@@ -291,14 +299,12 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
         res.status(415).send('Content-Type must be multipart/form-data.')
     }
     if (req.files.length === 0) {
-        console.log("in empty")
         res.status(200).send('No files uploaded.')
     }
     
     let count = 0
     let failFlag = false
     for (let file in req.files) {
-        console.log("hello")
         query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.files[file].path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
 
         pool.query(query, (err, rows, fields) => {
