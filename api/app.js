@@ -12,7 +12,7 @@ import mysql from 'mysql'                  // We are using a database (https://e
 import fs from 'fs'
 
 import upload from './lib/upload.js'                         // multer
-import funcs from './lib/functions.js'                      // Helper functions
+import { isLoggedIn, isValid, getIP } from './lib/functions.js'                      // Helper functions
 // These are all for authentication
 import auth from './lib/auth.js'                           // This needs to be loaded for passport.authenticate
 
@@ -55,7 +55,7 @@ app.use('/images', express.static('images'));   // This is REQUIRED for displayi
 /*****************
  * GET
  *****************/
-app.get('/nextImage', funcs.isLoggedIn, funcs.isValid, (req, res) => {
+app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
     console.log("Get /nextImage"); // tracking location 
     
     // Get random row
@@ -86,12 +86,12 @@ app.get('/isLoggedIn', (req, res) => {
  *****************/
 
 // Insert the hotornots
-app.post('/hotornot', funcs.isLoggedIn, funcs.isValid, (req, res) => {
+app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
     console.log("post /hotornot")
     // REMEMBER: the data in body is in JSON format
     
     const query = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) 
-        VALUES (${req.user.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${funcs.getIP(req)});
+        VALUES (${req.user.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});
         UPDATE images 
         SET times_graded = times_graded + 1 
         WHERE id = ${req.body.id};`
@@ -104,7 +104,7 @@ app.post('/hotornot', funcs.isLoggedIn, funcs.isValid, (req, res) => {
 })
 
 // Insert new user
-app.post('/users', funcs.isLoggedIn, funcs.isValid, (req, res) => {
+app.post('/users', isLoggedIn, isValid, (req, res) => {
     console.log("Post /users");
     let query = `INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES 
         ("${req.body.fullname}", "${req.body.email}", "${req.body.password}", 
@@ -132,7 +132,7 @@ app.post('/users', funcs.isLoggedIn, funcs.isValid, (req, res) => {
 })
 
 // Insert new images
-app.post('/images', funcs.isLoggedIn, funcs.isValid, upload.any(), (req, res) => {
+app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
     console.log("Post /images");
     // Check for proper content-type: multer only checks requests with multipart/form-data
     if (!req.headers['content-type'].includes('multipart/form-data')) {
@@ -145,7 +145,7 @@ app.post('/images', funcs.isLoggedIn, funcs.isValid, upload.any(), (req, res) =>
     let count = 0
     let failFlag = false
     for (let file in req.files) {
-        const query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.files[file].path}", ${req.body.hash || 'NULL'}, ${funcs.getIP(req)}, ${req.user.id});` // insert image
+        const query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.files[file].path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
 
         pool.query(query, (err, rows, fields) => {
             count++

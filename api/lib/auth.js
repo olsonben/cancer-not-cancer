@@ -11,10 +11,9 @@
 import env from '../.env.js'                                    // Public environment variables
 import envLocal from '../.env.local.js'                         // Private "
 import dbConnect from './database.js'                           // Database to set permissions on user
-import funcs from './functions.js'
+import { bounce } from './functions.js'
 const pool = dbConnect(false)
 
-import mysql from 'mysql'
 import passport from 'passport'            // Authentication procedure (https://www.passportjs.org/)
 import session from 'express-session'      // Session gives us cookies (https://www.npmjs.com/package/express-session)
 import cookieParser from 'cookie-parser'   // We need to track things about the session (https://www.npmjs.com/package/cookie-parser)
@@ -99,13 +98,13 @@ function setup(app) {
             res.status(403)
         }
         // Bounce back to origin
-        funcs.bounce(req, res)
+        bounce(req, res)
     })
     
     // Failed authorization
     app.get('/auth/failure', (req, res) => {
         if (['User not in database.', 'User not enabled.'].some(item => req.session.messages.includes(item))) {
-            funcs.bounce(req, res)
+            bounce(req, res)
         } else {
             res.send("Something went wrong...")
         }
