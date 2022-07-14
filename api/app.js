@@ -15,15 +15,13 @@ import upload from './lib/upload.js'                         // multer
 import funcs from './lib/functions.js'                      // Helper functions
 // These are all for authentication
 import auth from './lib/auth.js'                           // This needs to be loaded for passport.authenticate
-import passport from 'passport'            // Authentication procedure (https://www.passportjs.org/)
-import session from 'express-session'      // Session gives us cookies (https://www.npmjs.com/package/express-session)
-import cookieParser from 'cookie-parser'   // We need to track things about the session (https://www.npmjs.com/package/cookie-parser)
 
 /**********************************************
  * SERVER SETUP
  **********************************************/
 // Make the server
 const app = express() 
+auth.setup(app)
 const port = env.port || 5000;
 const imageBaseURL = env.url.image
 const baseURL = env.url.base
@@ -35,12 +33,6 @@ const baseURL = env.url.base
 import dbConnect from './lib/database.js'
 const pool = dbConnect(true)
 
-/**
- * Image Handling
- */
-
-app.use('/images', express.static('images'));   // This is REQUIRED for displaying images
-
 /******************
  * REQUEST PARSING
  ******************/
@@ -50,66 +42,11 @@ app.use(bodyParser.json({           // to support JSON-encoded bodies
     type: 'application/json'
 }));
 
-/*****************
- * USER AUTHENTICATION
- *****************/
-
-// This was done with this video: https://youtu.be/Q0a0594tOrc
-app.use(
-    cookieParser(),                             // Use cookies to track the session         :: req.session
-    session({ secret: envLocal.session.secret }),    // Encrypted session
-    passport.initialize(),                      // Google OAuth2 is a passport protocol
-    passport.session()                          // Need to track the user as a session      :: req.user
-)
-
 /**
- * GENERAL AUTHENTICATION ROUTES
+ * Image Handling
  */
 
-// Authorization options page
-app.get('/auth', (req, res) => {
-    res.send('<a href="/auth/google">Authenticate with Google</a>')
-})
-
-// Handle successful authentications
-app.get('/auth/success', (req, res) => {
-    // Check to make sure they were allowed
-    if (!req.user.allowed) {
-        res.status(403)
-    }
-    // Bounce back to origin
-    funcs.bounce(req, res)
-})
-
-// Failed authorization
-app.get('/auth/failure', (req, res) => {
-    if (['User not in database.', 'User not enabled.'].some(item => req.session.messages.includes(item))) {
-        funcs.bounce(req, res)
-    } else {
-        res.send("Something went wrong...")
-    }
-})
-
-// Log out the user
-app.get('/auth/logout', (req, res) => {
-    req.logout()            // Log out the user
-    req.session.destroy()   // kill their session
-    res.send('Goodbye!')
-})
-
-/**
- * GOOGLE AUTHENTICATION
- */
-//                                                  Interested in: email
-app.get('/auth/google', passport.authenticate('google', { scope: ['email'] }))
-
-// You need to tell google where to go for successful and failed authorizations
-app.get('/auth/google/callback',
-    passport.authenticate('google', {
-        failureRedirect: '/auth/failure', failureMessage: true,
-        successRedirect: '/auth/success'
-    })
-)
+app.use('/images', express.static('images'));   // This is REQUIRED for displaying images
 
 /**********************************************
  * Express REQUESTS
@@ -136,6 +73,7 @@ app.get('/nextImage', funcs.isLoggedIn, funcs.isValid, (req, res) => {
 })
 
 app.get('/isLoggedIn', (req, res) => {
+    // TODO: console.log("isAuthenticated: " + req.isAuthenticated())
     if (req.user) {
         res.send(req.user)
     } else {

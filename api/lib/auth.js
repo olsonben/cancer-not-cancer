@@ -11,10 +11,13 @@
 import env from '../.env.js'                                    // Public environment variables
 import envLocal from '../.env.local.js'                         // Private "
 import dbConnect from './database.js'                           // Database to set permissions on user
+import funcs from './functions.js'
 const pool = dbConnect(false)
 
 import mysql from 'mysql'
-import passport from 'passport'
+import passport from 'passport'            // Authentication procedure (https://www.passportjs.org/)
+import session from 'express-session'      // Session gives us cookies (https://www.npmjs.com/package/express-session)
+import cookieParser from 'cookie-parser'   // We need to track things about the session (https://www.npmjs.com/package/cookie-parser)
 import { Strategy as GoogleStrategy } from 'passport-google-oauth2'
 
 passport.use(new GoogleStrategy({
@@ -67,4 +70,67 @@ passport.deserializeUser((id, done) => {
     })
 })
 
-export default passport
+function setup(app) {
+    /*****************
+     * USER AUTHENTICATION
+     *****************/
+    
+    // This was done with this video: https://youtu.be/Q0a0594tOrc
+    app.use(
+        cookieParser(),                             // Use cookies to track the session         :: req.session
+        session({ secret: envLocal.session.secret }),    // Encrypted session
+        passport.initialize(),                      // Google OAuth2 is a passport protocol
+        passport.session()                          // Need to track the user as a session      :: req.user
+    )
+    
+    /**
+     * GENERAL AUTHENTICATION ROUTES
+     */
+    
+    // Authorization options page
+    app.get('/auth', (req, res) => {
+        res.send('<a href="/auth/google">Authenticate with Google</a>')
+    })
+    
+    // Handle successful authentications
+    app.get('/auth/success', (req, res) => {
+        // Check to make sure they were allowed
+        if (!req.user.allowed) {
+            res.status(403)
+        }
+        // Bounce back to origin
+        funcs.bounce(req, res)
+    })
+    
+    // Failed authorization
+    app.get('/auth/failure', (req, res) => {
+        if (['User not in database.', 'User not enabled.'].some(item => req.session.messages.includes(item))) {
+            funcs.bounce(req, res)
+        } else {
+            res.send("Something went wrong...")
+        }
+    })
+    
+    // Log out the user
+    app.get('/auth/logout', (req, res) => {
+        req.logout()            // Log out the user
+        req.session.destroy()   // kill their session
+        res.send('Goodbye!')
+    })
+    
+    /**
+     * GOOGLE AUTHENTICATION
+     */
+    //                                                  Interested in: email
+    app.get('/auth/google', passport.authenticate('google', { scope: ['email'] }))
+    
+    // You need to tell google where to go for successful and failed authorizations
+    app.get('/auth/google/callback',
+        passport.authenticate('google', {
+            failureRedirect: '/auth/failure', failureMessage: true,
+            successRedirect: '/auth/success'
+        })
+    )
+}
+
+export default { passport, setup }
