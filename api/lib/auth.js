@@ -8,15 +8,15 @@
  * https://youtu.be/Q0a0594tOrc
  */
 
-import env from '../.env.js'                                    // Public environment variables
-import envLocal from '../.env.local.js'                         // Private "
-import dbConnect from './database.js'                           // Database to set permissions on user
-import { bounce } from './functions.js'
+import env from '../.env.js'                    // Public environment variables
+import envLocal from '../.env.local.js'         // Private "
+import dbConnect from './database.js'           // Database to set permissions on user
+import { bounce } from './functions.js'         // Functions
 const pool = dbConnect(false)
 
-import passport from 'passport'            // Authentication procedure (https://www.passportjs.org/)
-import session from 'express-session'      // Session gives us cookies (https://www.npmjs.com/package/express-session)
-import cookieParser from 'cookie-parser'   // We need to track things about the session (https://www.npmjs.com/package/cookie-parser)
+import passport from 'passport'                 // Authentication procedure (https://www.passportjs.org/)
+import session from 'express-session'           // Session gives us cookies (https://www.npmjs.com/package/express-session)
+import cookieParser from 'cookie-parser'        // We need to track things about the session (https://www.npmjs.com/package/cookie-parser)
 import { Strategy as GoogleStrategy } from 'passport-google-oauth2'
 
 passport.use(new GoogleStrategy({
@@ -76,10 +76,10 @@ function setup(app) {
     
     // This was done with this video: https://youtu.be/Q0a0594tOrc
     app.use(
-        cookieParser(),                             // Use cookies to track the session         :: req.session
-        session({ secret: envLocal.session.secret }),    // Encrypted session
-        passport.initialize(),                      // Google OAuth2 is a passport protocol
-        passport.session()                          // Need to track the user as a session      :: req.user
+        cookieParser(),                                     // Use cookies to track the session         :: req.session
+        session({ secret: envLocal.session.secret }),       // Encrypted session
+        passport.initialize(),                              // Google OAuth2 is a passport protocol
+        passport.session()                                  // Need to track the user as a session      :: req.user
     )
     
     /**

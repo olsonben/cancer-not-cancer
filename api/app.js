@@ -2,19 +2,19 @@
  * IMPORTS
  **********************************************/
 // Basic stuff for the server
-import express from 'express'              // We have an express server (https://expressjs.com/)
+import express from 'express'               // We have an express server (https://expressjs.com/)
 import env from './.env.js'
-import envLocal from './.env.local.js'        // Hidden information not to be tracked by github (passwords and such)
+import envLocal from './.env.local.js'      // Hidden information not to be tracked by github (passwords and such)
 
 /// Features
-import bodyParser from 'body-parser'       // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
-import mysql from 'mysql'                  // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
+import bodyParser from 'body-parser'        // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
+import mysql from 'mysql'                   // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
 import fs from 'fs'
 
-import upload from './lib/upload.js'                         // multer
-import { isLoggedIn, isValid, getIP } from './lib/functions.js'                      // Helper functions
+import upload from './lib/upload.js'                                // multer
+import { isLoggedIn, isValid, getIP } from './lib/functions.js'     // Helper functions
 // These are all for authentication
-import auth from './lib/auth.js'                           // This needs to be loaded for passport.authenticate
+import auth from './lib/auth.js'                                    // This needs to be loaded for passport.authenticate
 
 /**********************************************
  * SERVER SETUP
@@ -38,7 +38,7 @@ const pool = dbConnect(true)
  ******************/
 
 // This is vital to parsing the json requests
-app.use(bodyParser.json({           // to support JSON-encoded bodies
+app.use(bodyParser.json({
     type: 'application/json'
 }));
 
@@ -56,11 +56,11 @@ app.use('/images', express.static('images'));   // This is REQUIRED for displayi
  * GET
  *****************/
 app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
-    console.log("Get /nextImage"); // tracking location 
+    console.log("Get /nextImage");
     
     // Get random row
     // NOTE: this is not very efficient, but it works
-    const query = `SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;`
+    const query = "SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;"
     
     pool.query(query, (err, rows, fields) => {
         if (err) throw err

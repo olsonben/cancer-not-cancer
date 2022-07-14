@@ -72,7 +72,7 @@ export default {
     ]
   },
   
-  // Server side rendering
+  // Server side rendering :: removes the server
   // Must be false for axios requests in middleware
   ssr: false,
 
