@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "API to CancerNotCancer",
   "main": "app.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "kill-port 5000; nodemon --no-colors app.js > ../log/express.log"

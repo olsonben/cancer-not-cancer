@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     port: 5000,
     
     url: {  // These will eventually be largely seperate routes

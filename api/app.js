@@ -2,21 +2,22 @@
  * IMPORTS
  **********************************************/
 // Basic stuff for the server
-const express = require('express')              // We have an express server (https://expressjs.com/)
-const env = require('./.env')
-const envLocal = require('./.env.local')        // Hidden information not to be tracked by github (passwords and such)
+import express from 'express'              // We have an express server (https://expressjs.com/)
+import env from './.env.js'
+import envLocal from './.env.local.js'        // Hidden information not to be tracked by github (passwords and such)
 
 /// Features
-const bodyParser = require('body-parser')       // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
-const mysql = require('mysql')                  // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
-const multer = require('multer')                // Need to upload images (https://www.npmjs.com/package/multer)
-const fs = require('fs')
+import bodyParser from 'body-parser'       // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
+import mysql from 'mysql'                  // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
+import fs from 'fs'
 
-// These four are all for authentication
-require('./auth')                               // This needs to be loaded for passport.authenticate
-const passport = require('passport')            // Authentication procedure (https://www.passportjs.org/)
-const session = require('express-session')      // Session gives us cookies (https://www.npmjs.com/package/express-session)
-const cookieParser = require('cookie-parser')   // We need to track things about the session (https://www.npmjs.com/package/cookie-parser)
+import upload from './lib/multer.js'                         // multer
+import funcs from './lib/functions.js'                      // Helper functions
+// These are all for authentication
+import auth from './lib/auth.js'                           // This needs to be loaded for passport.authenticate
+import passport from 'passport'            // Authentication procedure (https://www.passportjs.org/)
+import session from 'express-session'      // Session gives us cookies (https://www.npmjs.com/package/express-session)
+import cookieParser from 'cookie-parser'   // We need to track things about the session (https://www.npmjs.com/package/cookie-parser)
 
 /**********************************************
  * SERVER SETUP
@@ -40,6 +41,12 @@ const pool = mysql.createConnection({
 }) 
 pool.connect()
 
+/**
+ * Image Handling
+ */
+
+app.use('/images', express.static('images'));   // This is REQUIRED for displaying images
+
 /******************
  * REQUEST PARSING
  ******************/
@@ -48,55 +55,6 @@ pool.connect()
 app.use(bodyParser.json({           // to support JSON-encoded bodies
     type: 'application/json'
 }));
-
-/**
- * MULTER FILE UPLOADS
- */
-
-const upload = multer({
-    storage: multer.diskStorage({
-        // Where to files
-        destination: (req, file, cb) => {
-            // Get the directory path
-            console.log(file.originalname)
-            const paths = file.originalname.match(/^.*[\\\/]/)
-            const dirpath = './images/' + (paths !== null ? paths[0] : '')
-
-            // Check if it already exists
-            fs.access(dirpath, err => {
-                // If not, make the dir
-                if (err) {
-                    fs.mkdirSync(dirpath, { recursive: true })
-                }
-                // Use the dir as the destination
-                cb(null, dirpath) // We are only interested in images
-            })
-        },
-
-        filename: (req, file, cb) => {
-            // Joe is setting the files to have unique names
-            // Just get the file name
-            cb(null, file.originalname.replace(/^.*[\\\/]/, ''))
-        }
-    }),
-
-    // Multer completely ignores anything that doesn't pass this test, not even being noted in req.files
-    fileFilter: (req, file, cb) => {
-        const ext = file.originalname.split('.').pop()
-        // Only allow png, jpg, and jpeg
-        if ([ 'png', 'jpg', 'jpeg' ].includes(ext)) {
-            cb(null, true)
-        } else {
-            cb(null, false)
-        }
-    },
-
-    // Busboy (what multer uses to upload) will just use the file name if this is not set
-    preservePath: true
-    // you might also want to set some limits: https://github.com/expressjs/multer#limits
-});
-
-app.use('/images', express.static('images'));   // This is REQUIRED for displaying images
 
 /*****************
  * USER AUTHENTICATION
@@ -126,13 +84,13 @@ app.get('/auth/success', (req, res) => {
         res.status(403)
     }
     // Bounce back to origin
-    bounce(req, res)
+    funcs.bounce(req, res)
 })
 
 // Failed authorization
 app.get('/auth/failure', (req, res) => {
     if (['User not in database.', 'User not enabled.'].some(item => req.session.messages.includes(item))) {
-        bounce(req, res)
+        funcs.bounce(req, res)
     } else {
         res.send("Something went wrong...")
     }
@@ -160,68 +118,18 @@ app.get('/auth/google/callback',
 )
 
 /**********************************************
- * HELPER FUNCTIONS
- **********************************************/
-function bounce(req, res, route='/') {
-    // Bounce back to origin
-    const origin = req.session.origin
-    delete req.session.origin
-    res.redirect(origin || route)
-}
-
-function isLoggedIn(req, res, next) {
-    // Has user ? move on : unauthorized status
-    if (req.user) {
-        next()
-    } else {
-        req.session.origin = req.headers.referer // Remember the original url to bounce back to
-        console.log("Origin: " + req.session.origin)
-        res.status(401).send('/auth')
-    } 
-}
-
-function getIP(req) {
-    let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
-    console.log(ip)
-    ip = '"' + ip.substring(ip.lastIndexOf(':')+1) + '"'
-    return ip
-}
-
-// Checking if a user is allowed to make a specific request
-function isValid(req, res, next) {
-    // Each method and source has specific requirements to be valid
-    const perms = req.user.permissions
-    if (req.route.methods.get) {
-        if (req.route.path === '/nextImage') {
-            perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
-        }
-    } else if (req.route.methods.post) {
-        // Checking enabled is redundant but safe
-        if (req.route.path === '/hotornot') {
-            perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
-        } else if (req.route.path === '/images') {
-            perms.uploader && perms.enabled ? next() : res.sendStatus(401)
-        } else if (req.route.path === '/users') {
-            perms.admin && perms.enabled ? next() : res.sendStatus(401)
-        }
-    }
-    
-    return false
-}
-
-/**********************************************
  * Express REQUESTS
  **********************************************/
 
 /*****************
  * GET
  *****************/
-app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
+app.get('/nextImage', funcs.isLoggedIn, funcs.isValid, (req, res) => {
     console.log("Get /nextImage"); // tracking location 
     
     // Get random row
     // NOTE: this is not very efficient, but it works
-    query = `SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;`
+    const query = `SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;`
     
     pool.query(query, (err, rows, fields) => {
         if (err) throw err
@@ -246,15 +154,15 @@ app.get('/isLoggedIn', (req, res) => {
  *****************/
 
 // Insert the hotornots
-app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
+app.post('/hotornot', funcs.isLoggedIn, funcs.isValid, (req, res) => {
     console.log("post /hotornot")
     // REMEMBER: the data in body is in JSON format
     
-    query = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) 
-    VALUES (${req.user.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});
-    UPDATE images 
-    SET times_graded = times_graded + 1 
-    WHERE id = ${req.body.id};`
+    const query = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) 
+        VALUES (${req.user.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${funcs.getIP(req)});
+        UPDATE images 
+        SET times_graded = times_graded + 1 
+        WHERE id = ${req.body.id};`
     
     pool.query(query, (err, results, fields) => {
         if (err) throw err
@@ -264,10 +172,10 @@ app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
 })
 
 // Insert new user
-app.post('/users', isLoggedIn, isValid, (req, res) => {
+app.post('/users', funcs.isLoggedIn, funcs.isValid, (req, res) => {
     console.log("Post /users");
-    query = 'INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES '
-    query += `("${req.body.fullname}", "${req.body.email}", "${req.body.password}", 
+    let query = `INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES 
+        ("${req.body.fullname}", "${req.body.email}", "${req.body.password}", 
         ${req.body.permissions.enabled ? 1 : 0}, 
         ${req.body.permissions.pathologist ? 1 : 0}, 
         ${req.body.permissions.uploader ? 1 : 0}, 
@@ -292,7 +200,7 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
 })
 
 // Insert new images
-app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
+app.post('/images', funcs.isLoggedIn, funcs.isValid, upload.any(), (req, res) => {
     console.log("Post /images");
     // Check for proper content-type: multer only checks requests with multipart/form-data
     if (!req.headers['content-type'].includes('multipart/form-data')) {
@@ -305,7 +213,7 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
     let count = 0
     let failFlag = false
     for (let file in req.files) {
-        query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.files[file].path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
+        const query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.files[file].path}", ${req.body.hash || 'NULL'}, ${funcs.getIP(req)}, ${req.user.id});` // insert image
 
         pool.query(query, (err, rows, fields) => {
             count++

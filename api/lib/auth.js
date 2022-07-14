@@ -8,11 +8,11 @@
  * https://youtu.be/Q0a0594tOrc
  */
 
-const env = require('./.env')
-const envLocal = require('./.env.local')
-const mysql = require('mysql')
-const passport = require('passport')
-const GoogleStrategy = require('passport-google-oauth2').Strategy
+import env from '../.env.js'
+import envLocal from '../.env.local.js'
+import mysql from 'mysql'
+import passport from 'passport'
+import { Strategy as GoogleStrategy } from 'passport-google-oauth2'
 
 // We use the database to set permissions on the user
 const pool = mysql.createConnection({
@@ -72,3 +72,5 @@ passport.deserializeUser((id, done) => {
         })
     })
 })
+
+export default passport
