@@ -67,8 +67,14 @@ export default {
   router: {
     // Middleware runs on every page
     // TODO: can we use this to pre-authenticate users?
-    middleware: []
+    middleware: [
+      'isLoggedIn'
+    ]
   },
+  
+  // Server side rendering
+  // Must be false for axios requests in middleware
+  ssr: false,
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
