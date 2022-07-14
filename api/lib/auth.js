@@ -8,20 +8,14 @@
  * https://youtu.be/Q0a0594tOrc
  */
 
-import env from '../.env.js'
-import envLocal from '../.env.local.js'
+import env from '../.env.js'                                    // Public environment variables
+import envLocal from '../.env.local.js'                         // Private "
+import dbConnect from './database.js'                           // Database to set permissions on user
+const pool = dbConnect(false)
+
 import mysql from 'mysql'
 import passport from 'passport'
 import { Strategy as GoogleStrategy } from 'passport-google-oauth2'
-
-// We use the database to set permissions on the user
-const pool = mysql.createConnection({
-    host: 'localhost',
-    user: envLocal.db.user,
-    password: envLocal.db.password,
-    database: envLocal.db.database
-}) 
-pool.connect()
 
 passport.use(new GoogleStrategy({
         clientID: envLocal.google.clientID,                     // Authentication requirements by Google

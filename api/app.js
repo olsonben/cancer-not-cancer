@@ -11,7 +11,7 @@ import bodyParser from 'body-parser'       // JSON parsing is NOT default with h
 import mysql from 'mysql'                  // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
 import fs from 'fs'
 
-import upload from './lib/multer.js'                         // multer
+import upload from './lib/upload.js'                         // multer
 import funcs from './lib/functions.js'                      // Helper functions
 // These are all for authentication
 import auth from './lib/auth.js'                           // This needs to be loaded for passport.authenticate
@@ -32,14 +32,8 @@ const baseURL = env.url.base
 /*****************
  * MariaDB DATABASE
  *****************/
-const pool = mysql.createConnection({
-    host: 'localhost',
-    user: envLocal.db.user,
-    password: envLocal.db.password,
-    database: envLocal.db.database,
-    multipleStatements: true
-}) 
-pool.connect()
+import dbConnect from './lib/database.js'
+const pool = dbConnect(true)
 
 /**
  * Image Handling
