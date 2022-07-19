@@ -68,7 +68,7 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
             id: rows[0].id, // imageID
             url: imageBaseURL + rows[0].path
         })
-        console.log("Successful image get query");
+        console.log("Successful image get query")
     })
 })
 
@@ -185,7 +185,12 @@ app.listen(port, () => {
     console.log(`CNC running on port ${port}`);
 })
 
-
+// This is to control shutdown
+// nodemon sends out `SIGUSR2` to restart
+process.once('SIGUSR2', () => {
+    // This is to kill the process
+    process.kill(process.pid);
+})
 
 
 
