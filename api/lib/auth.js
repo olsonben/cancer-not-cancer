@@ -77,7 +77,11 @@ function setup(app) {
     // This was done with this video: https://youtu.be/Q0a0594tOrc
     app.use(
         cookieParser(),                                     // Use cookies to track the session         :: req.session
-        session({ secret: envLocal.session.secret }),       // Encrypted session
+        session({
+            secret: envLocal.session.secret,                // Encrypted session
+            resave: true,                                   // Using default is deprecated :: This is the default value
+            saveUninitialized: true   
+        }),
         passport.initialize(),                              // Google OAuth2 is a passport protocol
         passport.session()                                  // Need to track the user as a session      :: req.user
     )
