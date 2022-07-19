@@ -8,7 +8,7 @@ export function bounce(req, res, route='/') {
 
 export function isLoggedIn (req, res, next) {
     // Has user ? move on : unauthorized status
-    if (req.user) {
+    if (req.isAuthenticated()) {
         next()
     } else {
         req.session.origin = req.headers.referer // Remember the original url to bounce back to

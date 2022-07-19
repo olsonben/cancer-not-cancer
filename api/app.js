@@ -74,7 +74,7 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
 
 app.get('/isLoggedIn', (req, res) => {
     // TODO: console.log("isAuthenticated: " + req.isAuthenticated())
-    if (req.user) {
+    if (req.isAuthenticated()) {
         res.send(req.user)
     } else {
         res.status(401).send('/auth')
