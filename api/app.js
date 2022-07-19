@@ -121,13 +121,13 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
                     message: "Email already exists in database.",
                     user: req.body
                 })
+                return // Quit the function early to avoid compounding send
             } else {
-                throw err
+                console.log(err)
             }
-        } else {
-            console.log("Successful user insert query");
-            res.status(200).send(req.body)
         }
+        console.log("Successful user insert query");
+        res.status(200).send(req.body)
     })
 })
 
@@ -137,9 +137,11 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
     // Check for proper content-type: multer only checks requests with multipart/form-data
     if (!req.headers['content-type'].includes('multipart/form-data')) {
         res.status(415).send('Content-Type must be multipart/form-data.')
+        return
     }
     if (req.files.length === 0) {
         res.status(200).send('No files uploaded.')
+        return
     }
     
     let count = 0
@@ -165,6 +167,7 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
                 try {
                     // Respond as an error if any of the files failed
                     res.status(failFlag ? 409 : 200).send(req.files)
+                    return
                 } catch (err) {
                     if (err.code !== 'ERR_HTTP_HEADERS_SENT') throw err
                 }
