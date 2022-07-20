@@ -21,7 +21,7 @@ import auth from './lib/auth.js'                                    // This need
  **********************************************/
 // Make the server
 const app = express() 
-auth.setup(app)
+auth.setup(app)                         // Setup authentication routes for the app
 const port = env.port || 5000;
 const imageBaseURL = env.url.image
 const baseURL = env.url.base
@@ -35,18 +35,17 @@ const pool = dbConnect(true)
 
 /******************
  * REQUEST PARSING
+ * 
+ * These are vital for their respective areas
  ******************/
 
-// This is vital to parsing the json requests
+// JSON body structure
 app.use(bodyParser.json({
     type: 'application/json'
 }));
 
-/**
- * Image Handling
- */
-
-app.use('/images', express.static('images'));   // This is REQUIRED for displaying images
+// Images
+app.use('/images', express.static('images'))
 
 /**********************************************
  * Express REQUESTS
@@ -72,12 +71,12 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
     })
 })
 
+// Checker for if the user is authenticated
 app.get('/isLoggedIn', (req, res) => {
-    // TODO: console.log("isAuthenticated: " + req.isAuthenticated())
     if (req.isAuthenticated()) {
         res.send(req.user)
     } else {
-        res.status(401).send('/auth')
+        res.status(401).send(baseURL + '/auth')
     }
 })
 
