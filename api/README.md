@@ -34,14 +34,14 @@ axios.get('api.example.com/nextImage')
 
 ## GET
 
-- [/nextImage] *
-- [/isLoggedIn]
-- [/auth (deprecated)]
-    - [/auth/success]
-    - [/auth/failure]
-    - [/auth/logout]
-    - [/auth/google] -
-        - [/auth/google/callback]
+- [/nextImage](#/nextImage) *
+- [/isLoggedIn](#/isLoggedIn)
+- [/auth (deprecated)](#/auth-(deprecated))
+    - [/auth/success](#/auth/success)
+    - [/auth/failure](#/auth/failure)
+    - [/auth/logout](#/auth/logout)
+    - [/auth/google](#/auth/google) -
+        - [/auth/google/callback](#/auth/google/callback)
 
 ### /nextImage *
 
@@ -86,9 +86,9 @@ Callback for authorizing with google
 
 ## POST
 
-- [/hotornot] *
-- [/users] *
-- [/images] *
+- [/hotornot](#/hotornot) *
+- [/users](#/users) *
+- [/images](#/images) *
 
 ### /hotornot
 
