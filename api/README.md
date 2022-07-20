@@ -95,7 +95,7 @@ Callback for authorizing with google
 Archive responses from the pathologist.
 
 Example request body:
-```json
+```js
 {
     id: 1,
     rating: 0,
@@ -108,9 +108,9 @@ Example request body:
 Add a user.
 
 Example request body:
-```json
+```js
 {
-    fullname: "Maria Doe"
+    fullname: "Maria Doe",
     email: "mar.doe@gmail.com",
     password: "i_like2DB",
     permissions: {
