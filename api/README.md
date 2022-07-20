@@ -34,13 +34,13 @@ axios.get('api.example.com/nextImage')
 
 ## GET
 
-- [/nextImage](#nextImage-) *
+- [/nextImage `*`](#nextImage-)
 - [/isLoggedIn](#isLoggedIn)
 - [/auth (deprecated)](#auth-(deprecated))
     - [/auth/success](#authsuccess)
     - [/auth/failure](#authfailure)
     - [/auth/logout](#authlogout)
-    - [/auth/google](#authgoogle--) -
+    - [/auth/google `-`](#authgoogle--)
         - [/auth/google/callback](#authgooglecallback)
 
 ### /nextImage `*`
@@ -76,7 +76,7 @@ Page to show when authentication has an error.
 
 Logout of the session. The session will automatically logout after enough time but this is instantaneous and cleaner than deleting the cookie.
 
-#### /auth/google -
+#### /auth/google `-`
 
 Authorize with Google
 
@@ -86,9 +86,9 @@ Callback for authorizing with google
 
 ## POST
 
-- [/hotornot](#hotornot) *
-- [/users](#users) *
-- [/images](#images) *
+- [/hotornot `*`](#hotornot-)
+- [/users `*`](#users-)
+- [/images `*`](#images-)
 
 ### /hotornot `*`
 
