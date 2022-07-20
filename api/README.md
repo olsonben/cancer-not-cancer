@@ -34,16 +34,16 @@ axios.get('api.example.com/nextImage')
 
 ## GET
 
-- [/nextImage](#/nextImage) *
-- [/isLoggedIn](#/isLoggedIn)
-- [/auth (deprecated)](#/auth-(deprecated))
-    - [/auth/success](#/auth/success)
-    - [/auth/failure](#/auth/failure)
-    - [/auth/logout](#/auth/logout)
-    - [/auth/google](#/auth/google) -
-        - [/auth/google/callback](#/auth/google/callback)
+- [/nextImage](#nextImage-) *
+- [/isLoggedIn](#isLoggedIn)
+- [/auth (deprecated)](#auth-(deprecated))
+    - [/auth/success](#authsuccess)
+    - [/auth/failure](#authfailure)
+    - [/auth/logout](#authlogout)
+    - [/auth/google](#authgoogle--) -
+        - [/auth/google/callback](#authgooglecallback)
 
-### /nextImage *
+### /nextImage `*`
 
 Randomly select the next image to display. Returns path to the image.
 
@@ -86,11 +86,11 @@ Callback for authorizing with google
 
 ## POST
 
-- [/hotornot](#/hotornot) *
-- [/users](#/users) *
-- [/images](#/images) *
+- [/hotornot](#hotornot) *
+- [/users](#users) *
+- [/images](#images) *
 
-### /hotornot
+### /hotornot `*`
 
 Archive responses from the pathologist.
 
@@ -103,7 +103,7 @@ Example request body:
 }
 ```
 
-### /users
+### /users `*`
 
 Add a user.
 
@@ -126,7 +126,7 @@ The values to `permissions` fields should be truthy.
 
 Note that email is a unique key for users. If a duplicate email is supplied, the server will respond with `409` and the message `"Email already exists in database."` as well as the submitted user.
 
-### /images
+### /images `*`
 
 Add an image. The request must include `multipart/form-data` or the image uploading will not work, the server will responde with status code `415` if this is not set. The api will safely handle all requests to ensure only images (specifically images of type `png`, `jpg`, or `jpeg`) are uploaded.
 
