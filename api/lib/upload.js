@@ -10,7 +10,6 @@ export default multer({
         // Where to files
         destination: (req, file, cb) => {
             // Get the directory path
-            console.log(file.originalname)
             const paths = file.originalname.match(/^.*[\\\/]/)
             const dirpath = './images/' + (paths !== null ? paths[0] : '')
 

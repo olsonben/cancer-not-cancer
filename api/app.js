@@ -163,13 +163,9 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
             }
 
             if (count === req.files.length) {
-                try {
-                    // Respond as an error if any of the files failed
-                    res.status(failFlag ? 409 : 200).send(req.files)
-                    return
-                } catch (err) {
-                    if (err.code !== 'ERR_HTTP_HEADERS_SENT') throw err
-                }
+                // Respond as an error if any of the files failed
+                res.status(failFlag ? 409 : 200).send(req.files)
+                return
             }
         })
     }

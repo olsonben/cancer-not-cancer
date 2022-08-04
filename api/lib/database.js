@@ -12,7 +12,6 @@ function dbConnection(multipleStatements) {
     }) 
     pool.connect()
     return pool
-
 }
 
 export default dbConnection
