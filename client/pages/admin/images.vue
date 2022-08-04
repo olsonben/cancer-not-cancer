@@ -55,6 +55,7 @@
         </section>
         <!-- Notifications of submission process -->
         <template v-for='file in submittedFiles'>
+            {{ file }}
             <div v-if="file.submissionSuccess === null" class='notification is-warning is-light'>
                 File {{ file.name }} is submitted, awaiting response.
             </div>
@@ -63,7 +64,7 @@
             </div>
             <div v-else-if="file.submissionSuccess === false" class='notification is-danger is-light'>
                 <!--                                             Don't add a period to messages ending w/ a period -->
-                File {{ file.name }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
+                File {{ file.originalname }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
             </div>
         </template>
     </div>
@@ -88,8 +89,8 @@ export default {
             uploadingFolders: true,
 
             // Notification stuff
-            submittedFiles: [],
-            notificationTime: "5000"
+            submittedFiles: {},
+            notificationTime: "1000"
         }
     },
 
@@ -141,22 +142,19 @@ export default {
         async saveImages() {
             this.currentStatus = STATUS_SAVING
 
-            const offset = this.submittedFiles.length
-
             const data = new FormData()                 // multer requires submittion via form data; like this
             data.append('files', this.files)            // Add the files array object
             this.files.forEach((file, index) => {
-                data.append('files', file, file.webkitRelativePath === '' ? file.name : file.webkitRelativePath)   // put each file into the files array in the form
+                const fileName = file.webkitRelativePath === '' ? file.name : file.webkitRelativePath
+                data.append('files', file, fileName)   // put each file into the files array in the form
 
                 // Keep track of important information for notifications
-                const i = {
+                this.submittedFiles[fileName] = {
                     submissionSuccess: null,
                     message: null,
-                    name: file.name
+                    originalname: file.name
                 }
-                this.submittedFiles.push(i)
             })
-            console.log(data.getAll('files'))
             
             try {
                 const response = await axios.post(env.url.api + '/images', data)
@@ -175,18 +173,24 @@ export default {
                     window.location.replace(`${env.url.client}/login`)
 
                 } else {
-                    console.log(offset)
-                    for (const id in error.response.data) {
-                        if (error.response.data[id].message !== undefined) {
-                            this.submittedFiles[Number(id) + offset].submissionSuccess = false // track failure
-                            this.submittedFiles[Number(id) + offset].message = error.response.data[id].message
+                    console.log("error")
+                    console.log(error.response.data)
+                    console.log("submittedfiles")
+                    console.log(this.submittedFiles)
+                    for (const file of Object.values(error.response.data)) {
+                        console.log(file)
+                        // Failed file
+                        if (file.message !== undefined) {
+                            this.submittedFiles[file.originalname].submissionSuccess = false // track failure
+                            this.submittedFiles[file.originalname].message = file.message
+                        // Success file
                         } else {
                             // Since we are uploading multiple files, some fail to upload, others succeed
-                            this.submittedFiles[Number(id) + offset].submissionSuccess = true
+                            this.submittedFiles[file.originalname].submissionSuccess = true
                         }
 
                         setTimeout(() => {
-                            this.submittedFiles[Number(id) + offset].submissionSuccess = -1
+                            this.submittedFiles[file.originalname].submissionSuccess = -1
                         }, this.notificationTime)
                     }
                 }
