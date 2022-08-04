@@ -8,11 +8,12 @@ $ npm install
 $ <NOTE: ask Elaine how she set up the DB>
 ```
 
-Fill in the `.env.js.bk` with the relavant values and rename the file to `.env.js`.
+Fill in `.env.local.js.bk` with the relavant values and rename the file to `.env.local.js`.
+Change values in `.env.js` according to your own website.
 
 # HTTP Requests
 
-All requests must pass the credentialling of `isValid` (see `HELPER FUNCTIONS` of `app.js`). It is recommended to reroute to a login page which links to `/auth` for any route requiring authentication (indicated with an `*`). This routing can be checked with the following code snippet wherever you catch errors from POST/GET:
+All requests must pass the credentialling of `isValid` (see `lib/functions.js`). It is recommended to reroute to a login page which links to `/auth` (or one of the authentication method subroutes `-`) for any request requiring authentication (indicated with an `*`). This routing can be checked with the following code snippet wherever you catch errors from the request:
 
 ```js
 if (error.response.status === 401) window.location.replace(`api.example.com/login`)
@@ -33,41 +34,49 @@ axios.get('api.example.com/nextImage')
 
 ## GET
 
-- [/nextImage] *
-- [/auth]
-    - [/auth/success]
-    - [/auth/failure]
-    - [/auth/logout]
-    - [/auth/google]
-        - [/auth/google/callback]
+- [/nextImage `*`](#nextImage-)
+- [/isLoggedIn](#isLoggedIn)
+- [/auth (deprecated)](#auth-(deprecated))
+    - [/auth/success](#authsuccess)
+    - [/auth/failure](#authfailure)
+    - [/auth/logout](#authlogout)
+    - [/auth/google `-`](#authgoogle--)
+        - [/auth/google/callback](#authgooglecallback)
 
-### /nextImage *
+### /nextImage `*`
 
 Randomly select the next image to display. Returns path to the image.
 
 Example return: `"https://api.milmed.ai/images/bridge.jpeg"`.
 
-### /auth
+### /isLoggedIn
 
-Base page for authorization and where you can login. Protected pages are rerouted here for authorization.
+Checks whether or not the user has been authenticated. Sends the user (see `lib/auth.js deserializeUser`) if they are logged in and `401` with a link to `/auth` if not.
 
-Current methods of authorization:
+### /auth (deprecated)
+
+> Deprecated:
+> It is recommended to link directly to each methods subroute
+
+Basic page for authentication and where you can login. Protected pages are rerouted here for authentication.
+
+Current methods of authentication:
 
 - Google
 
 ### /auth/success
 
-Redirection route for successful authorization. Users that authenticate correctly but are not allowed by the user database also go through here but are redirected to origin with a `403` status code. 
+Redirection route for successful authentication. Users that authenticate correctly but are not allowed by the user database also go through here but are redirected to origin with a `403` status code. 
 
 #### /auth/failure
 
-Page to show when authorization has an error.
+Page to show when authentication has an error.
 
 ### /auth/logout
 
 Logout of the session. The session will automatically logout after enough time but this is instantaneous and cleaner than deleting the cookie.
 
-#### /auth/google
+#### /auth/google `-`
 
 Authorize with Google
 
@@ -77,16 +86,16 @@ Callback for authorizing with google
 
 ## POST
 
-- [/hotornot] *
-- [/users] *
-- [/images] *
+- [/hotornot `*`](#hotornot-)
+- [/users `*`](#users-)
+- [/images `*`](#images-)
 
-### /hotornot
+### /hotornot `*`
 
 Archive responses from the pathologist.
 
 Example request body:
-```json
+```js
 {
     id: 1,
     rating: 0,
@@ -94,30 +103,30 @@ Example request body:
 }
 ```
 
-### /users
+### /users `*`
 
 Add a user.
 
 Example request body:
-```json
+```js
 {
-    fullname: "Maria Doe"
+    fullname: "Maria Doe",
     email: "mar.doe@gmail.com",
     password: "i_like2DB",
     permissions: {
-        enabled: 1,
+        enabled: true,
         uploader: 1,
-        pathologist: 1,
+        pathologist: true,
         admin: 1
     }
 }
 ```
 
-The values to `permissions` fields must be either `1` or `0`, this is strongly compared (`===`).
+The values to `permissions` fields should be truthy.
 
-Note that email is a unique key for users.
+Note that email is a unique key for users. If a duplicate email is supplied, the server will respond with `409` and the message `"Email already exists in database."` as well as the submitted user.
 
-### /images
+### /images `*`
 
 Add an image. The request must include `multipart/form-data` or the image uploading will not work, the server will responde with status code `415` if this is not set. The api will safely handle all requests to ensure only images (specifically images of type `png`, `jpg`, or `jpeg`) are uploaded.
 
@@ -139,7 +148,26 @@ this.files.forEach(file => {
 axios.post(env.url.api + '/images', data)
 ```
 
-# Keys for `rating`
+You can upload folders for images by placing the filepath in the name of the file (only works with JS):
+```js
+const data = new FormData()
+data.append('files', this.files)
+this.files.forEach(file => {
+    data.append('files', file, file.webkitRelativePath === '' ? file.name : file.webkitRelativePath) /* important */
+});
+axios.post(env.url.api + '/images', data)
+```
+
+```html
+<form method="post" enctype="multipart/form-data" action='/images'>
+    <input type="file" name="files" accept="image/*" multiple webkitdirectory/> <!-- `webkitdirectory` attribute allows submission of folders -->
+    <input type="submit" value="Submit" />
+</form>
+```
+
+# Keys
+
+## Rating
 
 Keys generally follow the pattern of `-` for "not"-ness while the absolute value of the rating refers to the specific diagnosis. 
 
@@ -147,13 +175,30 @@ Keys generally follow the pattern of `-` for "not"-ness while the absolute value
 |:------:|:----------:|
 | -1     | Not Cancer |
 | 0      | Unsure     |
-| 1      | Cancer     |
+| 1      | Yes Cancer |
 
-# Keys for `permissions`
+## Permissions
 
 | Permission     |  Allows           |
 |:--------------:|:-----------------:|
-| is_enabled     | All actions       |
-| is_uploader    | Uploading images  |
-| is_pathologist | Scoring hotornots |
-| is_admin       | Adding users      |
+| enabled        | Actions           |
+| uploader       | Uploading images  |
+| pathologist    | Scoring hotornots |
+| admin          | Adding users      |
+
+# Structure
+
+```bash
+.
+├── database/
+│   └── pathapp.sql     # Database setup script
+├── images/             # Where images are stored
+├── lib/
+│   ├── auth.js         # Authentication logic (+ routes)
+│   ├── database.js     # Easy import to connect to the db
+│   ├── functions.js    # Global functions
+│   └── upload.js       # Upload with multer
+├── .env.js             # Environment variables (public)
+├── .env.local.js       # Environment variables (private)
+└── app.js              # Main server
+```

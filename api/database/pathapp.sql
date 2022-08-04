@@ -3,13 +3,19 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Apr 14, 2022 at 10:25 PM
+-- Generation Time: Jul 12, 2022 at 08:51 PM
 -- Server version: 10.5.15-MariaDB-0ubuntu0.21.10.1
 -- PHP Version: 8.0.8
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
 --
 -- Database: `pathapptest`
@@ -43,7 +49,8 @@ CREATE TABLE `images` (
   `hash` varchar(16) DEFAULT NULL,
   `date_added` datetime NOT NULL DEFAULT current_timestamp(),
   `from_ip` varchar(15) NOT NULL,
-  `user_id` bigint(20) UNSIGNED NOT NULL
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `times_graded` int(10) UNSIGNED NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -55,12 +62,14 @@ CREATE TABLE `images` (
 CREATE TABLE `users` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `fullname` varchar(256) NOT NULL,
-  `username` varchar(24) NOT NULL, -- This is unique
-  `password` varchar(32) NOT NULL,
+  `username` varchar(320) NOT NULL,
+  `password` varchar(50) NOT NULL,
+  `is_enabled` tinyint(1) NOT NULL DEFAULT 0,
   `is_pathologist` tinyint(1) NOT NULL DEFAULT 0,
+  `is_uploader` tinyint(1) NOT NULL DEFAULT 0,
+  `is_admin` tinyint(1) NOT NULL DEFAULT 0,
   `created` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated` datetime NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE current_timestamp(),
-  `enabled` tinyint(1) NOT NULL DEFAULT 1
+  `updated` datetime NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
@@ -132,3 +141,7 @@ ALTER TABLE `hotornot`
 ALTER TABLE `images`
   ADD CONSTRAINT `images_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

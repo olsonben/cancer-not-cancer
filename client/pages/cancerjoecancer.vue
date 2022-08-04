@@ -32,7 +32,7 @@
 
 <script>
 import axios from 'axios'
-import * as env from '/.env'
+import * as env from '../.env.js'
 
 export default {
     data() {

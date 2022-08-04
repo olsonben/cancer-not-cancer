@@ -2,21 +2,21 @@
     <div>
         <div class='tabs'>
             <ul>
-                <li><nuxt-link to='/admin/images'>Images</nuxt-link></li>
-                <li><nuxt-link to='/admin/users'>Users</nuxt-link></li>
+                <!-- Tabs visible based on permissions -->
+                <li><nuxt-link v-if='this.$store.state.user.permissions.uploader' to='/admin/images'>Images</nuxt-link></li>
+                <li><nuxt-link v-if='this.$store.state.user.permissions.admin' to='/admin/users'>Users</nuxt-link></li>
             </ul>
         </div>
-        <nuxt-child />
+        <nuxt-child class='nuxt-child'/>
     </div>
 </template>
 
 <script>
 export default {
-    beforeMount() {
-        if (this.$nuxt.$route.path === '/admin') {
-            window.location.replace(
-                `${window.location.origin}/admin/images`
-            )
+    // This is more a layout for admin subpages
+    mounted() {
+        if (["/admin", "/admin/"].includes(this.$nuxt.$route.path)) {
+            window.location.replace('/')
         }
     }
 }
@@ -26,5 +26,9 @@ export default {
 a.nuxt-link-exact-active {
     color: $info;
     border-bottom-color: $info;
+}
+/* move .section up to avoid oddly large whitespace */
+.tabs, section.section {
+    margin-top: calc(-1 * $block-margin);
 }
 </style>

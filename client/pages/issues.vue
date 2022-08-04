@@ -1,5 +1,5 @@
 <template>
     <div>
-        This is the home
+        There are no issues.
     </div>
 </template>

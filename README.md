@@ -7,7 +7,7 @@ A great project covering a surprising amount of web basics. Incidentally, it als
 
 1. [Set Up](#set-up)
 2. [Usage](#usage)
-    1. [Client]](#client)
+    1. [Client](#client)
     2. [API](#api)
 3. [TODO](#todo)
 4. [Discuss](#discuss)
@@ -31,15 +31,14 @@ This is what handles all the data. Storing and logging images and hotornots as w
 
 # TODO
 
-1. Set up home page.
-2. Set up login page.
-4. Set up new image selection method.
-5. Seperate frontend (pathapp.milmed.ai) from backend (api.milmed.ai).
+1. Update tools.
+
+## FUTURE
+1. Skip button
+2. History toggle (limit 10 grades with show more)
 
 ## Urgent
 
-1. Get client pages locked under authorization. Does this actually need to happen?
-
 # Discuss
 
-1. ~~How to choose the next image?~~ Select first in first out.
+1. Do we want to register a skip in the hotornot table? Should this be handled with mysql or express. Noting a skip is simple, getting the next image with skips is less so. If we want to check out blocks of images, this is simply moving the current image to the end of the list. All of this depends on how skipping works.
