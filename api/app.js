@@ -62,7 +62,7 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
     const query = "SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;"
     
     pool.query(query, (err, rows, fields) => {
-        if (err) throw err
+        if (err) console.log(err)
         res.send({
             id: rows[0].id, // imageID
             url: imageBaseURL + rows[0].path
@@ -91,14 +91,14 @@ app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
 
     // Check types
     let flag = false
-    message = []
+    let message = []
     if (typeof req.body.id !== 'number') {
         flag = true
         message += "Image ID is not a number"
-    } if (typeof req.body.rating !== number) {
+    } if (typeof req.body.rating !== 'number') {
         flag = true
         message += "Rating is not a number"
-    } if (typeof req.body.comment !== string) {
+    } if (typeof req.body.comment !== 'string') {
         flag = true
         message += "Message is not a string"
     } if (flag) {
@@ -119,7 +119,7 @@ app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
         WHERE id = ${req.body.id};`
     
     pool.query(query, (err, results, fields) => {
-        if (err) throw err
+        if (err) console.log(err)
         console.log("Successful hotornot insert query");
         res.sendStatus(200)
     })
@@ -140,6 +140,7 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
     // Check string lengths
     let flag = false
     let message = []
+    console.log(req.body)
     if (req.body.fullname.length > 256) {
         flag = true
         message += "Name too long"
@@ -227,7 +228,7 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
                         status = 409
                     }
                 } else {
-                    throw err
+                    console.log(err)
                 }
             } else {
                 console.log(file)

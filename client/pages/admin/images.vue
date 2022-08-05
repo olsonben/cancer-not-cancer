@@ -11,7 +11,7 @@
                     <li :class="{ 'is-active': fileUpload }"><a @click='uploadingFolders = false'>Upload Files</a></li>
                 </ul>
             </div>
-            <form enctype="multipart/form-data" @submit.prevent="saveImages()" novalidate>
+            <div>
                 <div class="dropbox">
                     <!-- File input -->
                     <input type="file"
@@ -45,22 +45,21 @@
                 <!-- Submit or clear files -->
                 <div class='level'>
                     <div class='level-left'>
-                        <input class='level-item button is-primary'type="submit" value="Submit" />
+                        <button class='level-item button is-primary' @click='saveImages'>Submit</button>
                     </div>
                     <div class='level-right'>
                         <button class='level-item button is-light' @click='reset'>Clear Choices</button>
                     </div>
                 </div>
-            </form>
+            </div>
         </section>
         <!-- Notifications of submission process -->
         <template v-for='file in submittedFiles'>
-            {{ file }}
             <div v-if="file.submissionSuccess === null" class='notification is-warning is-light'>
-                File {{ file.name }} is submitted, awaiting response.
+                File {{ file.originalname }} is submitted, awaiting response.
             </div>
             <div v-else-if="file.submissionSuccess === true" class='notification is-success is-light'>
-                File {{ file.name }} is successfully submitted.
+                File {{ file.originalname }} is successfully submitted.
             </div>
             <div v-else-if="file.submissionSuccess === false" class='notification is-danger is-light'>
                 <!--                                             Don't add a period to messages ending w/ a period -->
@@ -80,6 +79,8 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_FAILED = 3, STATUS_LOADED = 
 export default {
     data() {
         return {
+            stuff: false,
+
             // Loaded files
             files: [],
 
@@ -123,6 +124,7 @@ export default {
             this.currentStatus = STATUS_INITIAL
             this.files = []
             this.fileCount = 0
+            console.log(this.submittedFiles)
         },
 
         // Fill this.files with the files added at ref=fileInput
@@ -160,10 +162,11 @@ export default {
                 const response = await axios.post(env.url.api + '/images', data)
 
                 if (response.data !== 'No files uploaded.') { // Handling 0 file upload edge case
-                    for (const id in response.data) {
-                        this.submittedFiles[Number(id) + offset].submissionSuccess = true // Track success
+                    console.log(response.data)
+                    for (let file of response.data) {
+                        this.submittedFiles[file.originalname].submissionSuccess = true // Track success
                         setTimeout(() => {
-                            this.submittedFiles[Number(id) + offset].submissionSuccess = -1 // Kill notification
+                            this.submittedFiles[file.originalname].submissionSuccess = -1 // Kill notification
                         }, this.notificationTime)
                     }
                 }
@@ -177,7 +180,7 @@ export default {
                     console.log(error.response.data)
                     console.log("submittedfiles")
                     console.log(this.submittedFiles)
-                    for (const file of Object.values(error.response.data)) {
+                    for (const file of error.response.data) {
                         console.log(file)
                         // Failed file
                         if (file.message !== undefined) {
@@ -191,6 +194,7 @@ export default {
 
                         setTimeout(() => {
                             this.submittedFiles[file.originalname].submissionSuccess = -1
+                            this.stuff = !this.stuff
                         }, this.notificationTime)
                     }
                 }
