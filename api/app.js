@@ -63,6 +63,16 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
     
     pool.query(query, (err, rows, fields) => {
         if (err) throw err
+        let imagePath = rows[0].path
+        if (imageBaseURL.slice(-1) == "/") {
+            if (rows[0].path.charAt(0) == "/") {
+                imagePath = imagePath.slice(1)
+            }
+        } else if (rows[0].path.charAt(0) != "/") {
+            imagePath = "/" + imagePath
+        }
+
+        let url = imageBaseURL + imagePath
         res.send({
             id: rows[0].id, // imageID
             url: imageBaseURL + rows[0].path
@@ -146,7 +156,8 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
     let count = 0
     let failFlag = false
     for (let file in req.files) {
-        const query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.files[file].path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
+        let path = req.files[file].path.slice("/home/ben/www/html/static/".length)
+        const query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("${path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
 
         pool.query(query, (err, rows, fields) => {
             count++

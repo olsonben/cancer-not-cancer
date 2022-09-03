@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "../scripts"
+		},
+		{
+			"path": "../www/html/static/images"
 		}
 	],
 	"settings": {}
