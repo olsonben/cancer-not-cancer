@@ -133,6 +133,19 @@ export default {
                 
                 // This is all for notifications of successful uploads
                 this.submittedUsers[response.data.id].submittionSuccess = true // Note success
+                user = {
+                    fullname: '',
+                    email: '',
+                    password: '',
+                    permissions: {
+                        enabled: 0,
+                        uploader: 0,
+                        pathologist: 0,
+                        admin: 0
+                    },
+                    submittionSuccess: null,
+                    message: ''
+                }
                 setTimeout(() => {
                     this.submittedUsers[response.data.id].submittionSuccess = -1
                 }, this.notificationTime) // "kill" notification after some time
