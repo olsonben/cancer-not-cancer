@@ -85,7 +85,7 @@
 </template>
 
 <script>
-import env from '../../.env'
+import env from '../../.env.js'
 import axios from 'axios'
 
 export default {

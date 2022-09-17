@@ -1,5 +1,5 @@
 import axios from 'axios'
-import * as env from '../.env'
+import * as env from '../.env.js'
 
 export default async ({ redirect }) => {
     // Check if the user is logged in, redirect if not
