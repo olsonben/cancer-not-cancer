@@ -8,8 +8,6 @@
  * https://youtu.be/Q0a0594tOrc
  */
 
-import env from '../.env.js'                    // Public environment variables
-import envLocal from '../.env.local.js'         // Private "
 import dbConnect from './database.js'           // Database to set permissions on user
 import { bounce } from './functions.js'         // Functions
 const pool = dbConnect(false)
@@ -20,9 +18,9 @@ import cookieParser from 'cookie-parser'        // We need to track things about
 import { Strategy as GoogleStrategy } from 'passport-google-oauth2'
 
 passport.use(new GoogleStrategy({
-        clientID: envLocal.google.clientID,                     // Authentication requirements by Google
-        clientSecret: envLocal.google.clientSecret,
-        callbackURL: env.url.base + "/auth/google/callback",    // Handler for coming back after authentication
+        clientID: process.env.GOOGLE_CLIENT_ID,                     // Authentication requirements by Google
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: process.env.BASE_URL + "/auth/google/callback",    // Handler for coming back after authentication
         passReqToCallback: true
     },
     (request, accessToken, refreshToken, profile, done) => {
@@ -78,7 +76,7 @@ function setup(app) {
     app.use(
         cookieParser(),                                     // Use cookies to track the session         :: req.session
         session({
-            secret: envLocal.session.secret,                // Encrypted session
+            secret: process.env.SESSION_SECRET,                // Encrypted session
             resave: true,                                   // Using default is deprecated :: This is the default value
             saveUninitialized: true   
         }),

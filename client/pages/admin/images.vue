@@ -70,7 +70,6 @@
 </template>
 
 <script>
-import * as env from '../../.env.js'
 import axios from 'axios'
 import FormData from 'form-data'
 
@@ -159,7 +158,7 @@ export default {
             })
             
             try {
-                const response = await axios.post(env.url.api + '/images', data)
+                const response = await axios.post(this.$config.url.api + '/images', data)
 
                 if (response.data !== 'No files uploaded.') { // Handling 0 file upload edge case
                     console.log(response.data)
@@ -173,7 +172,7 @@ export default {
 
             } catch (error) {
                 if ([401, 403].includes(error.response.status)) {
-                    window.location.replace(`${env.url.client}/login`)
+                    window.location.replace(`${this.$config.url.client}/login`)
 
                 } else {
                     console.log("error")

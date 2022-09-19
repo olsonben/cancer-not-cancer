@@ -85,7 +85,6 @@
 </template>
 
 <script>
-import env from '../../.env.js'
 import axios from 'axios'
 
 export default {
@@ -129,7 +128,7 @@ export default {
             
             // POST to /users
             try {
-                const response = await axios.post(env.url.api + '/users', axiosData, axiosConfig)
+                const response = await axios.post(this.$config.url.api + '/users', axiosData, axiosConfig)
                 
                 // This is all for notifications of successful uploads
                 this.submittedUsers[response.data.id].submittionSuccess = true // Note success
@@ -152,7 +151,7 @@ export default {
 
             } catch (error) {
                 // Reroute if you aren't logged in
-                if ([401, 403].includes(error.response.status)) { window.location.replace(`${env.url.client}/login`) }
+                if ([401, 403].includes(error.response.status)) { window.location.replace(`${this.$config.url.client}/login`) }
                 else { console.error(error) }
 
                 this.submittedUsers[error.response.data.user.id].submittionSuccess = false // Note failure

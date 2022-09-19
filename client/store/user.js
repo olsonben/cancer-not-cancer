@@ -5,7 +5,6 @@
  * https://nuxtjs.org/docs/directory-structure/store/
  */
 import axios from 'axios'
-import * as env from '../.env.js'
 
 // State should be a function that returns an object of everything you want to keep track of in the state
 /**
@@ -59,7 +58,7 @@ export const actions = {
     // Get permissions and isLoggedIn on loading the site (called in ~middleware/onload.js)
     async onload({ commit, dispatch }) {
         try {
-            let response = await axios.get(env.url.api + '/isLoggedIn')
+            let response = await axios.get(this.$config.url.api + '/isLoggedIn')
             
             // Since `context` only references this module and submodules, the 'user/' identifier should not be used
             commit('isLoggedIn', true)
@@ -76,9 +75,9 @@ export const actions = {
     },
 
     // Register a logout
-    async logout({ commit }) {
+    async logout({ commit, $config }) {
         try {
-            const response = await axios.get(env.url.api + '/auth/logout')
+            const response = await axios.get(this.$config.url.api + '/auth/logout')
 
             commit('isLoggedIn', false)
             commit('permissions', {

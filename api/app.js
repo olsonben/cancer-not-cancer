@@ -3,8 +3,6 @@
  **********************************************/
 // Basic stuff for the server
 import express from 'express'               // We have an express server (https://expressjs.com/)
-import env from './.env.js'
-import envLocal from './.env.local.js'      // Hidden information not to be tracked by github (passwords and such)
 
 /// Features
 import bodyParser from 'body-parser'        // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
@@ -22,9 +20,9 @@ import auth from './lib/auth.js'                                    // This need
 // Make the server
 const app = express() 
 auth.setup(app)                         // Setup authentication routes for the app
-const port = env.port || 5000;
-const imageBaseURL = env.url.image
-const baseURL = env.url.base
+const port = process.env.PORT || 5000;
+const imageBaseURL = process.env.IMAGE_URL
+const baseURL = process.env.BASE_URL
 
 
 /*****************
