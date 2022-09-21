@@ -26,7 +26,7 @@
                     <div class="field">
                         <label class="label">Password</label>
                         <div class="control">
-                            <input class="input" type="text" placeholder="Password" v-model="user.password" />
+                            <input class="input" type="password" placeholder="Password" v-model="user.password" />
                         </div>
                     </div>
                 </div>
