@@ -152,9 +152,9 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
     if (req.body.fullname.length > 256) {
         flag = true
         message += "Name too long"
-    } if (req.body.username.length > 320) {
+    } if (req.body.email.length > 320) {
         flag = true
-        message += "Username too long"
+        message += "Email too long"
     } if (req.body.password.length > 50) {
         flag = true
         message += "Password too long"

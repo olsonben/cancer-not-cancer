@@ -129,22 +129,19 @@ export default {
             // POST to /users
             try {
                 const response = await axios.post(this.$config.url.api + '/users', axiosData, axiosConfig)
-                
+
                 // This is all for notifications of successful uploads
                 this.submittedUsers[response.data.id].submittionSuccess = true // Note success
-                user = {
-                    fullname: '',
-                    email: '',
-                    password: '',
-                    permissions: {
-                        enabled: 0,
-                        uploader: 0,
-                        pathologist: 0,
-                        admin: 0
-                    },
-                    submittionSuccess: null,
-                    message: ''
-                }
+
+                // Clear the form for more user entries
+                this.user.fullname = ''
+                this.user.email =''
+                this.user.password =''
+                this.user.permissions.enabled = 0
+                this.user.permissions.uploader = 0
+                this.user.permissions.pathologist = 0
+                this.user.permissions.admin = 0
+
                 setTimeout(() => {
                     this.submittedUsers[response.data.id].submittionSuccess = -1
                 }, this.notificationTime) // "kill" notification after some time
