@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../sites-available"
+		},
+		{
+			"path": "../scripts"
 		}
 	],
 	"settings": {}

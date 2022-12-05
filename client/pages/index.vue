@@ -1,5 +1,5 @@
 <template>
     <div class='content section'>
-        <h1>I AM MILMED!</h1>
+        <h1>Welcome to Cancer Not Cancer!</h1>
     </div>
 </template>
