@@ -3,8 +3,6 @@
  **********************************************/
 // Basic stuff for the server
 import express from 'express'               // We have an express server (https://expressjs.com/)
-import env from './.env.js'
-import envLocal from './.env.local.js'      // Hidden information not to be tracked by github (passwords and such)
 
 /// Features
 import bodyParser from 'body-parser'        // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
@@ -22,9 +20,9 @@ import auth from './lib/auth.js'                                    // This need
 // Make the server
 const app = express() 
 auth.setup(app)                         // Setup authentication routes for the app
-const port = env.port || 5000;
-const imageBaseURL = env.url.image
-const baseURL = env.url.base
+const port = process.env.PORT || 5000;
+const imageBaseURL = process.env.IMAGE_URL
+const baseURL = process.env.BASE_URL
 
 
 /*****************
@@ -63,6 +61,16 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
     
     pool.query(query, (err, rows, fields) => {
         if (err) throw err
+        let imagePath = rows[0].path
+        if (imageBaseURL.slice(-1) == "/") {
+            if (rows[0].path.charAt(0) == "/") {
+                imagePath = imagePath.slice(1)
+            }
+        } else if (rows[0].path.charAt(0) != "/") {
+            imagePath = "/" + imagePath
+        }
+
+        let url = imageBaseURL + imagePath
         res.send({
             id: rows[0].id, // imageID
             url: imageBaseURL + rows[0].path
@@ -88,6 +96,29 @@ app.get('/isLoggedIn', (req, res) => {
 app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
     console.log("post /hotornot")
     // REMEMBER: the data in body is in JSON format
+
+    // Check types
+    let flag = false
+    let message = []
+    if (typeof req.body.id !== 'number') {
+        flag = true
+        message += "Image ID is not a number"
+    } if (typeof req.body.rating !== 'number') {
+        flag = true
+        message += "Rating is not a number"
+    } if (typeof req.body.comment !== 'string') {
+        flag = true
+        message += "Message is not a string"
+    } if (flag) {
+        res.status(415).send(message)
+        return
+    }
+
+    // Check comment length: MariaDB has a max text length of 65,535 characters
+    if (req.body.comment.length > 65535) {
+        res.status(413).send(["Comment too long"])
+        return
+    }
     
     const query = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) 
         VALUES (${req.user.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});
@@ -96,7 +127,7 @@ app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
         WHERE id = ${req.body.id};`
     
     pool.query(query, (err, results, fields) => {
-        if (err) throw err
+        if (err) console.log(err)
         console.log("Successful hotornot insert query");
         res.sendStatus(200)
     })
@@ -105,7 +136,33 @@ app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
 // Insert new user
 app.post('/users', isLoggedIn, isValid, (req, res) => {
     console.log("Post /users");
-    let query = `INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES 
+
+    // Check permissions
+    if (typeof req.body.fullname !== 'string' ||
+            typeof req.body.email !== 'string' ||
+            typeof req.body.password !== 'string') {
+        res.sendStatus(415)
+        return
+    }
+
+    // Check string lengths
+    let flag = false
+    let message = []
+    console.log(req.body)
+    if (req.body.fullname.length > 256) {
+        flag = true
+        message += "Name too long"
+    } if (req.body.email.length > 320) {
+        flag = true
+        message += "Email too long"
+    } if (req.body.password.length > 50) {
+        flag = true
+        message += "Password too long"
+    } if (flag) {
+        res.status(413).send(message)
+    }
+
+    const query = `INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES 
         ("${req.body.fullname}", "${req.body.email}", "${req.body.password}", 
         ${req.body.permissions.enabled ? 1 : 0}, 
         ${req.body.permissions.pathologist ? 1 : 0}, 
@@ -138,15 +195,33 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
         res.status(415).send('Content-Type must be multipart/form-data.')
         return
     }
+
+    // Get the status based on fileFails
+    var status = 200
+
+    for (const key in req.session.fileFails) {
+        const file = req.session.fileFails[key]
+        // Only use generic status if multiple types of status are existing together
+        if (![200, file.status].includes(status)) {
+            status = 400
+        } else {
+            status = file.status
+        }
+    }
+    
+    // Handle 0 submitted files
+    let files = req.session.fileFails
+
     if (req.files.length === 0) {
-        res.status(200).send('No files uploaded.')
+        res.status(status).send(files)
         return
     }
     
     let count = 0
     let failFlag = false
     for (let file in req.files) {
-        const query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.files[file].path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
+        let path = req.files[file].path.slice("/home/ben/www/html/static/".length)
+        const query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("${path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
 
         pool.query(query, (err, rows, fields) => {
             count++
@@ -154,13 +229,22 @@ app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
                 // No duplicate images
                 failFlag = true
                 if (err.code === 'ER_DUP_ENTRY') {
-                    req.files[file].message = "Path already exists in database."
+                    file.message = "Path already exists in database."
+                    if (![200, 409].includes(status)) {
+                        file.status = 409
+                        status = 400
+                    } else {
+                        status = 409
+                    }
                 } else {
-                    throw err
+                    console.log(err)
                 }
             } else {
-                console.log(`Successful image insert query: ${req.files[file].path}`)
+                console.log(file)
+                console.log(`Successful image insert query: ${file.path}`)
             }
+
+            files.push(file)
 
             if (count === req.files.length) {
                 // Respond as an error if any of the files failed

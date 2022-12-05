@@ -1,6 +1,16 @@
 export default {
   // Target: https://go.nuxtjs.dev/config-target
   target: 'static',
+  telemetry: false,
+
+  publicRuntimeConfig: {
+    url: {
+      base: process.env.DOMAIN,
+      api: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_API}${process.env.DOMAIN}`,
+      client: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_CLIENT}${process.env.DOMAIN}`
+    }
+  },
+  privateRuntimeConfig: {},
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {

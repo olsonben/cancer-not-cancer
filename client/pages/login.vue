@@ -7,11 +7,11 @@
 </template>
 
 <script>
-import * as env from '../.env.js'
+
 export default {
     data() {
         return {
-            api: env.url.api
+            api: this.$config.url.api
         }
     }
 }

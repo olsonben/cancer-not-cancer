@@ -7,11 +7,11 @@ import multer from 'multer'
 
 export default multer({
     storage: multer.diskStorage({
-        // Where to files
+        // Where to put files
         destination: (req, file, cb) => {
             // Get the directory path
             const paths = file.originalname.match(/^.*[\\\/]/)
-            const dirpath = './images/' + (paths !== null ? paths[0] : '')
+            const dirpath = process.env.IMAGES_DIR + (paths !== null ? paths[0] : '')
 
             // Check if it already exists
             fs.access(dirpath, err => {
@@ -33,11 +33,29 @@ export default multer({
 
     // Multer completely ignores anything that doesn't pass this test, not even being noted in req.files
     fileFilter: (req, file, cb) => {
+        if (req.session.fileFails === undefined) {
+            req.session.fileFails = []
+        }
+
+        if (file.originalname.length > 4096) {
+            req.session.fileFails.push({
+                originalname: file.originalname,
+                message: "Original name too long",
+                status: 413
+            })
+            cb(null, false)
+        }
+
         const ext = file.originalname.split('.').pop()
         // Only allow png, jpg, and jpeg
         if ([ 'png', 'jpg', 'jpeg' ].includes(ext)) {
             cb(null, true)
         } else {
+            req.session.fileFails.push({
+                originalname: file.originalname,
+                message: "Invalid extension",
+                status: 415
+            })
             cb(null, false)
         }
     },

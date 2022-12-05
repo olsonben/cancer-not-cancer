@@ -6,7 +6,7 @@
 
         <!-- Image to grade -->
         <div class='prompt wrapper'>
-            <div class='prompt focus'></div>
+            <!-- <div class='prompt focus'></div> -->
             <img class='prompt img' :src='this.image.url' :alt='image.url' />
         </div>
 
@@ -32,7 +32,6 @@
 
 <script>
 import axios from 'axios'
-import * as env from '/.env'
 
 export default {
     data() {
@@ -116,7 +115,7 @@ export default {
 
             // POST with axios
             try {
-                axios.post(env.url.api + '/hotornot', axiosData, axiosConfig)
+                axios.post(this.$config.url.api + '/hotornot', axiosData, axiosConfig)
             } catch (error) {
                 if ([401, 403].includes(error.response.status)) window.location.replace(`${window.location.origin}/login`)
                 console.error(error);
@@ -126,7 +125,7 @@ export default {
         async nextImage() {
             // try-catch is needed for async/await
             try {
-                const response = await axios.get(env.url.api + '/nextImage');
+                const response = await axios.get(this.$config.url.api + '/nextImage');
                 this.image = response.data
             } catch (error) {
                 if ([401, 403].includes(error.response.status)) window.location.replace(`${window.location.origin}/login`)
@@ -177,16 +176,22 @@ export default {
 
         // Handler for touchend event
         handleTouchEnd(event) {
-            // touchend event has an empty `touches` list, so we pass the touchmove event instead
-            this.touchMacro(this.touchEvent, 10, () => {
-                this.commenting = true
-            }, () => {
-                this.onClick('yes-cancer')
-            }, () => {
-                // this.onClick('maybe-cancer')
-            }, () => {
-                this.onClick('no-cancer')
-            })
+            if (this.touchEvent != null) {
+                const touchList = this.touchEvent.touches ||
+                                        this.touchEvent.originalEvent.touches
+                if (touchList.length == 1) {
+                    // touchend event has an empty `touches` list, so we pass the touchmove event instead
+                    this.touchMacro(this.touchEvent, 100, () => {
+                        this.commenting = true
+                    }, () => {
+                        this.onClick('yes-cancer')
+                    }, () => {
+                        // this.onClick('maybe-cancer')
+                    }, () => {
+                        this.onClick('no-cancer')
+                    })
+                } 
+            }
 
             /* reset values */
             this.moveLeft = false
@@ -297,10 +302,11 @@ $no-cancer-color: #ff6184;
     }
     /* Focus is a white box + centered in the image */
     &.focus {
-        width: 128px;
-        height: 128px;
+        $focus-border-width: 1px;
+        width: 128px + 2*$focus-border-width;
+        height: 128px + 2*$focus-border-width;
         margin: auto;
-        border: 1px solid white;
+        border: $focus-border-width solid #00ff00;
 
         position: absolute;
         left: 0;
