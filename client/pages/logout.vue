@@ -1,6 +1,6 @@
 <template>
     <div>
-        Bye!
+        You have been logged out.
     </div>
 </template>
 
