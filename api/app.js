@@ -3,6 +3,7 @@
  **********************************************/
 // Basic stuff for the server
 import express from 'express'               // We have an express server (https://expressjs.com/)
+import cors from 'cors'
 
 /// Features
 import bodyParser from 'body-parser'        // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
@@ -18,7 +19,11 @@ import auth from './lib/auth.js'                                    // This need
  * SERVER SETUP
  **********************************************/
 // Make the server
-const app = express() 
+const app = express()
+// TODO: This should be changed to specifically mention api and client, not all *
+app.use(cors({
+    origin: '*'
+}))
 auth.setup(app)                         // Setup authentication routes for the app
 const port = process.env.PORT || 5000;
 const imageBaseURL = process.env.IMAGE_URL
