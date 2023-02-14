@@ -85,7 +85,6 @@
 </template>
 
 <script>
-import axios from 'axios'
 
 export default {
     data() {
@@ -128,7 +127,7 @@ export default {
             
             // POST to /users
             try {
-                const response = await axios.post(this.$config.url.api + '/users', axiosData, axiosConfig)
+                const response = await this.$axios.post('/users', axiosData, axiosConfig)
 
                 // This is all for notifications of successful uploads
                 this.submittedUsers[response.data.id].submittionSuccess = true // Note success

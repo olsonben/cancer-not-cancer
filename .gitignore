@@ -1,7 +1,7 @@
 .DS_Store
 **/node_modules/*
 **/.env.local.js
-.env
+.env*
 
 log/*
 
@@ -10,3 +10,5 @@ client/dist/*
 client/assets/css/main.css
 
 api/images/*
+
+html/*
