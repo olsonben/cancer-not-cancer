@@ -31,7 +31,6 @@
 </template>
 
 <script>
-import axios from 'axios'
 
 export default {
     data() {
@@ -115,7 +114,7 @@ export default {
 
             // POST with axios
             try {
-                axios.post(this.$config.url.api + '/hotornot', axiosData, axiosConfig)
+                this.$axios.post('/hotornot', axiosData, axiosConfig)
             } catch (error) {
                 if ([401, 403].includes(error.response.status)) window.location.replace(`${window.location.origin}/login`)
                 console.error(error);
@@ -125,7 +124,7 @@ export default {
         async nextImage() {
             // try-catch is needed for async/await
             try {
-                const response = await axios.get(this.$config.url.api + '/nextImage');
+                const response = await this.$axios.get('/nextImage');
                 this.image = response.data
             } catch (error) {
                 if ([401, 403].includes(error.response.status)) window.location.replace(`${window.location.origin}/login`)

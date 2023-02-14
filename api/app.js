@@ -2,29 +2,25 @@
  * IMPORTS
  **********************************************/
 // Basic stuff for the server
-import express from 'express'               // We have an express server (https://expressjs.com/)
-import cors from 'cors'
+import express from 'express' // We have an express server (https://expressjs.com/)
 
 /// Features
-import bodyParser from 'body-parser'        // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
-import mysql from 'mysql'                   // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
+import bodyParser from 'body-parser' // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
+import mysql from 'mysql' // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
 import fs from 'fs'
 
-import upload from './lib/upload.js'                                // multer
+import upload from './lib/upload.js' // multer
 import { isLoggedIn, isValid, getIP } from './lib/functions.js'     // Helper functions
 // These are all for authentication
-import auth from './lib/auth.js'                                    // This needs to be loaded for passport.authenticate
+import auth from './lib/auth.js' // This needs to be loaded for passport.authenticate
 
 /**********************************************
  * SERVER SETUP
  **********************************************/
 // Make the server
 const app = express()
-// TODO: This should be changed to specifically mention api and client, not all *
-app.use(cors({
-    origin: '*'
-}))
-auth.setup(app)                         // Setup authentication routes for the app
+
+auth.setup(app) // Setup authentication routes for the app
 const port = process.env.PORT || 5000;
 const imageBaseURL = process.env.IMAGE_URL
 const baseURL = process.env.BASE_URL
@@ -48,7 +44,7 @@ app.use(bodyParser.json({
 }));
 
 // Images
-app.use('/images', express.static('images'))
+app.use('/images', express.static(process.env.IMAGES_DIR))
 
 /**********************************************
  * Express REQUESTS

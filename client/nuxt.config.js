@@ -62,7 +62,12 @@ export default {
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
+    '@nuxtjs/axios',
   ],
+  axios: {
+    baseURL: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_API}/`, // api URL
+    credentials: true,
+  },
 
   // Globally accessible style resources
   // e.g. variables declared in scss files here are globally available
@@ -73,20 +78,21 @@ export default {
     ]
   },
 
-  // Customization for vue-router: https://nuxtjs.org/docs/configuration-glossary/configuration-router
-  router: {
-    // Middleware runs on every page
-    // TODO: can we use this to pre-authenticate users?
-    middleware: [
-      'isLoggedIn'
-    ]
-  },
+  // TODO: can we use this to pre-authenticate users?
+  // Note: Why would we want to pre-authenticate users? Seems like it could be a security risk.
+  // // Customization for vue-router: https://nuxtjs.org/docs/configuration-glossary/configuration-router
+  // router: {
+  //   // Middleware runs on every page
+  //   middleware: [
+  //     'isLoggedIn'
+  //   ]
+  // },
   
   // Server side rendering :: removes the server
   // Must be false for axios requests in middleware
   ssr: false,
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
-  build: {
-  }
+  // build: {
+  // }
 }
