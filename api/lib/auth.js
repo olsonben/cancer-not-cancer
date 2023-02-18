@@ -8,35 +8,57 @@
  * https://youtu.be/Q0a0594tOrc
  */
 
-import env from '../.env.js'                    // Public environment variables
-import envLocal from '../.env.local.js'         // Private "
 import dbConnect from './database.js'           // Database to set permissions on user
-import { bounce } from './functions.js'         // Functions
 const pool = dbConnect(false)
 
-import passport from 'passport'                 // Authentication procedure (https://www.passportjs.org/)
-import session from 'express-session'           // Session gives us cookies (https://www.npmjs.com/package/express-session)
-import cookieParser from 'cookie-parser'        // We need to track things about the session (https://www.npmjs.com/package/cookie-parser)
+// Manage Cross Origin Resource Sharing
+import cors from 'cors'
+// Authentication procedure (https://www.passportjs.org/)
+import passport from 'passport'
+// Session gives us cookies (https://www.npmjs.com/package/express-session)
+import session from 'express-session'
+// Server-side session store. Without this sessions are stored in ram, which is leaky and not production.
+// ref: https://github.com/expressjs/session
+import expressMySQLSession from 'express-mysql-session'
+const MySQLStore = expressMySQLSession(session)
+
+const sessionStoreOption = {
+    host: 'localhost',
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DATABASE
+}
+
+const sessionStore = new MySQLStore(sessionStoreOption)
+// to cleanly close `sessionStore.close();`
+
 import { Strategy as GoogleStrategy } from 'passport-google-oauth2'
 
 passport.use(new GoogleStrategy({
-        clientID: envLocal.google.clientID,                     // Authentication requirements by Google
-        clientSecret: envLocal.google.clientSecret,
-        callbackURL: env.url.base + "/auth/google/callback",    // Handler for coming back after authentication
+        clientID: process.env.GOOGLE_CLIENT_ID,                     // Authentication requirements by Google
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: process.env.BASE_URL + "/auth/google/callback",    // Handler for coming back after authentication
         passReqToCallback: true
     },
     (request, accessToken, refreshToken, profile, done) => {
         const query = `SELECT id, is_enabled FROM users WHERE username = "${profile.email}";`
         
         pool.query(query, (err, rows, fields) => {
-            if (err) console.log(err)
+            if (err) {
+                return done(err)
+            }
+
             // User must be registered and enabled to be allowed in
             if (rows.length != 1) {
-                return done(null, false, { message: 'User not in database.' })
+                // user not in database
+                console.log(`Failed login: ${profile.email} not a user.`)
+                return done(null, false, { message: 'Not a user.' })
             } else if (!rows[0].is_enabled) {
-                return done(null, false, { message: 'User not enabled.' })
+                // user not enabled
+                console.log(`Failed login: ${profile.email} not enabled.`)
+                return done(null, false, { message: 'Account disabled.' })
             }
-            
+
             profile.id = rows[0].id     // Only store id number in session
             return done(null, profile)
         })
@@ -70,20 +92,43 @@ passport.deserializeUser((id, done) => {
 })
 
 function setup(app) {
+    // We need to clear the frontend for cors
+    app.use(cors({
+        origin: [process.env.FRONTEND_URL],
+        credentials: true
+    }))
+    
     /*****************
      * USER AUTHENTICATION
      *****************/
     
     // This was done with this video: https://youtu.be/Q0a0594tOrc
+    // Use cookies securely: https://expressjs.com/en/advanced/best-practice-security.html#use-cookies-securely
+    // sameSite and cookie secure flag info: https://www.npmjs.com/package/express-session#cookiesamesite
+
+    const sessionConfig = {
+        secret: process.env.SESSION_SECRET, // Encrypted session
+        store: sessionStore,
+        name: 'sessionId',
+        resave: false,
+        saveUninitialized: false,    // https://github.com/expressjs/session#saveuninitialized
+        cookie: {
+            httpOnly: true, // helps prevent cross-site scripting
+            secure: false,
+            maxAge: 60 * 60 * 1000, // 1 hour in milliseconds
+            sameSite: 'strict'
+        }
+    }
+
+    if (process.env.NODE_ENV == 'production') {
+        // app.set('trust proxy', 1) // trust first proxy (NGINX)
+        sessionConfig.cookie.secure = true // https needed
+    }
+
     app.use(
-        cookieParser(),                                     // Use cookies to track the session         :: req.session
-        session({
-            secret: envLocal.session.secret,                // Encrypted session
-            resave: true,                                   // Using default is deprecated :: This is the default value
-            saveUninitialized: true   
-        }),
-        passport.initialize(),                              // Google OAuth2 is a passport protocol
-        passport.session()                                  // Need to track the user as a session      :: req.user
+        session(sessionConfig),
+        passport.initialize(),  // Google OAuth2 is a passport protocol
+        passport.session()  // Need to track the user as a session :: req.user
     )
     
     /**
@@ -97,28 +142,27 @@ function setup(app) {
     
     // Handle successful authentications
     app.get('/auth/success', (req, res) => {
-        // Check to make sure they were allowed
-        if (!req.user.allowed) {
-            res.status(403)
-        }
-        // Bounce back to origin
-        bounce(req, res)
+        res.redirect(process.env.FRONTEND_URL)
     })
     
     // Failed authorization
     app.get('/auth/failure', (req, res) => {
-        if (['User not in database.', 'User not enabled.'].some(item => req.session.messages.includes(item))) {
-            bounce(req, res)
-        } else {
-            res.send("Something went wrong...")
-        }
+        // TODO: Inform the user that login failed. Currently req.session.messages doesn't seem to work with google oauth.
+        // Failures loop back to login link to try again.
+        res.redirect(process.env.FRONTEND_URL + '/login')
     })
     
     // Log out the user
-    app.get('/auth/logout', (req, res) => {
-        req.logout()            // Log out the user
-        req.session.destroy()   // kill their session
-        res.send('Goodbye!')
+    app.post('/auth/logout', (req, res) => {
+        // Logout the user: passport(req.logout) handles session.destory so no need to call it.
+        req.logout((err) => {
+            if (err) {
+                console.log(err)
+            } else {
+                // we need to resolve the request so the client can continue
+                res.sendStatus(204) // No-Content Success
+            }
+        })
     })
     
     /**

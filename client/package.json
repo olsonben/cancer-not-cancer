@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "kill-port 3000 ; npm run css-watch & nuxt --port 3000 && fg",
+    "dev": " dotenv-run-script .env.development -- env-dev",
+    "env-dev": "kill-port $PORT ;  npm run css-watch & nuxt dev --port $PORT ; fg",
     "build": "nuxt build",
     "css-build": "sass --no-source-map assets/scss/main.scss assets/css/main.css > ../log/sass.log",
     "css-watch": "npm run css-build -- --watch",
@@ -12,12 +13,14 @@
   },
   "devDependencies": {
     "@nuxtjs/style-resources": "^1.2.1",
+    "dotenv-run-script": "^0.2.0",
     "kill-port": "^2.0.0",
     "sass": "^1.52.1",
     "sass-loader": "10.1.1",
     "webpack": "^4.46.0"
   },
   "dependencies": {
+    "@nuxtjs/axios": "^5.13.6",
     "axios": "^0.27.2",
     "bootstrap-icons": "^1.8.3",
     "bulma": "^0.9.4",

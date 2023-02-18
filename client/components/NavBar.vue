@@ -79,7 +79,6 @@
 
 <script>
 import axios from 'axios'
-import * as env from '../.env.js'
 
 export default {
     data() {
@@ -87,7 +86,7 @@ export default {
             // State for the burger menu
             showNav: false,
             showAnimation: false,
-            api: env.url.api
+            api: this.$config.url.api
         }
     },
 

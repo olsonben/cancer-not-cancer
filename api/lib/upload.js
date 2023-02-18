@@ -1,6 +1,5 @@
 import fs from 'fs'
 import multer from 'multer'
-import env from '../.env.js'
 
 /**
  * MULTER FILE UPLOADS
@@ -12,7 +11,7 @@ export default multer({
         destination: (req, file, cb) => {
             // Get the directory path
             const paths = file.originalname.match(/^.*[\\\/]/)
-            const dirpath = env.directory.images + (paths !== null ? paths[0] : '')
+            const dirpath = process.env.IMAGES_DIR + (paths !== null ? paths[0] : '')
 
             // Check if it already exists
             fs.access(dirpath, err => {
