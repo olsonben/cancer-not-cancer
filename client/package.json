@@ -3,17 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": " dotenv-run-script .env.development -- env-dev",
-    "env-dev": "kill-port $PORT ;  npm run css-watch & nuxt dev --port $PORT ; fg",
-    "build": "nuxt build",
+    "dev": "kill-port $PORT ;  npm run css-watch & nuxt --dotenv .env.development --port $PORT ; fg",
+    "build": "nuxt build --dotenv .env.production",
     "css-build": "sass --no-source-map assets/scss/main.scss assets/css/main.css > ../log/sass.log",
-    "css-watch": "npm run css-build -- --watch",
-    "start": "nuxt start",
-    "generate": "nuxt generate"
+    "css-watch": "npm run css-build -- --watch"
   },
   "devDependencies": {
     "@nuxtjs/style-resources": "^1.2.1",
-    "dotenv-run-script": "^0.2.0",
     "kill-port": "^2.0.0",
     "sass": "^1.52.1",
     "sass-loader": "10.1.1",
