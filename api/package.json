@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "kill-port 5000; nodemon --config nodemon.json --no-colors app.js > ../log/express.log"
+    "dev": "kill-port 5000; nodemon --config nodemon.json --no-colors app.js > ../log/express.log",
+    "prod": "kill-port 5000; start pm2 app.js"
   },
   "author": "",
   "license": "ISC",
@@ -24,5 +25,8 @@
     "passport-google-oauth2": "^0.2.0",
     "passport-oauth2": "^1.6.1",
     "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "pm2": "^5.2.2"
   }
 }
