@@ -6,7 +6,7 @@
 
         <!-- Image to grade -->
         <div class='prompt wrapper'>
-            <div class='prompt focus'></div>
+            <!-- <div class='prompt focus'></div> -->
             <img class='prompt img' :src='this.image.url' :alt='image.url' />
         </div>
 
@@ -177,16 +177,22 @@ export default {
 
         // Handler for touchend event
         handleTouchEnd(event) {
-            // touchend event has an empty `touches` list, so we pass the touchmove event instead
-            this.touchMacro(this.touchEvent, 10, () => {
-                this.commenting = true
-            }, () => {
-                this.onClick('yes-cancer')
-            }, () => {
-                // this.onClick('maybe-cancer')
-            }, () => {
-                this.onClick('no-cancer')
-            })
+            if (this.touchEvent != null) {
+                const touchList = this.touchEvent.touches ||
+                                        this.touchEvent.originalEvent.touches
+                if (touchList.length == 1) {
+                    // touchend event has an empty `touches` list, so we pass the touchmove event instead
+                    this.touchMacro(this.touchEvent, 100, () => {
+                        this.commenting = true
+                    }, () => {
+                        this.onClick('yes-cancer')
+                    }, () => {
+                        // this.onClick('maybe-cancer')
+                    }, () => {
+                        this.onClick('no-cancer')
+                    })
+                } 
+            }
 
             /* reset values */
             this.moveLeft = false
@@ -297,10 +303,11 @@ $no-cancer-color: #ff6184;
     }
     /* Focus is a white box + centered in the image */
     &.focus {
-        width: 128px;
-        height: 128px;
+        $focus-border-width: 1px;
+        width: 128px + 2*$focus-border-width;
+        height: 128px + 2*$focus-border-width;
         margin: auto;
-        border: 1px solid white;
+        border: $focus-border-width solid #00ff00;
 
         position: absolute;
         left: 0;
