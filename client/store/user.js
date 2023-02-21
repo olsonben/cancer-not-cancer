@@ -23,7 +23,7 @@ const getDefaultState = () => {
     }
 }
 
-export const state = getDefaultState()
+export const state = getDefaultState
 
 // For special types of getters (eg. a list without a certain item)
 export const getters = {}
