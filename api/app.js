@@ -50,6 +50,10 @@ app.use('/images', express.static(process.env.IMAGES_DIR))
  * Express REQUESTS
  **********************************************/
 
+app.get('/123', (req, res) => {
+    res.send('This is a test!!!')
+})
+
 /*****************
  * GET
  *****************/

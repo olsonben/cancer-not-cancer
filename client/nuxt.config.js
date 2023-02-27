@@ -6,8 +6,8 @@ export default {
   publicRuntimeConfig: {
     url: {
       base: process.env.DOMAIN,
-      api: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_API}`,
-      client: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_CLIENT}`
+      api: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_API}${process.env.DOMAIN}`,
+      client: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_CLIENT}${process.env.DOMAIN}`
     }
   },
   privateRuntimeConfig: {},
@@ -65,7 +65,7 @@ export default {
     '@nuxtjs/axios',
   ],
   axios: {
-    baseURL: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_API}/`, // api URL
+    baseURL: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_API}${process.env.DOMAIN}/`, // api URL
     credentials: true,
   },
 
@@ -92,7 +92,13 @@ export default {
   // Must be false for axios requests in middleware
   ssr: false,
 
+  // Define the workspace of Nuxt
+  // https://nuxtjs.org/docs/configuration-glossary/configuration-rootdir
+  // rootDir: './testing/',
+  // srcDir: '/home/colin/cw-stage/cancer-not-cancer/client',
+
   // Build Configuration: https://go.nuxtjs.dev/config-build
-  // build: {
-  // }
+  build: {
+    publicPath: 'https://client.milmed.ai/testing/'
+  }
 }

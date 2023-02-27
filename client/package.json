@@ -6,7 +6,10 @@
     "dev": "kill-port $PORT ;  npm run css-watch & nuxt --dotenv .env.development --port $PORT ; fg",
     "build": "nuxt build --dotenv .env.production",
     "css-build": "sass --no-source-map assets/scss/main.scss assets/css/main.css > ../log/sass.log",
-    "css-watch": "npm run css-build -- --watch"
+    "css-watch": "npm run css-build -- --watch",
+    "staging": "nuxt start --dotenv .env.testing --port $PORT",
+    "build-stage": "nuxt build --dotenv .env.testing",
+    "gen-stage": "nuxt generate --dotenv .env.testing"
   },
   "devDependencies": {
     "@nuxtjs/style-resources": "^1.2.1",
