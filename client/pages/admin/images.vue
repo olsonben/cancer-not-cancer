@@ -171,7 +171,7 @@ export default {
 
             } catch (error) {
                 if ([401, 403].includes(error.response.status)) {
-                    window.location.replace(`${this.$config.url.client}/login`)
+                    this.$router.push('/login')
 
                 } else {
                     console.log("error")

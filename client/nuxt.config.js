@@ -5,9 +5,10 @@ export default {
 
   publicRuntimeConfig: {
     url: {
-      base: process.env.DOMAIN,
-      api: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_API}${process.env.DOMAIN}`,
-      client: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_CLIENT}${process.env.DOMAIN}`
+      // TODO: REMOVE, not needed
+      // base: process.env.DOMAIN,
+      // api: process.env.API_URL,
+      // client: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_CLIENT}${process.env.DOMAIN}`
     }
   },
   privateRuntimeConfig: {},
@@ -65,8 +66,10 @@ export default {
     '@nuxtjs/axios',
   ],
   axios: {
-    baseURL: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_API}${process.env.DOMAIN}/`, // api URL
+    baseURL: process.env.API_URL, // api URL
     credentials: true,
+    https: (process.env.PROTOCOL == 'https'),
+    debug: false,
   },
 
   // Globally accessible style resources
@@ -81,24 +84,26 @@ export default {
   // TODO: can we use this to pre-authenticate users?
   // Note: Why would we want to pre-authenticate users? Seems like it could be a security risk.
   // // Customization for vue-router: https://nuxtjs.org/docs/configuration-glossary/configuration-router
-  // router: {
-  //   // Middleware runs on every page
-  //   middleware: [
-  //     'isLoggedIn'
-  //   ]
-  // },
+  router: {
+    base: new URL(process.env.PUBLIC_PATH).pathname,
+    // Middleware runs on every page
+    // middleware: [
+    //   'isLoggedIn',
+    //   'authError'
+    // ]
+  },
   
   // Server side rendering :: removes the server
   // Must be false for axios requests in middleware
   ssr: false,
 
-  // Define the workspace of Nuxt
-  // https://nuxtjs.org/docs/configuration-glossary/configuration-rootdir
-  // rootDir: './testing/',
-  // srcDir: '/home/colin/cw-stage/cancer-not-cancer/client',
-
   // Build Configuration: https://go.nuxtjs.dev/config-build
+  // publicPath: when specified, creates absolute links.
+  //   ex. publicPath: 'https://my.app.com'
+  //   would change /about to https://my.app.com/about
+  //   This is needed for CDNs
   build: {
-    publicPath: 'https://client.milmed.ai/testing/'
+    publicPath: process.env.PUBLIC_PATH, // create absolute links
+    devtools: false,
   }
 }

@@ -4,6 +4,8 @@ export function isLoggedIn (req, res, next) {
     if (req.isAuthenticated()) {
         next()
     } else {
+        // redirects are handled else where
+        // TODO: should this behavior be revised?
         res.status(401).send('/auth')
     } 
 }

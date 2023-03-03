@@ -78,15 +78,13 @@
 </template>
 
 <script>
-import axios from 'axios'
-
 export default {
     data() {
         return {
             // State for the burger menu
             showNav: false,
             showAnimation: false,
-            api: this.$config.url.api
+            api: this.$axios.defaults.baseURL.replace(/\/+$/, '') // remove ending slash
         }
     },
 

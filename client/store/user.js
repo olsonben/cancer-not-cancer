@@ -67,18 +67,13 @@ export const actions = {
         try {
             const response = await this.$axios.get('/isLoggedIn')
             
-            // Since `context` only references this module and submodules, the 'user/' identifier should not be used
-            commit('isLoggedIn', true)
-            commit('permissions', response.data.permissions)
-        } catch(error) {
-            if (error.response.status === 401) {
-                // Not authorized / not logged in
-                console.log('NOT logged in.')
-            } else if (error.response.status === 403) {
-                // Forbidden
-            } else {
-                console.error(error)
+            if (response.data) {
+                // Since `context` only references this module and submodules, the 'user/' identifier should not be used
+                commit('isLoggedIn', true)
+                commit('permissions', response.data.permissions)
             }
+        } catch(error) {
+            console.error(error)
         }
     },
 

@@ -116,7 +116,7 @@ export default {
             try {
                 this.$axios.post('/hotornot', axiosData, axiosConfig)
             } catch (error) {
-                if ([401, 403].includes(error.response.status)) window.location.replace(`${window.location.origin}/login`)
+                if ([401, 403].includes(error.response.status)) this.$router.push('/login')
                 console.error(error);
             }
         },
@@ -127,7 +127,7 @@ export default {
                 const response = await this.$axios.get('/nextImage');
                 this.image = response.data
             } catch (error) {
-                if ([401, 403].includes(error.response.status)) window.location.replace(`${window.location.origin}/login`)
+                if ([401, 403].includes(error.response.status)) this.$router.push('/login')
                 console.error(error);
             }
         },

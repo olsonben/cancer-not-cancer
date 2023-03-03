@@ -23,7 +23,6 @@ const app = express()
 auth.setup(app) // Setup authentication routes for the app
 const port = process.env.PORT || 5000;
 const imageBaseURL = process.env.IMAGE_URL
-const baseURL = process.env.BASE_URL
 
 
 /*****************
@@ -43,13 +42,19 @@ app.use(bodyParser.json({
     type: 'application/json'
 }));
 
-// Images
-app.use('/images', express.static(process.env.IMAGES_DIR))
+// Server images if using local development
+if (process.env.NODE_ENV != 'production') {
+    console.log('Serving images locally from:')
+    console.log(`  ${process.env.IMAGES_DIR}`)
+    app.use('/images', express.static(process.env.IMAGES_DIR))
+}
+
 
 /**********************************************
  * Express REQUESTS
  **********************************************/
 
+// TODO: remove when no longer needed.
 app.get('/123', (req, res) => {
     res.send('This is a test!!!')
 })
@@ -84,12 +89,13 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
     })
 })
 
-// Checker for if the user is authenticated
+// Checker for if the user is authenticated (NOT middleware)
 app.get('/isLoggedIn', (req, res) => {
     if (req.isAuthenticated()) {
         res.send(req.user)
     } else {
-        res.status(401).send(baseURL + '/auth')
+        // Send false/no user data
+        res.status(200).send(false)
     }
 })
 

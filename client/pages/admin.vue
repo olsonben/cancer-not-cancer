@@ -16,7 +16,7 @@ export default {
     // This is more a layout for admin subpages
     mounted() {
         if (["/admin", "/admin/"].includes(this.$nuxt.$route.path)) {
-            window.location.replace('/')
+            this.$router.push('/')
         }
     }
 }

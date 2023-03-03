@@ -10,6 +10,7 @@
 
 import dbConnect from './database.js'           // Database to set permissions on user
 const pool = dbConnect(false)
+import * as path from 'path'
 
 // Manage Cross Origin Resource Sharing
 import cors from 'cors'
@@ -34,10 +35,16 @@ const sessionStore = new MySQLStore(sessionStoreOption)
 
 import { Strategy as GoogleStrategy } from 'passport-google-oauth2'
 
+// Using the URL class to manage urls. If the api is living at a certain path,
+// then using path.join inside a new URL should resolve the location desired.
+// ex. staging may leave at milmed.ai/staging/, /staging/ needs to be retained.
+const backendURL = new URL(process.env.BACKEND_URL)
+const authCallbackURL = new URL(path.join(backendURL.pathname, "/auth/google/callback"), backendURL)
+
 passport.use(new GoogleStrategy({
         clientID: process.env.GOOGLE_CLIENT_ID,                     // Authentication requirements by Google
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: process.env.BASE_URL + "/auth/google/callback",    // Handler for coming back after authentication
+        callbackURL: authCallbackURL.href,    // Handler for coming back after authentication
         passReqToCallback: true
     },
     (request, accessToken, refreshToken, profile, done) => {
@@ -82,19 +89,25 @@ passport.deserializeUser((id, done) => {
         done(null, {
             id: rows[0].id,
             permissions: {
-                enabled: rows[0].is_enabled,
-                uploader: rows[0].is_uploader,
-                pathologist: rows[0].is_pathologist,
-                admin: rows[0].is_admin,
+                enabled: !!Number(rows[0].is_enabled), // !!Number() returns boolean for 1 & 0
+                uploader: !!Number(rows[0].is_uploader),
+                pathologist: !!Number(rows[0].is_pathologist),
+                admin: !!Number(rows[0].is_admin),
             }
         })
     })
 })
 
 function setup(app) {
+    const frontendURL = new URL(process.env.FRONTEND_URL)
+
     // We need to clear the frontend for cors
     app.use(cors({
-        origin: [process.env.FRONTEND_URL],
+        // Regex can be used to work as a wild card for subdomains.
+        // For now using matching string(s).
+        // docs: https://expressjs.com/en/resources/middleware/cors.html
+        origin: [frontendURL.origin],
+        // need for authenticating
         credentials: true
     }))
     
@@ -121,7 +134,7 @@ function setup(app) {
     }
 
     if (process.env.NODE_ENV == 'production') {
-        // app.set('trust proxy', 1) // trust first proxy (NGINX)
+        app.set('trust proxy', 1) // trust first proxy (NGINX) ie. http -> https
         sessionConfig.cookie.secure = true // https needed
     }
 
@@ -135,21 +148,17 @@ function setup(app) {
      * GENERAL AUTHENTICATION ROUTES
      */
     
-    // Authorization options page
-    app.get('/auth', (req, res) => {
-        res.send('<a href="/auth/google">Authenticate with Google</a>')
-    })
-    
     // Handle successful authentications
     app.get('/auth/success', (req, res) => {
-        res.redirect(process.env.FRONTEND_URL)
+        // redirect successful logins to the homepage
+        res.redirect(frontendURL.href)
     })
     
     // Failed authorization
     app.get('/auth/failure', (req, res) => {
         // TODO: Inform the user that login failed. Currently req.session.messages doesn't seem to work with google oauth.
-        // Failures loop back to login link to try again.
-        res.redirect(process.env.FRONTEND_URL + '/login')
+        // Failures LOOP back to login page to try again.
+        res.redirect(path.join(backendURL.pathname, '/auth/google'))
     })
     
     // Log out the user
@@ -174,8 +183,8 @@ function setup(app) {
     // You need to tell google where to go for successful and failed authorizations
     app.get('/auth/google/callback',
         passport.authenticate('google', {
-            failureRedirect: '/auth/failure', failureMessage: true,
-            successRedirect: '/auth/success'
+            failureRedirect: path.join(backendURL.pathname, '/auth/failure'), failureMessage: true,
+            successRedirect: path.join(backendURL.pathname, '/auth/success')
         })
     )
 }
