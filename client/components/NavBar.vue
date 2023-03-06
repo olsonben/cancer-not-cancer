@@ -138,7 +138,7 @@ a.nuxt-link-exact-active {
 
 /* Logo */
 .navbar, .navbar-brand {
-    background-image: url(/logo.svg);
+    background-image: url(~assets/logo.svg);
     background-position: left;
     background-position-x: .70rem;
     background-size: 2rem auto;
