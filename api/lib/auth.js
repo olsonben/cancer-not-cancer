@@ -102,14 +102,18 @@ function setup(app) {
     const frontendURL = new URL(process.env.FRONTEND_URL)
 
     // We need to clear the frontend for cors
-    //app.use(cors({
-        // Regex can be used to work as a wild card for subdomains.
-        // For now using matching string(s).
-        // docs: https://expressjs.com/en/resources/middleware/cors.html
-      //  origin: [frontendURL.origin],
-        // need for authenticating
-        //credentials: true
-    //}))
+    if (process.env.NODE_ENV !== 'production') {
+        console.log('Dev Mode: CORS running in node.js')
+        app.use(cors({
+            // Regex can be used to work as a wild card for subdomains.
+            // For now using matching string(s).
+            // docs: https://expressjs.com/en/resources/middleware/cors.html
+            origin: [frontendURL.origin],
+            // need for authenticating
+            credentials: true
+        }))
+    }
+    
     
     /*****************
      * USER AUTHENTICATION
