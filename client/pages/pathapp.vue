@@ -91,34 +91,26 @@ export default {
                 id: this.image.id,
                 rating: this.rating,
                 comment: this.comment
+            }).then((res) => {
+                // move on to the next image
+                this.nextImage()
             })
 
             /* reset */
             this.comment = ''
             this.commenting = false
 
-            // move on to the next image
-            this.nextImage()
         },
 
         async postData(pathHistory) {
-            console.log(pathHistory)
-
-            // Configure data
-            let axiosData = JSON.stringify(pathHistory)
-            const axiosConfig = {
-                headers: {
-                    "Content-Type": "application/json",
-                }
-            }
-
             // POST with axios
-            try {
-                this.$axios.post('/hotornot', axiosData, axiosConfig)
-            } catch (error) {
-                if ([401, 403].includes(error.response.status)) this.$router.push('/login')
-                console.error(error);
-            }
+            return await this.$axios.$post('/hotornot', pathHistory).catch(error => {
+                if ([401, 403].includes(error.response.status)) {
+                    this.$router.push('/login')
+                } else {
+                    console.error(error);
+                }
+            })
         },
 
         async nextImage() {
