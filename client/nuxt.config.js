@@ -4,6 +4,7 @@ export default {
   telemetry: false,
 
   publicRuntimeConfig: {
+    uploadSizeLimit: process.env.UPLOAD_SIZE_LIMIT,
     url: {
       // TODO: REMOVE, not needed
       // base: process.env.DOMAIN,
