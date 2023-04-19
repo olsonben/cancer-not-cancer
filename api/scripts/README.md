@@ -1,5 +1,7 @@
 # Using Sqlite as your local DB
 
+**NOTE:** This script and setup shouldn't require that sqlite3 be install other than running `npm install`. Though for Macs, sqlite3 should be installed by default.
+
 1. Make sure your ssh config is setup to ssh into client.milmed.ai.
     - Add `CLIENT_MILMED_AI_SSH_CONFIG=client.milmed.ai` to your .env, such that it matchs your ssh config.
 2. Run script to pull a copy of the existing database and static files.
