@@ -2,29 +2,28 @@
  * IMPORTS
  **********************************************/
 // Basic stuff for the server
-import express from 'express'               // We have an express server (https://expressjs.com/)
-import env from './.env.js'
-import envLocal from './.env.local.js'      // Hidden information not to be tracked by github (passwords and such)
+import express from 'express' // We have an express server (https://expressjs.com/)
 
 /// Features
-import bodyParser from 'body-parser'        // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
-import mysql from 'mysql'                   // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
+import bodyParser from 'body-parser' // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
+import mysql from 'mysql' // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
 import fs from 'fs'
 
-import upload from './lib/upload.js'                                // multer
+import upload from './lib/upload.js' // multer
 import { isLoggedIn, isValid, getIP } from './lib/functions.js'     // Helper functions
 // These are all for authentication
-import auth from './lib/auth.js'                                    // This needs to be loaded for passport.authenticate
+import auth from './lib/auth.js' // This needs to be loaded for passport.authenticate
 
 /**********************************************
  * SERVER SETUP
  **********************************************/
 // Make the server
-const app = express() 
-auth.setup(app)                         // Setup authentication routes for the app
-const port = env.port || 5000;
-const imageBaseURL = env.url.image
-const baseURL = env.url.base
+const app = express()
+
+auth.setup(app) // Setup authentication routes for the app
+const port = process.env.PORT || 5000;
+const imageBaseURL = process.env.IMAGE_URL
+const baseURL = process.env.BASE_URL
 
 
 /*****************
@@ -45,7 +44,7 @@ app.use(bodyParser.json({
 }));
 
 // Images
-app.use('/images', express.static('images'))
+app.use('/images', express.static(process.env.IMAGES_DIR))
 
 /**********************************************
  * Express REQUESTS
@@ -154,9 +153,9 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
     if (req.body.fullname.length > 256) {
         flag = true
         message += "Name too long"
-    } if (req.body.username.length > 320) {
+    } if (req.body.email.length > 320) {
         flag = true
-        message += "Username too long"
+        message += "Email too long"
     } if (req.body.password.length > 50) {
         flag = true
         message += "Password too long"

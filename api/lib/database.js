@@ -1,13 +1,12 @@
 import mysql from 'mysql'
-import envLocal from '../.env.local.js'
 
 // Basis for connecting to the db
 function dbConnection(multipleStatements) {
     const pool = mysql.createConnection({
         host: 'localhost',
-        user: envLocal.db.user,
-        password: envLocal.db.password,
-        database: envLocal.db.database,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DATABASE,
         multipleStatements: multipleStatements
     }) 
     pool.connect()

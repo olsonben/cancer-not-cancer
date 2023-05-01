@@ -1,18 +1,9 @@
 // `export function ...` lets us deconstruct the import to get specific functions
-export function bounce(req, res, route='/') {
-    // Bounce back to origin
-    const origin = req.session.origin
-    delete req.session.origin
-    res.redirect(origin || route)
-}
-
 export function isLoggedIn (req, res, next) {
     // Has user ? move on : unauthorized status
     if (req.isAuthenticated()) {
         next()
     } else {
-        req.session.origin = req.headers.referer // Remember the original url to bounce back to
-        console.log("Origin: " + req.session.origin)
         res.status(401).send('/auth')
     } 
 }
@@ -46,4 +37,4 @@ export function isValid (req, res, next) {
 }
 
 // export default wraps all the functions in one object
-export default { bounce, isLoggedIn, getIP, isValid }
+export default { isLoggedIn, getIP, isValid }

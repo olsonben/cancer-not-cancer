@@ -79,7 +79,6 @@
 
 <script>
 import axios from 'axios'
-import * as env from '../.env.js'
 
 export default {
     data() {
@@ -87,7 +86,7 @@ export default {
             // State for the burger menu
             showNav: false,
             showAnimation: false,
-            api: env.url.api
+            api: this.$config.url.api
         }
     },
 
@@ -131,8 +130,14 @@ export default {
 /* CSS for the current page */
 a.nuxt-link-exact-active {
     background-color: $info;
-    color: black !important;
+    color: white !important; //this should be moved out of the .vue and into a scss or css file since it's static, also our need to use !important gives me pause.
 }
+
+.navbar.is-primary:hover .navbar-start > .navbar-item:hover{
+    background-color: $info;
+    color: white !important; //this should be moved out of the .vue and into a scss or css file since it's static
+}
+
 /* Logo */
 .navbar, .navbar-brand {
     background-image: url(/logo.svg);
