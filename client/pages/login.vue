@@ -11,7 +11,7 @@
 export default {
     data() {
         return {
-            api: this.$config.url.api
+            api: this.$axios.defaults.baseURL.replace(/\/+$/, '') // remove ending slash
         }
     }
 }

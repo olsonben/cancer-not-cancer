@@ -18,6 +18,10 @@ All requests must pass the credentialling of `isValid` (see `lib/functions.js`).
 ```js
 if (error.response.status === 401) window.location.replace(`api.example.com/login`)
 ```
+or use the nuxt router
+```js
+f (error.response.status === 401) this.$router.push('/login')
+```
 
 For example:
 

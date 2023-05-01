@@ -78,15 +78,13 @@
 </template>
 
 <script>
-import axios from 'axios'
-
 export default {
     data() {
         return {
             // State for the burger menu
             showNav: false,
             showAnimation: false,
-            api: this.$config.url.api
+            api: this.$axios.defaults.baseURL.replace(/\/+$/, '') // remove ending slash
         }
     },
 
@@ -140,7 +138,7 @@ a.nuxt-link-exact-active {
 
 /* Logo */
 .navbar, .navbar-brand {
-    background-image: url(/logo.svg);
+    background-image: url(~assets/logo.svg);
     background-position: left;
     background-position-x: .70rem;
     background-size: 2rem auto;

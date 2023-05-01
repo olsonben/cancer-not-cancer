@@ -147,7 +147,7 @@ export default {
 
             } catch (error) {
                 // Reroute if you aren't logged in
-                if ([401, 403].includes(error.response.status)) { window.location.replace(`${this.$config.url.client}/login`) }
+                if ([401, 403].includes(error.response.status)) { this.$router.push('/login') }
                 else { console.error(error) }
 
                 this.submittedUsers[error.response.data.user.id].submittionSuccess = false // Note failure

@@ -1,3 +1,8 @@
+// Tag our process to easily identify later
+import process from 'node:process'
+process.title = process.title + ' app.js [CancerNotCancer API]'
+console.log("PID: " + process.pid + " process title is " + process.title)
+
 /**********************************************
  * IMPORTS
  **********************************************/
@@ -7,9 +12,8 @@ import express from 'express' // We have an express server (https://expressjs.co
 /// Features
 import bodyParser from 'body-parser' // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
 import mysql from 'mysql' // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
-import fs from 'fs'
 
-import upload from './lib/upload.js' // multer
+import { uploadImages } from './lib/upload.js' // middleware to handle uploads
 import { isLoggedIn, isValid, getIP } from './lib/functions.js'     // Helper functions
 // These are all for authentication
 import auth from './lib/auth.js' // This needs to be loaded for passport.authenticate
@@ -23,7 +27,6 @@ const app = express()
 auth.setup(app) // Setup authentication routes for the app
 const port = process.env.PORT || 5000;
 const imageBaseURL = process.env.IMAGE_URL
-const baseURL = process.env.BASE_URL
 
 
 /*****************
@@ -43,12 +46,22 @@ app.use(bodyParser.json({
     type: 'application/json'
 }));
 
-// Images
-app.use('/images', express.static(process.env.IMAGES_DIR))
+// Server images if using local development
+if (process.env.NODE_ENV != 'production') {
+    console.log('Serving images locally from:')
+    console.log(`  ${process.env.IMAGES_DIR}`)
+    app.use('/images', express.static(process.env.IMAGES_DIR))
+}
+
 
 /**********************************************
  * Express REQUESTS
  **********************************************/
+
+// TODO: remove when no longer needed.
+app.get('/123', (req, res) => {
+    res.send('This is a test!!!')
+})
 
 /*****************
  * GET
@@ -80,12 +93,13 @@ app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
     })
 })
 
-// Checker for if the user is authenticated
+// Checker for if the user is authenticated (NOT middleware)
 app.get('/isLoggedIn', (req, res) => {
     if (req.isAuthenticated()) {
         res.send(req.user)
     } else {
-        res.status(401).send(baseURL + '/auth')
+        // Send false/no user data
+        res.status(200).send(false)
     }
 })
 
@@ -188,73 +202,39 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
     })
 })
 
-// Insert new images
-app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
-    console.log("Post /images");
-    // Check for proper content-type: multer only checks requests with multipart/form-data
-    if (!req.headers['content-type'].includes('multipart/form-data')) {
-        res.status(415).send('Content-Type must be multipart/form-data.')
-        return
-    }
 
-    // Get the status based on fileFails
-    var status = 200
+async function dbConfirm(file, req) {
+    const query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("${file.filename}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
 
-    for (const key in req.session.fileFails) {
-        const file = req.session.fileFails[key]
-        // Only use generic status if multiple types of status are existing together
-        if (![200, file.status].includes(status)) {
-            status = 400
-        } else {
-            status = file.status
-        }
-    }
-    
-    // Handle 0 submitted files
-    let files = req.session.fileFails
-
-    if (req.files.length === 0) {
-        res.status(status).send(files)
-        return
-    }
-    
-    let count = 0
-    let failFlag = false
-    for (let file in req.files) {
-        let path = req.files[file].path.slice("/home/ben/www/html/static/".length)
-        const query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("${path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
-
+    return new Promise((resolve, reject) => {
         pool.query(query, (err, rows, fields) => {
-            count++
             if (err) {
                 // No duplicate images
-                failFlag = true
                 if (err.code === 'ER_DUP_ENTRY') {
-                    file.message = "Path already exists in database."
-                    if (![200, 409].includes(status)) {
-                        file.status = 409
-                        status = 400
-                    } else {
-                        status = 409
-                    }
+                    console.log('File already exists:', file.filename)
+                    resolve(false)
                 } else {
-                    console.log(err)
+                    console.error(err)
+                    reject(err)
                 }
             } else {
-                console.log(file)
-                console.log(`Successful image insert query: ${file.path}`)
-            }
-
-            files.push(file)
-
-            if (count === req.files.length) {
-                // Respond as an error if any of the files failed
-                res.status(failFlag ? 409 : 200).send(req.files)
-                return
+                console.log(`Successful image insert query: ${file.filename}`)
+                resolve(true)
             }
         })
-    }
+    })
+}
+
+function dbApprove(files) {
+    // TODO:
+    // For each file if file.success is true update db entry and make image live
+}
+
+app.post('/images', isLoggedIn, isValid, uploadImages(dbConfirm), (req, res) => {
+    dbApprove(req.files)
+    res.status(200).send(req.files)
 })
+
 
 /**********************************************
  * LISTEN

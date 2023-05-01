@@ -77,8 +77,6 @@ const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_FAILED = 3, STATUS_LOADED = 
 export default {
     data() {
         return {
-            stuff: false,
-
             // Loaded files
             files: [],
 
@@ -89,7 +87,7 @@ export default {
 
             // Notification stuff
             submittedFiles: {},
-            notificationTime: "1000"
+            notificationTime: "10000" // 10 sec in ms
         }
     },
 
@@ -122,7 +120,6 @@ export default {
             this.currentStatus = STATUS_INITIAL
             this.files = []
             this.fileCount = 0
-            console.log(this.submittedFiles)
         },
 
         // Fill this.files with the files added at ref=fileInput
@@ -142,58 +139,71 @@ export default {
         async saveImages() {
             this.currentStatus = STATUS_SAVING
 
-            const data = new FormData()                 // multer requires submittion via form data; like this
-            data.append('files', this.files)            // Add the files array object
+            // image upload requires submittion via form data 
+            const data = new FormData()
+
+            // Add the files array object
             this.files.forEach((file, index) => {
+                console.log(file)
+                if (file.size > this.$config.uploadSizeLimit) {
+                    console.error(`${file.name} is too large. MAX_BYTES: ${this.$config.uploadSizeLimit}`)
+                    this.submittedFiles[file.name] = {
+                        submissionSuccess: false,
+                        message: 'Too large',
+                        originalname: file.name
+                    }
+                    setTimeout(() => {
+                        this.$delete(this.submittedFiles, file.name)
+                    }, this.notificationTime)
+                    return
+                }
                 const fileName = file.webkitRelativePath === '' ? file.name : file.webkitRelativePath
-                data.append('files', file, fileName)   // put each file into the files array in the form
+                data.append(`files[${index}]`, file, fileName)
 
                 // Keep track of important information for notifications
                 this.submittedFiles[fileName] = {
                     submissionSuccess: null,
                     message: null,
-                    originalname: file.name
+                    originalname: fileName
                 }
             })
             
+            const clearNotification = (filename) => {
+                // set a timer to kill the notification
+                setTimeout(() => {
+                    this.$delete(this.submittedFiles, filename)
+                }, this.notificationTime)
+            }
+
             try {
                 const response = await this.$axios.post('/images', data)
 
-                if (response.data !== 'No files uploaded.') { // Handling 0 file upload edge case
+                // Handling 0 file upload edge case
+                if (response.data !== 'No files uploaded.') {
                     console.log(response.data)
                     for (let file of response.data) {
-                        this.submittedFiles[file.originalname].submissionSuccess = true // Track success
-                        setTimeout(() => {
-                            this.submittedFiles[file.originalname].submissionSuccess = -1 // Kill notification
-                        }, this.notificationTime)
+                        // update file's success value
+                        this.submittedFiles[file.filename].submissionSuccess = file.success
+                        this.submittedFiles[file.filename].message = (file.message) ? file.message : null
+
+                        clearNotification(file.filename)
                     }
+                } else {
+                    console.log('No Files to Upload')
                 }
 
             } catch (error) {
                 if ([401, 403].includes(error.response.status)) {
-                    window.location.replace(`${this.$config.url.client}/login`)
-
+                    console.log('Please login.')
+                    this.$router.push('/login')
                 } else {
                     console.log("error")
-                    console.log(error.response.data)
-                    console.log("submittedfiles")
-                    console.log(this.submittedFiles)
+                    console.log(error)
                     for (const file of error.response.data) {
                         console.log(file)
-                        // Failed file
-                        if (file.message !== undefined) {
-                            this.submittedFiles[file.originalname].submissionSuccess = false // track failure
-                            this.submittedFiles[file.originalname].message = file.message
-                        // Success file
-                        } else {
-                            // Since we are uploading multiple files, some fail to upload, others succeed
-                            this.submittedFiles[file.originalname].submissionSuccess = true
-                        }
-
-                        setTimeout(() => {
-                            this.submittedFiles[file.originalname].submissionSuccess = -1
-                            this.stuff = !this.stuff
-                        }, this.notificationTime)
+                        // update failed status
+                        this.submittedFiles[file.filename].submissionSuccess = file.success || 'failure'
+                        clearNotification(file.filename)
                     }
                 }
             } finally {
