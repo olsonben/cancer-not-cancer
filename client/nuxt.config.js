@@ -1,3 +1,4 @@
+const base = new URL(process.env.PUBLIC_PATH).pathname
 export default {
   // Target: https://go.nuxtjs.dev/config-target
   target: 'static',
@@ -30,12 +31,12 @@ export default {
     ],
     link: [
       // Favicon
-      { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' },
-      { rel: 'mask-icon', href: '/safari-pinned-tab.svg', color: '#9f262c' },
-      { rel: 'apple-touch-icon', sizes: '180x180', href:"/apple-touch-icon.png" },
-      { rel:'icon', type:'image/png', sizes:'32x32', href:'/favicon-32x32.png' },
-      { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' },
-      { rel: 'manifest', href: '/site.webmanifest' }
+      { rel: 'icon', type: 'image/svg+xml', href: base + 'logo.svg' },
+      { rel: 'mask-icon', href: base + 'safari-pinned-tab.svg', color: '#9f262c' },
+      { rel: 'apple-touch-icon', sizes: '180x180', href: base + 'apple-touch-icon.png' },
+      { rel:'icon', type:'image/png', sizes:'32x32', href: base + 'favicon-32x32.png' },
+      { rel: 'icon', type: 'image/png', sizes: '16x16', href: base + 'favicon-16x16.png' },
+      { rel: 'manifest', href: base + 'site.webmanifest' }
     ]
   },
 
