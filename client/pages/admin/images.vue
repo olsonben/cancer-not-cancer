@@ -183,10 +183,10 @@ export default {
                     console.log(response.data)
                     for (let file of response.data) {
                         // update file's success value
-                        this.submittedFiles[file.filename].submissionSuccess = file.success
-                        this.submittedFiles[file.filename].message = (file.message) ? file.message : null
+                        this.submittedFiles[file.originalFilename].submissionSuccess = file.success
+                        this.submittedFiles[file.originalFilename].message = (file.message) ? file.message : null
 
-                        clearNotification(file.filename)
+                        clearNotification(file.originalFilename)
                     }
                 } else {
                     console.log('No Files to Upload')

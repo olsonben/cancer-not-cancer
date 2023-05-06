@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import os from 'os'
 import path from 'path'
 import busboy from 'busboy'
+import { createHash } from 'crypto'
 
 // Creates a directory if it doesn't already exist
 async function createDirectory(dirPath) {
@@ -158,9 +159,16 @@ export function uploadImages(beforeSave) {
         // Listen for files being uploaded
         bb.on('file', async (fieldName, fileStream, fileInfo) => {
             let isAcceptable = false
+            fileInfo.originalFilename = fileInfo.filename
+            // TODO: add date to filename hashing
+            fileInfo.filename = createHash('sha256').update(fileInfo.originalFilename).digest('hex')
 
             // make sure the file is an image
-            if (['image/jpeg', 'image/x-png'].includes(fileInfo.mimeType)) {
+            if (fileInfo.mimeType == 'image/jpeg') {
+                fileInfo.filename += '.jpeg'
+                isAcceptable = true
+            } else if (fileInfo.mimeType == 'image/jpeg') {
+                fileInfo.filename += '.png'
                 isAcceptable = true
             }
 

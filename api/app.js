@@ -32,8 +32,7 @@ const imageBaseURL = process.env.IMAGE_URL
 /*****************
  * MariaDB DATABASE
  *****************/
-import dbConnect from './lib/database.js'
-const pool = dbConnect(true)
+import { getNextImage, addRating, createUser, addImage } from './lib/database.js'
 
 /******************
  * REQUEST PARSING
@@ -66,30 +65,25 @@ app.get('/123', (req, res) => {
 /*****************
  * GET
  *****************/
-app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
+app.get('/nextImage', isLoggedIn, isValid, async (req, res) => {
     console.log("Get /nextImage");
     
-    // Get random row
-    // NOTE: this is not very efficient, but it works
-    const query = "SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;"
+    const img = await getNextImage()
     
-    pool.query(query, (err, rows, fields) => {
-        if (err) throw err
-        let imagePath = rows[0].path
-        if (imageBaseURL.slice(-1) == "/") {
-            if (rows[0].path.charAt(0) == "/") {
-                imagePath = imagePath.slice(1)
-            }
-        } else if (rows[0].path.charAt(0) != "/") {
-            imagePath = "/" + imagePath
+    // TODO: Use URLs and Path Join instead of this logic
+    let imagePath = img.path
+    if (imageBaseURL.slice(-1) == "/") {
+        if (img.path.charAt(0) == "/") {
+            imagePath = imagePath.slice(1)
         }
+    } else if (img.path.charAt(0) != "/") {
+        imagePath = "/" + imagePath
+    }
 
-        let url = imageBaseURL + imagePath
-        res.send({
-            id: rows[0].id, // imageID
-            url: imageBaseURL + rows[0].path
-        })
-        console.log("Successful image get query")
+    let url = imageBaseURL + imagePath
+    res.send({
+        id: img.id, // imageID
+        url: imageBaseURL + img.path
     })
 })
 
@@ -108,7 +102,7 @@ app.get('/isLoggedIn', (req, res) => {
  *****************/
 
 // Insert the hotornots
-app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
+app.post('/hotornot', isLoggedIn, isValid, async (req, res) => {
     console.log("post /hotornot")
     // REMEMBER: the data in body is in JSON format
 
@@ -135,21 +129,21 @@ app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
         return
     }
     
-    const query = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) 
-        VALUES (${req.user.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});
-        UPDATE images 
-        SET times_graded = times_graded + 1 
-        WHERE id = ${req.body.id};`
-    
-    pool.query(query, (err, results, fields) => {
-        if (err) console.log(err)
-        console.log("Successful hotornot insert query");
+    const insertSuccess = await addRating(
+        req.user.id,
+        req.body.id,
+        req.body.rating,
+        req.body.comment,
+        getIP(req))
+
+    if (insertSuccess) {
         res.sendStatus(200)
-    })
+    }
+    // TODO: handle failed inserts that aren't errors.
 })
 
 // Insert new user
-app.post('/users', isLoggedIn, isValid, (req, res) => {
+app.post('/users', isLoggedIn, isValid, async (req, res) => {
     console.log("Post /users");
 
     // Check permissions
@@ -177,52 +171,42 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
         res.status(413).send(message)
     }
 
-    const query = `INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES 
-        ("${req.body.fullname}", "${req.body.email}", "${req.body.password}", 
-        ${req.body.permissions.enabled ? 1 : 0}, 
-        ${req.body.permissions.pathologist ? 1 : 0}, 
-        ${req.body.permissions.uploader ? 1 : 0}, 
-        ${req.body.permissions.admin ? 1 : 0});`
+    const addUserSuccess = await createUser(
+        req.body.fullname,
+        req.body.email,
+        req.body.password,
+        req.body.permissions.enabled,
+        req.body.permissions.pathologist,
+        req.body.permissions.uploader,
+        req.body.permissions.admin
+    )
 
-    pool.query(query, (err, rows, fields) => {
-        if (err) {
-            // No duplicate users
-            if (err.code === 'ER_DUP_ENTRY') {
-                res.status(409).send({
-                    message: "Email already exists in database.",
-                    user: req.body
-                })
-                return // Quit the function early to avoid compounding send
-            } else {
-                console.log(err)
-            }
-        }
-        console.log("Successful user insert query");
+    if (addUserSuccess) {
         res.status(200).send(req.body)
-    })
+    } else {
+        // No duplicate users
+        res.status(409).send({
+            message: "Email already exists in database.",
+            user: req.body
+        })
+    }
 })
 
 
 async function dbConfirm(file, req) {
-    const query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("${file.filename}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
+    const insertImageSuccess = await addImage(
+        `/images/${file.filename}`,
+        req.body.hash || 'NULL',
+        getIP(req),
+        req.user.id
+    )
 
-    return new Promise((resolve, reject) => {
-        pool.query(query, (err, rows, fields) => {
-            if (err) {
-                // No duplicate images
-                if (err.code === 'ER_DUP_ENTRY') {
-                    console.log('File already exists:', file.filename)
-                    resolve(false)
-                } else {
-                    console.error(err)
-                    reject(err)
-                }
-            } else {
-                console.log(`Successful image insert query: ${file.filename}`)
-                resolve(true)
-            }
-        })
-    })
+    if (insertImageSuccess) {
+        return true
+    } else {
+        console.log('File already exists:', file.filename)
+        return false
+    }
 }
 
 function dbApprove(files) {

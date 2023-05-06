@@ -27,11 +27,13 @@
     "fs": "^0.0.1-security",
     "kill-port": "^1.6.1",
     "mysql": "^2.18.1",
+    "mysql2": "^3.2.4",
     "nodemon": "^2.0.15",
     "passport": "^0.6.0",
     "passport-google-oauth2": "^0.2.0",
     "passport-oauth2": "^1.6.1",
     "path": "^0.12.7",
+    "sqlite": "^4.2.0",
     "sqlite3": "^5.1.6"
   },
   "devDependencies": {
