@@ -14,20 +14,20 @@ const dbOps = new DatabaseOps(dbConfig)
 
 export async function getUserByUsername(username) {
     const query = `SELECT * FROM users WHERE username = ?`
-    const rows = await dbOps.query(query, [username])
+    const rows = await dbOps.select(query, [username])
     return rows[0]
 }
 
 export async function getUserById(id) {
     const query = `SELECT * FROM users WHERE id = ?`
-    const rows = await dbOps.query(query, [id])
+    const rows = await dbOps.select(query, [id])
     return rows[0]
 }
 
 export async function getNextImage() {
     // NOTE: this is not very efficient, but it works
     const query = `SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;`
-    const rows = await dbOps.query(query, [])
+    const rows = await dbOps.select(query, [])
     return rows[0]
 }
 
@@ -39,8 +39,8 @@ export async function addRating(userId, imageId, rating, comment, fromIp) {
         WHERE id = ?;`
     
     await Promise.all([
-        dbOps.query(ratingQuery, [userId, imageId, rating, comment, fromIp]),
-        dbOps.query(updateQuery, [imageId])
+        dbOps.execute(ratingQuery, [userId, imageId, rating, comment, fromIp]),
+        dbOps.execute(updateQuery, [imageId])
     ])
 
     console.log("Successful hotornot insert query");
@@ -61,7 +61,7 @@ export async function createUser(fullname, username, password, is_enabled, is_pa
     try {
         // TODO: Consider using ternary instead of number for speed.
         // ex. is_enabled ? 1 : 0
-        await dbOps.query(
+        await dbOps.execute(
             addUserQuery, 
             [
                 fullname,
@@ -90,7 +90,7 @@ export async function addImage(path, hash, from_ip, user_id) {
     const addImageQuery = `INSERT INTO images (path, hash, from_ip, user_id) VALUES (?, ?, ?, ?);` // insert image
 
     try {
-        await dbOps.query(addImageQuery, [ path, hash, from_ip, user_id])
+        await dbOps.execute(addImageQuery, [ path, hash, from_ip, user_id])
         console.log(`Successful image insert query: ${path}`);
         return true
     } catch (err) {
