@@ -3,7 +3,21 @@ import * as fs from 'node:fs';
 import os from 'os'
 import path from 'path'
 import busboy from 'busboy'
-import { createHash } from 'crypto'
+import { randomUUID } from 'crypto'
+import { customAlphabet } from 'nanoid/async'
+import sanitize from 'sanitize-filename'
+
+// Removing the dash and hyphen from ids for upload folders
+const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 20)
+
+function sanitizeFilename(filename) {
+    const sanitized = path.normalize(filename)
+                        .split(path.sep)
+                        .map(part => sanitize(part))
+                        .filter(part => part !== "")
+                        .join(path.sep)
+    return sanitized
+}
 
 // Creates a directory if it doesn't already exist
 async function createDirectory(dirPath) {
@@ -12,12 +26,7 @@ async function createDirectory(dirPath) {
     } catch (error) {
         // ENOENT means the directory doesn't exist, so we make the directory.
         if (error.code === 'ENOENT') {
-            try {
-                await fs.promises.mkdir(dirPath, { recursive: true })
-            } catch (err) {
-                // Can't create directory
-                throw err
-            }
+            await fs.promises.mkdir(dirPath, { recursive: true })
         } else {
             throw error;
         }
@@ -25,11 +34,17 @@ async function createDirectory(dirPath) {
 }
 
 // Removes a file if it can.
-async function removeFile(filePath) {
+// TODO: add empty folder removal
+export async function removeFile(filePath) {
     try {
-        await fs.promises.rm(filePath);
+        await fs.promises.rm(filePath)
+        console.log(`removed: ${filePath}`)
     } catch (error) {
-        console.error(`Error removing file: ${filePath}`, error)
+        if (error.code === 'ENOENT') {
+            console.log(`removeFile: ${filePath} didn't exist.`)
+        } else {
+            console.error(`Error removing file: ${filePath}`, error)
+        }
     }
 }
 
@@ -43,8 +58,8 @@ function updateFileInfo(fileInfo, success, message) {
 // moves the complete save to the image directory.
 async function saveFile(file, fileInfo, onFinish) {
     // tmpdir stores files for 3~10 days
-    const saveTo = path.join(os.tmpdir(), fileInfo.filename)
-    const moveTo = path.join(process.env.IMAGES_DIR, fileInfo.filename)
+    const saveTo = path.join(os.tmpdir(), path.basename(fileInfo.savePath))
+    const moveTo = path.join(fileInfo.savePath)
 
     // Since we are trying to preserve the path we have to do a lot of directory creating.
     try {
@@ -67,7 +82,7 @@ async function saveFile(file, fileInfo, onFinish) {
             // on read stream errors (failed reading the uploading file)
             file.on('error', (err) => {
                 if (err === 'ECONNRESET' ) {
-                    console.error(`connection aborted for ${fileInfo.filename}`)
+                    console.error(`connection aborted for ${fileInfo.sanitizedName}`)
                 } else {
                     console.error('FileStream error:', err)
                 }
@@ -87,7 +102,7 @@ async function saveFile(file, fileInfo, onFinish) {
     } catch (error) {
         console.error('Upload write error:', error)
         await removeFile(saveTo) // remove half upload files
-        updateFileInfo(fileInfo, false, `Upload Aborted: ${fileInfo.filename}`)
+        updateFileInfo(fileInfo, false, `Upload Aborted: ${fileInfo.sanitizedName}`)
         onFinish()
         return
     }
@@ -95,7 +110,7 @@ async function saveFile(file, fileInfo, onFinish) {
     // At this point we can see if busboy limited a file because of the size limit.
     // If so we want to remove it.
     if (file.truncated) {
-        console.log(`LIMIT: ${fileInfo.filename} was too large. Removing...`)
+        console.log(`LIMIT: ${fileInfo.sanitizedName} was too large. Removing...`)
         await removeFile(saveTo)
         updateFileInfo(fileInfo, false, `File was larger than: ${process.env.UPLOAD_SIZE_LIMIT}B`)
         onFinish()
@@ -112,7 +127,7 @@ async function saveFile(file, fileInfo, onFinish) {
     } catch (error) {
         console.error('Could not move file:', error)
         await removeFile(saveTo)
-        updateFileInfo(fileInfo, false, `Could not properly save file: ${fileInfo.filename}`)
+        updateFileInfo(fileInfo, false, `Could not properly save file: ${fileInfo.sanitizedName}`)
     }
 
     onFinish()
@@ -120,125 +135,103 @@ async function saveFile(file, fileInfo, onFinish) {
 }
 
 // Handle upload image(s) request for express
-export function uploadImages(beforeSave) {
-    return (req, res, next) => {
-        console.log('Uploading images')
+export async function uploadImages(req, res, next) {
+    console.log('Uploading images')
 
-        // Check for proper content-type, needs to be multipart/form-data
-        // busboy should error out on malformed data, be we do our own check before starting.
-        if (!req.headers['content-type'].includes('multipart/form-data')) {
-            res.status(415).send('Content-Type must be multipart/form-data.')
+    const saveDirectory = await nanoid()
+
+    // Check for proper content-type, needs to be multipart/form-data
+    // busboy should error out on malformed data, be we do our own check before starting.
+    if (!req.headers['content-type'].includes('multipart/form-data')) {
+        res.status(415).send('Content-Type must be multipart/form-data.')
+        return
+    }
+
+    const busboyConfig = {
+        headers: req.headers, // pass headers to busboy
+        limits: {
+            fieldNameSize: 100, //typically 100
+            fileSize: process.env.UPLOAD_SIZE_LIMIT // in bytes
+        },
+        preservePath: true
+    }
+
+    const files = [] // keep track of the files for communicating success or failure.
+    let finished = false // busboy upload status
+    const bb = busboy(busboyConfig)
+
+    // When all files have the property 'succees' AND busboy is finished,
+    // we can send our response.
+    function onWriteFinish() {
+        if (files.every(fileObj => fileObj.hasOwnProperty('success')) && finished) {
+            console.log('Upload Complete')
+            req.files = files
+            next()
+        }
+    }
+
+    // Listen for files being uploaded
+    bb.on('file', async (fieldName, fileStream, fileInfo) => {
+        let isAcceptable = false
+        fileInfo.sanitizedName = sanitizeFilename(fileInfo.filename)
+        fileInfo.id = await randomUUID()
+        fileInfo.savePath = path.join(process.env.IMAGES_DIR, saveDirectory, fileInfo.id)
+        fileInfo.relPath = path.join(saveDirectory, fileInfo.id)
+
+        // make sure the file is an image
+        if (fileInfo.mimeType == 'image/jpeg') {
+            fileInfo.savePath += '.jpeg'
+            fileInfo.relPath += '.jpeg'
+            isAcceptable = true
+        } else if (fileInfo.mimeType == 'image/jpeg') {
+            fileInfo.savePath += '.png'
+            fileInfo.relPath += '.png'
+            isAcceptable = true
+        }
+
+        // track files
+        files.push(fileInfo)
+
+        if (!isAcceptable) {
+            fileStream.resume() // skips file read stream
+            updateFileInfo(fileInfo, false, 'File not accepted.')
+            onWriteFinish()
             return
         }
 
-        const busboyConfig = {
-            headers: req.headers, // pass headers to busboy
-            limits: {
-                fieldNameSize: 100, //typically 100
-                fileSize: process.env.UPLOAD_SIZE_LIMIT // in bytes
-            },
-            preservePath: true
+        // Try saving the file
+        try {
+            console.log('saving...')
+            saveFile(fileStream, fileInfo, onWriteFinish)
+        } catch (error) {
+            console.error('Save file error:', error)
+            updateFileInfo(fileInfo, false, 'Could not save file.')
+            onWriteFinish()
         }
+    })
 
-        const files = [] // keep track of the files for communicating success or failure.
-        let finished = false // busboy upload status
-        const bb = busboy(busboyConfig)
+    bb.on('error', (err) => {
+        console.error('busboy error:', err)
+        finished = true
+    })
 
-        // When all files have the property 'succees' AND busboy is finished,
-        // we can send our response.
-        function onWriteFinish() {
-            if (files.every(fileObj => fileObj.hasOwnProperty('success')) && finished) {
-                console.log('Upload Complete, Status:')
-                console.log(files)
-                // res.status(200).send(files)
-                req.files = files
-                next()
-            }
-        }
+    bb.on('finish', () => {
+        finished = true
+        onWriteFinish() // catch when bb finishes last
+    })
 
-        // Listen for files being uploaded
-        bb.on('file', async (fieldName, fileStream, fileInfo) => {
-            let isAcceptable = false
-            fileInfo.originalFilename = fileInfo.filename
-            // TODO: add date to filename hashing
-            fileInfo.filename = createHash('sha256').update(fileInfo.originalFilename).digest('hex')
+    // busboy unused events
+    // bb.on('close', () => {})
+    // bb.on('unpipe', (stream) => {})
 
-            // make sure the file is an image
-            if (fileInfo.mimeType == 'image/jpeg') {
-                fileInfo.filename += '.jpeg'
-                isAcceptable = true
-            } else if (fileInfo.mimeType == 'image/jpeg') {
-                fileInfo.filename += '.png'
-                isAcceptable = true
-            }
+    // Used to detect if the upload connection breaks.
+    req.on('error', (err) => {
+        console.error('REQUEST ERROR:', err)
+        req.unpipe()
+        bb.destroy(err.code)
+    })
 
-            if (isAcceptable) {
-                try {
-                    isAcceptable = await beforeSave(fileInfo, req)
-                } catch (error) {
-                    console.error('db error:', error)   
-                }
-            }
+    // Connect the request to busboy
+    req.pipe(bb);
 
-            // track files
-            files.push(fileInfo)
-
-            if (!isAcceptable) {
-                fileStream.resume() // skips file read stream
-                updateFileInfo(fileInfo, false, 'File not accepted.')
-                onWriteFinish()
-                return
-            }
-
-
-            // TODO: using filenames is bad. Use hashes of filenames would be safer.
-            // https://github.com/mscdex/busboy#special-parser-stream-events
-
-            // Try saving the file
-            try {
-                console.log('saving...')
-                saveFile(fileStream, fileInfo, onWriteFinish)
-            } catch (error) {
-                console.error('Save file error:', error)
-                updateFileInfo(fileInfo, false, 'Could not save file.')
-                onWriteFinish()
-            }
-        })
-
-        bb.on('error', (err) => {
-            console.error('busboy error:', err)
-            finished = true
-        })
-
-        bb.on('finish', () => {
-            finished = true
-            onWriteFinish() // catch when bb finishes last
-
-            // We could resolve the request here, but we want to wait
-            // until the file writting has completed. We may want to change
-            // this behavior in the future, since the client is concerned with
-            // the servers abilities two write and move files around. They just
-            // need to know if the files upload ok.
-            
-            // the exception is if an empty form is uploaded
-            if (files.length == 0) {
-                res.status(200).send('No files uploaded.')
-            }
-        })
-
-        // busboy unused events
-        // bb.on('close', () => {})
-        // bb.on('unpipe', (stream) => {})
-
-        // Used to detect if the upload connection breaks.
-        req.on('error', (err) => {
-            console.error('REQUEST ERROR:', err)
-            req.unpipe()
-            bb.destroy(err.code)
-        })
-
-        // Connect the request to busboy
-        req.pipe(bb);
-
-    }
 }
