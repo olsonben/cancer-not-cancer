@@ -6,7 +6,6 @@ import busboy from 'busboy'
 import { randomUUID, createHash } from 'crypto'
 import { customAlphabet } from 'nanoid/async'
 import sanitize from 'sanitize-filename'
-import { pipeline } from 'node:stream';
 
 // Removing the dash and hyphen from ids for upload folders
 const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 20)
@@ -78,20 +77,15 @@ async function saveFile(file, fileInfo) {
     // With the promise we can catch all the error and have a generic failed save in the catch.
     try {
         await new Promise((resolve, reject) => {
+            file.pipe(fileWriter)
+            
+            // We can create a hash of the file by piping to a hash stream.
+            // Using sha265, but all openssl algorithms are available.
+            // We are encoding the hash as base64, but hex is also an option.
             const hash = createHash('sha256')
-            pipeline(file, hash, fileWriter, (err) => {
-                // on complete
-                if (err) {
-                    // This error should be handled in the file.on('error') and
-                    // the fileWriter.on('error')
-                    console.error('Upload pipeline error')
-                } else {
-                    const hashResult =  hash.update('utf8').digest('base64')
-                    fileInfo.hash = hashResult
-                    // console.log('HASH:', `length: ${hashResult.length}`)
-                    // console.log(hashResult)
-                }
-            })
+            file.pipe(hash)
+            hash.on('error', err => { console.error(err) })
+            hash.on('finish', () => { fileInfo.hash = hash.update('utf8').digest('base64') })
 
             // on read stream errors (failed reading the uploading file)
             file.on('error', (err) => {
