@@ -3,9 +3,10 @@ import * as fs from 'node:fs';
 import os from 'os'
 import path from 'path'
 import busboy from 'busboy'
-import { randomUUID } from 'crypto'
+import { randomUUID, createHash } from 'crypto'
 import { customAlphabet } from 'nanoid/async'
 import sanitize from 'sanitize-filename'
+import { pipeline } from 'node:stream';
 
 // Removing the dash and hyphen from ids for upload folders
 const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 20)
@@ -77,7 +78,14 @@ async function saveFile(file, fileInfo, onFinish) {
     // With the promise we can catch all the error and have a generic failed save in the catch.
     try {
         await new Promise((resolve, reject) => {
-            file.pipe(fileWriter)
+            const hash = createHash('sha256')
+            pipeline(file, hash, fileWriter, (err) => {
+                // on complete
+                const hashResult =  hash.update('utf8').digest('base64')
+                fileInfo.hash = hashResult
+                // console.log('HASH:', `length: ${hashResult.length}`)
+                // console.log(hashResult)
+            })
 
             // on read stream errors (failed reading the uploading file)
             file.on('error', (err) => {
@@ -122,7 +130,7 @@ async function saveFile(file, fileInfo, onFinish) {
         await createDirectory(path.dirname(moveTo)) // make sure the destination directories exist
         await fs.promises.rename(saveTo, moveTo) // move the files
         // Success
-        console.log(`Moved: ${saveTo} to: ${moveTo}`)
+        console.log(`${'moved:'.padStart(8)} ${saveTo}\n${'to:'.padStart(8)} ${moveTo}`)
         updateFileInfo(fileInfo, true)
     } catch (error) {
         console.error('Could not move file:', error)
@@ -136,7 +144,7 @@ async function saveFile(file, fileInfo, onFinish) {
 
 // Handle upload image(s) request for express
 export async function uploadImages(req, res, next) {
-    console.log('Uploading images')
+    console.log('Uploading images...')
 
     const saveDirectory = await nanoid()
 
@@ -201,8 +209,7 @@ export async function uploadImages(req, res, next) {
 
         // Try saving the file
         try {
-            console.log('saving...')
-            saveFile(fileStream, fileInfo, onWriteFinish)
+            await saveFile(fileStream, fileInfo, onWriteFinish)
         } catch (error) {
             console.error('Save file error:', error)
             updateFileInfo(fileInfo, false, 'Could not save file.')

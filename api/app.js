@@ -207,7 +207,7 @@ async function saveUploadsToDb(req, res, next) {
                 const insertImageSuccess = await addImage(
                     // TODO: move this concatenation to upload.js
                     `/images/${file.relPath}`, // safe: created by the server
-                    file.hash || 'NULL',
+                    file.hash ? file.hash.slice(0,16) : null,
                     ip,
                     req.user.id
                 )
