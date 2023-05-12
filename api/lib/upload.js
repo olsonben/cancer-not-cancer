@@ -57,7 +57,7 @@ function updateFileInfo(fileInfo, success, message) {
 
 // Save a readablestream to disk. First saves to the temporary director, then
 // moves the complete save to the image directory.
-async function saveFile(file, fileInfo, onFinish) {
+async function saveFile(file, fileInfo) {
     // tmpdir stores files for 3~10 days
     const saveTo = path.join(os.tmpdir(), path.basename(fileInfo.savePath))
     const moveTo = path.join(fileInfo.savePath)
@@ -81,10 +81,16 @@ async function saveFile(file, fileInfo, onFinish) {
             const hash = createHash('sha256')
             pipeline(file, hash, fileWriter, (err) => {
                 // on complete
-                const hashResult =  hash.update('utf8').digest('base64')
-                fileInfo.hash = hashResult
-                // console.log('HASH:', `length: ${hashResult.length}`)
-                // console.log(hashResult)
+                if (err) {
+                    // This error should be handled in the file.on('error') and
+                    // the fileWriter.on('error')
+                    console.error('Upload pipeline error')
+                } else {
+                    const hashResult =  hash.update('utf8').digest('base64')
+                    fileInfo.hash = hashResult
+                    // console.log('HASH:', `length: ${hashResult.length}`)
+                    // console.log(hashResult)
+                }
             })
 
             // on read stream errors (failed reading the uploading file)
@@ -111,7 +117,6 @@ async function saveFile(file, fileInfo, onFinish) {
         console.error('Upload write error:', error)
         await removeFile(saveTo) // remove half upload files
         updateFileInfo(fileInfo, false, `Upload Aborted: ${fileInfo.sanitizedName}`)
-        onFinish()
         return
     }
 
@@ -121,7 +126,6 @@ async function saveFile(file, fileInfo, onFinish) {
         console.log(`LIMIT: ${fileInfo.sanitizedName} was too large. Removing...`)
         await removeFile(saveTo)
         updateFileInfo(fileInfo, false, `File was larger than: ${process.env.UPLOAD_SIZE_LIMIT}B`)
-        onFinish()
         return
     }
 
@@ -137,9 +141,6 @@ async function saveFile(file, fileInfo, onFinish) {
         await removeFile(saveTo)
         updateFileInfo(fileInfo, false, `Could not properly save file: ${fileInfo.sanitizedName}`)
     }
-
-    onFinish()
-
 }
 
 // Handle upload image(s) request for express
@@ -203,18 +204,17 @@ export async function uploadImages(req, res, next) {
         if (!isAcceptable) {
             fileStream.resume() // skips file read stream
             updateFileInfo(fileInfo, false, 'File not accepted.')
-            onWriteFinish()
-            return
+        } else {
+            // Try saving the file
+            try {
+                await saveFile(fileStream, fileInfo)
+            } catch (error) {
+                console.error('Save file error:', error)
+                updateFileInfo(fileInfo, false, 'Could not save file.')
+            }
         }
 
-        // Try saving the file
-        try {
-            await saveFile(fileStream, fileInfo, onWriteFinish)
-        } catch (error) {
-            console.error('Save file error:', error)
-            updateFileInfo(fileInfo, false, 'Could not save file.')
-            onWriteFinish()
-        }
+        onWriteFinish()
     })
 
     bb.on('error', (err) => {
