@@ -8,8 +8,7 @@
  * https://youtu.be/Q0a0594tOrc
  */
 
-import dbConnect from './database.js'           // Database to set permissions on user
-const pool = dbConnect(false)
+import { getUserByUsername, getUserById } from './database.js'
 import * as path from 'path'
 
 // Manage Cross Origin Resource Sharing
@@ -47,28 +46,24 @@ passport.use(new GoogleStrategy({
         callbackURL: authCallbackURL.href,    // Handler for coming back after authentication
         passReqToCallback: true
     },
-    (request, accessToken, refreshToken, profile, done) => {
-        const query = `SELECT id, is_enabled FROM users WHERE username = "${profile.email}";`
-        
-        pool.query(query, (err, rows, fields) => {
-            if (err) {
-                return done(err)
-            }
-
-            // User must be registered and enabled to be allowed in
-            if (rows.length != 1) {
-                // user not in database
+    async (request, accessToken, refreshToken, profile, done) => {
+        try {
+            const user = await getUserByUsername(profile.email)
+            if (!user) {
                 console.log(`Failed login: ${profile.email} not a user.`)
                 return done(null, false, { message: 'Not a user.' })
-            } else if (!rows[0].is_enabled) {
-                // user not enabled
+            } else if (!user.is_enabled) {
                 console.log(`Failed login: ${profile.email} not enabled.`)
                 return done(null, false, { message: 'Account disabled.' })
+            } else {
+                // Only store id number in session
+                profile.id = user.id
+                return done(null, profile)
             }
 
-            profile.id = rows[0].id     // Only store id number in session
-            return done(null, profile)
-        })
+        } catch (err) {
+            return done(err)
+        }
     }
 ));
 
@@ -82,19 +77,16 @@ passport.serializeUser((user, done) => {
 })
 
 // User object attaches to req as req.user (doesn't leave the server)
-passport.deserializeUser((id, done) => {
-    const query = `SELECT * FROM users WHERE id = "${id}";`
-    pool.query(query, (err, rows, fields) => {
-        // Store permissions to req.user
-        done(null, {
-            id: rows[0].id,
-            permissions: {
-                enabled: !!Number(rows[0].is_enabled), // !!Number() returns boolean for 1 & 0
-                uploader: !!Number(rows[0].is_uploader),
-                pathologist: !!Number(rows[0].is_pathologist),
-                admin: !!Number(rows[0].is_admin),
-            }
-        })
+passport.deserializeUser(async (id, done) => {
+    const user = await getUserById(id)
+    done(null, {
+        id: user.id,
+        permissions: {
+            enabled: !!Number(user.is_enabled), // !!Number() returns boolean for 1 & 0
+            uploader: !!Number(user.is_uploader),
+            pathologist: !!Number(user.is_pathologist),
+            admin: !!Number(user.is_admin),
+        }
     })
 })
 

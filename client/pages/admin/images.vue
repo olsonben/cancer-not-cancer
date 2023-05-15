@@ -122,6 +122,14 @@ export default {
             this.fileCount = 0
         },
 
+        appendSubmittedFile(filename, propObj) {
+            this.$set(this.submittedFiles, filename, propObj)
+        },
+
+        removeSubmittedFile(filename) {
+            this.$delete(this.submittedFiles, filename)
+        },
+
         // Fill this.files with the files added at ref=fileInput
         newImage(event) {
             for (let i = 0; i < event.target.files.length; i++) {
@@ -142,45 +150,42 @@ export default {
             // image upload requires submittion via form data 
             const data = new FormData()
 
+            const clearNotification = (filename) => {
+                // set a timer to kill the notification
+                setTimeout(() => {
+                    this.removeSubmittedFile(filename)
+                }, this.notificationTime)
+            }
+
             // Add the files array object
             this.files.forEach((file, index) => {
                 console.log(file)
                 if (file.size > this.$config.uploadSizeLimit) {
                     console.error(`${file.name} is too large. MAX_BYTES: ${this.$config.uploadSizeLimit}`)
-                    this.submittedFiles[file.name] = {
+                    this.appendSubmittedFile(file.name, {
                         submissionSuccess: false,
                         message: 'Too large',
                         originalname: file.name
-                    }
-                    setTimeout(() => {
-                        this.$delete(this.submittedFiles, file.name)
-                    }, this.notificationTime)
+                    }) 
+                    clearNotification(file.name)
                     return
                 }
                 const fileName = file.webkitRelativePath === '' ? file.name : file.webkitRelativePath
                 data.append(`files[${index}]`, file, fileName)
 
                 // Keep track of important information for notifications
-                this.submittedFiles[fileName] = {
+                this.appendSubmittedFile(fileName, {
                     submissionSuccess: null,
                     message: null,
                     originalname: fileName
-                }
+                })
             })
-            
-            const clearNotification = (filename) => {
-                // set a timer to kill the notification
-                setTimeout(() => {
-                    this.$delete(this.submittedFiles, filename)
-                }, this.notificationTime)
-            }
 
             try {
                 const response = await this.$axios.post('/images', data)
 
                 // Handling 0 file upload edge case
                 if (response.data !== 'No files uploaded.') {
-                    console.log(response.data)
                     for (let file of response.data) {
                         // update file's success value
                         this.submittedFiles[file.filename].submissionSuccess = file.success
@@ -199,11 +204,20 @@ export default {
                 } else {
                     console.log("error")
                     console.log(error)
-                    for (const file of error.response.data) {
-                        console.log(file)
-                        // update failed status
-                        this.submittedFiles[file.filename].submissionSuccess = file.success || 'failure'
-                        clearNotification(file.filename)
+                    if (error.response.data) {
+                        for (const file of error.response.data) {
+                            console.log(file)
+                            // update failed status
+                            this.submittedFiles[file.filename].submissionSuccess = file.success || false
+                            clearNotification(file.filename)
+                        }
+                    } else {
+                        // Handle lost connection/server failure
+                        for (const filename in this.submittedFiles) {
+                            this.submittedFiles[filename].submissionSuccess = false
+                            this.submittedFiles[filename].message = 'Not Uploaded'
+                            clearNotification(filename)
+                        }
                     }
                 }
             } finally {

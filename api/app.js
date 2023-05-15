@@ -11,9 +11,8 @@ import express from 'express' // We have an express server (https://expressjs.co
 
 /// Features
 import bodyParser from 'body-parser' // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
-import mysql from 'mysql' // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
 
-import { uploadImages } from './lib/upload.js' // middleware to handle uploads
+import { uploadImages, removeFile, removeEmptyImageFolders } from './lib/upload.js' // middleware to handle uploads
 import { isLoggedIn, isValid, getIP } from './lib/functions.js'     // Helper functions
 // These are all for authentication
 import auth from './lib/auth.js' // This needs to be loaded for passport.authenticate
@@ -29,11 +28,10 @@ const port = process.env.PORT || 5000;
 const imageBaseURL = process.env.IMAGE_URL
 
 
-/*****************
- * MariaDB DATABASE
- *****************/
-import dbConnect from './lib/database.js'
-const pool = dbConnect(true)
+/******************
+ * DATABASE Methods
+ ******************/
+import { getNextImage, addRating, createUser, addImage } from './lib/database.js'
 
 /******************
  * REQUEST PARSING
@@ -58,39 +56,34 @@ if (process.env.NODE_ENV != 'production') {
  * Express REQUESTS
  **********************************************/
 
-// TODO: remove when no longer needed.
-app.get('/123', (req, res) => {
-    res.send('This is a test!!!')
-})
-
 /*****************
  * GET
  *****************/
-app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
+app.get('/nextImage', isLoggedIn, isValid, async (req, res, next) => {
     console.log("Get /nextImage");
     
-    // Get random row
-    // NOTE: this is not very efficient, but it works
-    const query = "SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;"
-    
-    pool.query(query, (err, rows, fields) => {
-        if (err) throw err
-        let imagePath = rows[0].path
+    try {
+        const img = await getNextImage()
+        // TODO: Use URLs and Path Join instead of this logic
+        let imagePath = img.path
         if (imageBaseURL.slice(-1) == "/") {
-            if (rows[0].path.charAt(0) == "/") {
+            if (img.path.charAt(0) == "/") {
                 imagePath = imagePath.slice(1)
             }
-        } else if (rows[0].path.charAt(0) != "/") {
+        } else if (img.path.charAt(0) != "/") {
             imagePath = "/" + imagePath
         }
 
         let url = imageBaseURL + imagePath
         res.send({
-            id: rows[0].id, // imageID
-            url: imageBaseURL + rows[0].path
+            id: img.id, // imageID
+            url: imageBaseURL + img.path
         })
-        console.log("Successful image get query")
-    })
+    } catch (err) {
+        next(err)
+    }
+    
+    
 })
 
 // Checker for if the user is authenticated (NOT middleware)
@@ -108,7 +101,7 @@ app.get('/isLoggedIn', (req, res) => {
  *****************/
 
 // Insert the hotornots
-app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
+app.post('/hotornot', isLoggedIn, isValid, async (req, res, next) => {
     console.log("post /hotornot")
     // REMEMBER: the data in body is in JSON format
 
@@ -135,21 +128,24 @@ app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
         return
     }
     
-    const query = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) 
-        VALUES (${req.user.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});
-        UPDATE images 
-        SET times_graded = times_graded + 1 
-        WHERE id = ${req.body.id};`
-    
-    pool.query(query, (err, results, fields) => {
-        if (err) console.log(err)
-        console.log("Successful hotornot insert query");
-        res.sendStatus(200)
-    })
+    try {
+        const insertSuccess = await addRating(
+            req.user.id,
+            req.body.id,
+            req.body.rating,
+            req.body.comment,
+            getIP(req))
+
+        if (insertSuccess) {
+            res.sendStatus(200)
+        }
+    } catch (err) {
+        next(err)
+    }
 })
 
 // Insert new user
-app.post('/users', isLoggedIn, isValid, (req, res) => {
+app.post('/users', isLoggedIn, isValid, async (req, res, next) => {
     console.log("Post /users");
 
     // Check permissions
@@ -177,64 +173,100 @@ app.post('/users', isLoggedIn, isValid, (req, res) => {
         res.status(413).send(message)
     }
 
-    const query = `INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES 
-        ("${req.body.fullname}", "${req.body.email}", "${req.body.password}", 
-        ${req.body.permissions.enabled ? 1 : 0}, 
-        ${req.body.permissions.pathologist ? 1 : 0}, 
-        ${req.body.permissions.uploader ? 1 : 0}, 
-        ${req.body.permissions.admin ? 1 : 0});`
+    try {
+        const addUserSuccess = await createUser(
+            req.body.fullname,
+            req.body.email,
+            req.body.password,
+            req.body.permissions.enabled,
+            req.body.permissions.pathologist,
+            req.body.permissions.uploader,
+            req.body.permissions.admin
+        )
 
-    pool.query(query, (err, rows, fields) => {
-        if (err) {
+        if (addUserSuccess) {
+            res.status(200).send(req.body)
+        } else {
             // No duplicate users
-            if (err.code === 'ER_DUP_ENTRY') {
-                res.status(409).send({
-                    message: "Email already exists in database.",
-                    user: req.body
-                })
-                return // Quit the function early to avoid compounding send
-            } else {
-                console.log(err)
+            res.status(409).send({
+                message: "Email already exists in database.",
+                user: req.body
+            })
+        }
+    } catch (err) {
+        next(err)
+    }
+})
+
+
+async function saveUploadsToDb(req, res, next) {
+    const ip = getIP(req)
+    for (const file of req.files) {
+        if (file.success) {
+            try {
+                const insertImageSuccess = await addImage(
+                    // TODO: move this concatenation to upload.js
+                    file.relPath, // safe: created by the server
+                    file.hash || null,
+                    ip,
+                    req.user.id
+                )
+
+                if (!insertImageSuccess) {
+                    console.log('File already exists:', file.sanitizedName)
+                    file.success = false
+                    file.message = 'File already exists.'
+                }
+            } catch(err) {
+                // database error
+                console.error(err)
+                file.success = false
+                file.message = 'Upload Error. Please try again later.'
             }
         }
-        console.log("Successful user insert query");
-        res.status(200).send(req.body)
-    })
-})
+    }
+    next()
+}
 
+async function removeFailedImageSaves(req, res, next) {
+    for (const file of req.files) {
+        if (!file.success) {
+            await removeFile(file.savePath)
+        }
+    }
+    removeEmptyImageFolders()
+    next()
+}
 
-async function dbConfirm(file, req) {
-    const query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("${file.filename}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
+const uploadImageChain = [uploadImages, saveUploadsToDb, removeFailedImageSaves]
 
-    return new Promise((resolve, reject) => {
-        pool.query(query, (err, rows, fields) => {
-            if (err) {
-                // No duplicate images
-                if (err.code === 'ER_DUP_ENTRY') {
-                    console.log('File already exists:', file.filename)
-                    resolve(false)
-                } else {
-                    console.error(err)
-                    reject(err)
-                }
-            } else {
-                console.log(`Successful image insert query: ${file.filename}`)
-                resolve(true)
-            }
+// TODO: update the image pipeline to use unified error handler via `next(err)`
+app.post('/images', isLoggedIn, isValid, uploadImageChain, (req, res, next) => {
+    if (req.files.length === 0) {
+        res.status(200).send('No files uploaded.')
+    } else {
+        const allowedKeys = ["filename", "mimeType", "id", "relPath", "success", "message"]
+        const resultData = req.files.map((file) => {
+            const filteredFile = Object.keys(file)
+            .filter(key => allowedKeys.includes(key))
+            .reduce((obj, key) => {
+                obj[key] = file[key]
+                return obj
+            }, {})
+            return filteredFile
         })
-    })
-}
-
-function dbApprove(files) {
-    // TODO:
-    // For each file if file.success is true update db entry and make image live
-}
-
-app.post('/images', isLoggedIn, isValid, uploadImages(dbConfirm), (req, res) => {
-    dbApprove(req.files)
-    res.status(200).send(req.files)
+        
+        res.status(200).send(resultData)
+    }
 })
 
+
+// Unified error handler
+app.use((err, req, res, next) => {
+    console.log("Sending status(500). Route error caught...")
+    console.error('\x1b[31m', err.stack, '\x1b[0m')
+    res.status(500).send('Something broke!')
+})
 
 /**********************************************
  * LISTEN

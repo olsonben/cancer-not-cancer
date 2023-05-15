@@ -1,79 +1,103 @@
-import mysql from 'mysql'
-import sqlite3 from 'sqlite3'
-import path from 'node:path'
-import process from 'node:process'
+import { DatabaseOps } from "./dbops.js";
 
-// Basis for connecting to the db
-function dbConnection(multipleStatements) {
-    // Using createPool instead of createConnection fixes an issue with sql
-    // server timeouts and matches api recommendations.
-    const pool = mysql.createPool({
-        connectionLimit: 10,
-        host: 'localhost',
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DATABASE,
-        multipleStatements: multipleStatements
-    }) 
-    return pool
+const dbConfig = {
+    type: process.env.DB_PROTOCOL,
+    connectionLimit: 10,
+    host: 'localhost',
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DATABASE,
+    multipleStatements: true
 }
 
-/** SQLite database class to mirror mysql connection when running locally. */
-class SqliteConnection {
-    /**
-     * Create a sqlite3 connections to an instance of the pathapp database.
-     * @param {boolean} multipleStatements - not actually used, all non SELECT
-     * statements can handle multiple statments.
-     */
-    constructor(multipleStatements) {
-        const databasePath = path.resolve('../html/pathapp.sqlite3')
-        console.log(databasePath)
-        this.db = new sqlite3.Database(databasePath);
-    }
+const dbOps = new DatabaseOps(dbConfig)
 
-    /**
-     * Process sql command with sqlite. If a SELECT command is detected, an
-     * array or resulting rows is returned. Anything else is just executed and
-     * a callback is called.
-     * @param {string} queryString 
-     * @param {function} callback 
-     */
-    query(queryString, callback) {
-        // callback == (err, results, fields)
-        const isNotSelect = !queryString.toUpperCase().startsWith('SELECT');
-        if (isNotSelect) {
-            this.db.exec(queryString, err => {
-                if (err) {
-                    // Error executing
-                    callback(err);
-                } else {
-                    // Success
-                    callback();
-                }
-            })
+export async function getUserByUsername(username) {
+    const query = `SELECT * FROM users WHERE username = ?`
+    const rows = await dbOps.select(query, [username])
+    return rows[0]
+}
+
+export async function getUserById(id) {
+    const query = `SELECT * FROM users WHERE id = ?`
+    const rows = await dbOps.select(query, [id])
+    return rows[0]
+}
+
+export async function getNextImage() {
+    // NOTE: this is not very efficient, but it works
+    const query = `SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;`
+    const rows = await dbOps.select(query, [])
+    return rows[0]
+}
+
+export async function addRating(userId, imageId, rating, comment, fromIp) {
+    const ratingQuery = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) 
+        VALUES (?, ?, ?, ?, ?);`
+    const updateQuery = `UPDATE images 
+        SET times_graded = times_graded + 1 
+        WHERE id = ?;`
+    
+    await Promise.all([
+        dbOps.execute(ratingQuery, [userId, imageId, rating, comment, fromIp]),
+        dbOps.execute(updateQuery, [imageId])
+    ])
+
+    console.log("Successful hotornot insert query");
+    return true
+}
+
+export async function createUser(fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) {
+    const addUserQuery = `INSERT INTO users (
+        fullname,
+        username,
+        password,
+        is_enabled,
+        is_pathologist,
+        is_uploader,
+        is_admin
+        ) VALUES (?, ?, ?, ?, ?, ?, ?);`
+    
+    try {
+        // TODO: Consider using ternary instead of number for speed.
+        // ex. is_enabled ? 1 : 0
+        await dbOps.execute(
+            addUserQuery, 
+            [
+                fullname,
+                username,
+                password,
+                Number(is_enabled),
+                Number(is_pathologist),
+                Number(is_uploader),
+                Number(is_admin)
+            ]
+        )
+
+        console.log("Successful user insert query");
+        return true
+    } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            return false
         } else {
-            // Run as a select
-            this.db.all(queryString, (error, rows) => {
-                if (error) {
-                    // Error;
-                    callback(error);
-                } else {
-                    // Success
-                    callback(null, rows);
-                }
-            });
+            throw(err)
+        }
+    }
+    
+}
+
+export async function addImage(path, hash, from_ip, user_id) {
+    const addImageQuery = `INSERT INTO images (path, hash, from_ip, user_id) VALUES (?, ?, ?, ?);` // insert image
+
+    try {
+        await dbOps.execute(addImageQuery, [ path, hash, from_ip, user_id])
+        console.log(`Successful image insert query: ${path}`);
+        return true
+    } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            return false
+        } else {
+            throw(err)
         }
     }
 }
-
-let defaultConnection;
-
-if (process.env.DB_PROTOCOL != 'sqlite3') {
-    defaultConnection = dbConnection
-} else {
-    // const sqliteconn = SqliteConnection;
-    console.log("!! USING SQLITE3 FOR DATABASE OPERATIONS !!")
-    defaultConnection = function(...args) { return new SqliteConnection(...args) };
-}
-
-export default defaultConnection
