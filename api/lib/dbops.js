@@ -1,4 +1,5 @@
 // import Pool from 'mysql2/typings/mysql/lib/Pool'
+import path from 'path'
 
 async function buildMySqlConnection(dbConfig) {
     const { default: mysql } = await import('mysql2/promise')
