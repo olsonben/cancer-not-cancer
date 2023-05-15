@@ -7,8 +7,8 @@
             <!-- Upload box -->
             <div class='tabs'>
                 <ul>
-                    <li :class="{ 'is-active': folderUpload }"><a @click='uploadingFolders = true'>Upload Folders</a></li>
-                    <li :class="{ 'is-active': fileUpload }"><a @click='uploadingFolders = false'>Upload Files</a></li>
+                    <li :class="{ 'upload-active': folderUpload }"><a @click='uploadingFolders = true'>Upload Folders</a></li>
+                    <li :class="{ 'upload-active': fileUpload }"><a @click='uploadingFolders = false'>Upload Files</a></li>
                 </ul>
             </div>
             <div>
@@ -231,6 +231,14 @@ export default {
 
 <!-- Cannot scope this for some reason -->
 <style lang='scss'>
+li.upload-active a,
+li.upload-active a:hover{
+    color: $info;
+    // font-weight: bold;
+    border-bottom-color: $info;
+}
+
+
 /* This is all to style the drop box */
 .dropbox {
     outline: 2px dashed grey; /* the dash box */

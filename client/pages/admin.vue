@@ -25,6 +25,7 @@ export default {
 <style lang='scss' scoped>
 a.nuxt-link-exact-active {
     color: $info;
+    font-weight: bold;
     border-bottom-color: $info;
 }
 /* move .section up to avoid oddly large whitespace */
