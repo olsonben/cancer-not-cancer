@@ -6,6 +6,7 @@ import busboy from 'busboy'
 import { randomUUID, createHash } from 'crypto'
 import { customAlphabet } from 'nanoid/async'
 import sanitize from 'sanitize-filename'
+import deleteEmpty from 'delete-empty'
 
 // Removing the dash and hyphen from ids for upload folders
 const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 20)
@@ -33,8 +34,20 @@ async function createDirectory(dirPath) {
     }
 }
 
+export async function removeEmptyImageFolders() {
+    try {
+        const imageDirectory = path.resolve(process.env.IMAGES_DIR)
+        let deletedFolders = await deleteEmpty(imageDirectory)
+        if (deletedFolders.length > 0) {
+            console.log('Empty folders removed:')
+            console.log(deletedFolders)
+        }
+    } catch (err) {
+        console.error(err)
+    }
+}
+
 // Removes a file if it can.
-// TODO: add empty folder removal
 export async function removeFile(filePath) {
     try {
         await fs.promises.rm(filePath)

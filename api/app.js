@@ -12,7 +12,7 @@ import express from 'express' // We have an express server (https://expressjs.co
 /// Features
 import bodyParser from 'body-parser' // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
 
-import { uploadImages, removeFile } from './lib/upload.js' // middleware to handle uploads
+import { uploadImages, removeFile, removeEmptyImageFolders } from './lib/upload.js' // middleware to handle uploads
 import { isLoggedIn, isValid, getIP } from './lib/functions.js'     // Helper functions
 // These are all for authentication
 import auth from './lib/auth.js' // This needs to be loaded for passport.authenticate
@@ -234,6 +234,7 @@ async function removeFailedImageSaves(req, res, next) {
             await removeFile(file.savePath)
         }
     }
+    removeEmptyImageFolders()
     next()
 }
 
