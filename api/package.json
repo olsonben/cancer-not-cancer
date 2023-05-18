@@ -9,7 +9,7 @@
     "dev": "npm run development watch",
     "watch": "nodemon app.js",
     "deploy": "pm2 start app.js",
-    "development": "NODE_ENV=production dotenv-run-script .env --",
+    "development": "dotenv-run-script .env --",
     "staging": "NODE_ENV=production dotenv-run-script .env.testing --",
     "production": "NODE_ENV=production dotenv-run-script .env.production --"
   },
