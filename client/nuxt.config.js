@@ -1,5 +1,6 @@
 const base = new URL(process.env.PUBLIC_PATH).pathname
 export default {
+  globalName: 'pathapp',
   // Target: https://go.nuxtjs.dev/config-target
   target: 'static',
   telemetry: false,

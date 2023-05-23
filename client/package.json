@@ -8,9 +8,9 @@
     "generate": "NODE_OPTIONS=--openssl-legacy-provider nuxt generate --dotenv .env.production",
     "css-build": "sass --no-source-map assets/scss/main.scss assets/css/main.css > ../log/sass.log",
     "css-watch": "npm run css-build -- --watch",
-    "staging": "NODE_OPTIONS=--openssl-legacy-provider nuxt start --dotenv .env.testing --port $PORT",
-    "build-stage": "NODE_OPTIONS=--openssl-legacy-provider nuxt build --dotenv .env.testing",
-    "gen-stage": "NODE_OPTIONS=--openssl-legacy-provider nuxt generate --dotenv .env.testing"
+    "staging": "NODE_OPTIONS=--openssl-legacy-provider nuxt start --dotenv .env.staging --port $PORT",
+    "build-stage": "NODE_OPTIONS=--openssl-legacy-provider nuxt build --dotenv .env.staging",
+    "gen-stage": "NODE_OPTIONS=--openssl-legacy-provider nuxt generate --dotenv .env.staging"
   },
   "devDependencies": {
     "@nuxtjs/style-resources": "^1.2.1",
