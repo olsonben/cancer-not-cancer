@@ -10,7 +10,7 @@
     "watch": "nodemon app.js",
     "deploy": "pm2 start app.js",
     "development": "dotenv-run-script .env --",
-    "staging": "NODE_ENV=production dotenv-run-script .env.testing --",
+    "staging": "NODE_ENV=production dotenv-run-script .env.staging --",
     "production": "NODE_ENV=production dotenv-run-script .env.production --"
   },
   "author": "",
