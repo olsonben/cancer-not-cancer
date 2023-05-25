@@ -3,6 +3,9 @@
     <nav class="navbar is-primary block" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
             <!-- Should include the logo, but it was acting weird -->
+            <nuxt-link to='/' class="navbar-item logo" href="https://client.milmed.ai">
+                <img src="~assets/logo.svg" alt="Milmed Logo">
+            </nuxt-link>
 
             <!-- Burger menu -->
             <a 
@@ -126,37 +129,4 @@ export default {
 
 <style lang="scss" scoped>
 /* CSS for the current page */
-a.nuxt-link-exact-active {
-    background-color: $info;
-    color: white !important; //this should be moved out of the .vue and into a scss or css file since it's static, also our need to use !important gives me pause.
-}
-
-.navbar.is-primary:hover .navbar-start > .navbar-item:hover{
-    background-color: $info;
-    color: white !important; //this should be moved out of the .vue and into a scss or css file since it's static
-}
-
-/* Logo */
-.navbar, .navbar-brand {
-    background-image: url(~assets/logo.svg);
-    background-position: left;
-    background-position-x: .70rem;
-    background-size: 2rem auto;
-    background-repeat: no-repeat;
-}
-/* Spacer for the logo */
-.navbar-start {
-    margin-left: 3.4rem;
-}
-/* Adjust burger size for consistent navbar height */
-.navbar-burger {
-    height: $navbar-height;
-    width: $navbar-height; /* I want it square */
-}
-/* adjustments for mobile */
-@media screen and (max-width: 1024px) {
-    a.nuxt-link-exact-active {
-        border-radius: 1rem 0 0 1rem;
-    }
-}
 </style>
