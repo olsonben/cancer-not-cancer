@@ -1,4 +1,15 @@
 // These are globally accessible variables
-$block-margin: 1.5rem;
+$block-margin: 24px;
 $button-margin: calc($block-margin/3);
 $navbar-height: 3.5rem;
+
+// Media queries for tablets, phone, and small phones
+@mixin for-size($size) {
+    @if $size == tablet {
+        @media screen and (min-width: 479px) and (max-width: 1024px) { @content; }
+    } @else if $size == mobile {
+        @media screen and (max-width: 479px) { @content; }
+    } @else if $size == small_mobile {
+        @media screen and (max-width: 381px) { @content; }
+    }
+}

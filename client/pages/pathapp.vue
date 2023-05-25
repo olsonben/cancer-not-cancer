@@ -5,9 +5,11 @@
         <span class='grade-bar yes' :class="{ 'shown': moveRight }" :style='cssVars'></span>
 
         <!-- Image to grade -->
-        <div class='prompt wrapper'>
-            <div class='prompt focus'></div>
-            <img class='prompt img' :src='this.image.url' :alt='image.url' />
+        <div class='prompt'>
+            <div class="image-container">
+                <div class='roi'></div>
+                <img :src='this.image.url' :alt='image.url' />
+            </div>
         </div>
 
         <!-- Response section: grade + comment --> 
@@ -239,6 +241,7 @@ export default {
 </script>
 
 <style lang='scss' scoped>
+
 .app {
     /* To prevent scrolling */
     height: 100%;
@@ -276,35 +279,58 @@ $no-cancer-color: #ff6184;
 
 /* Control image size + overlay */
 .prompt {
-    &.wrapper {
-        margin: auto;
-        /**
-        * Important for .focus
-        * `position: absolute` works off first parent with `position: relative`
-        */
+    margin: auto;
+    position: relative;
+    width: 50vh;
+
+    @include for-size(mobile) {
+        padding: $block-margin;
+    }
+
+    // Trick to keep aspect ratio square in .prompt
+    &:after {
+        content: '';
+        display: block;
+        padding-top: calc(100%);
+    }
+
+    .image-container {
         position: relative;
-    }
-    /* Image sizing for large screens */
-    &.img {
-        object-fit: contain;
-        width: 50vw;
-        min-width: 100%;
-        max-height: 50vh;
+        width: 100%;
+        height: 100%;
+        line-height: 0;
 
-    }
-    /* Focus is a white box + centered in the image */
-    &.focus {
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        bottom: 0;
+        img {
+            object-fit: contain;
+            width: 100%;
+            height: 100%;
+        }
 
-        width: 128px;
-        height: 128px;
-        margin: auto;
-        border: 1px solid white;
-    }
+        /**
+        * ROI is a white box centered in the image
+        *
+        * Important for .roi to be `position: absolute` and parent `position: relative`
+        * That way the overlay will be centered on the image.
+        */
+        .roi {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+
+            // TODO: make this sizing dynamic
+            // ROI fallback
+            width: 14.05%;
+            height: 14.05%;
+            // ROI most accurate
+            width: calc(100% * 128/911);
+            height: calc(100% * 128/911);
+            margin: auto;
+            border: 1px solid white;
+            pointer-events: none;
+        }
+    }    
 }
 /* stuck to the bottom of the screen */
 .response-area {
@@ -318,6 +344,11 @@ $no-cancer-color: #ff6184;
     display: flex;
     justify-content: center;
     flex-direction: column;
+
+    /* special for extra-small mobile */
+    @include for-size(small_mobile) {
+        margin: 0 9px;
+    }
 }
 .icon-button {
     /* centered circle */
@@ -342,31 +373,6 @@ $no-cancer-color: #ff6184;
         &.shown {
             background-color: $yes-cancer-color;
         }
-    }
-}
-/**
- * Adjustments for mobile
- */
-
-/* We have to scale the image to maintain boundary */
-@media screen and (min-width: 479px) and (max-width: 1024px) {
-    .prompt.img {
-        width: 100vw;
-        min-width: 100%;
-        max-height: 50vh;
-    }
-}
-@media screen and (max-width: 479px) {
-    .prompt.img {
-        object-fit: contain;
-        width: calc(100vw - 2 * $block-margin);
-
-    }
-}
-/* special for extra-small mobile */
-@media screen and (max-width: 381px) {
-    .response-area {
-        margin: 0 9px;
     }
 }
 </style>
