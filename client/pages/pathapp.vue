@@ -1,5 +1,7 @@
 <template>
     <div class='app'>
+        <div class="bg no" :style='cssVars'></div>
+        <div class="bg yes" :style='cssVars'></div>
         <!-- Grade bars for clear user response -->
         <span class='grade-bar no' :class="{ 'shown': moveLeft }" :style='cssVars'></span>
         <span class='grade-bar yes' :class="{ 'shown': moveRight }" :style='cssVars'></span>
@@ -52,7 +54,10 @@ export default {
             yMove: null,
             touchEvent: null,
             moveRight: false,
-            moveLeft: false
+            moveLeft: false,
+            percent: 0.0,
+            innerWidth: window.innerWidth,
+            swipeDistance: 100
         }
     },
 
@@ -80,7 +85,10 @@ export default {
         // give the attribute `:style='cssVars'` to anything that should have access to these variables
         cssVars() {
             return {
-                '--x-diff': (this.xMove !== null ? this.xMove - this.xDown : 0) + 'px'
+                // '--x-diff': (this.xMove !== null ? this.xMove - this.xDown : 0) + 'px',
+                '--x-diff': '0px',
+                '--bg-no-opacity': (this.percent > 0 ? this.percent : 0),
+                '--bg-yes-opacity': (this.percent < 0 ? this.percent*-1.0 : 0),
             }
         }
     },
@@ -152,6 +160,7 @@ export default {
             const firstTouch = this.getTouches(event)[0]
             this.xDown = firstTouch.clientX
             this.yDown = firstTouch.clientY
+            this.innerWidth = window.innerWidth
         },
 
         // Handler for touchmove event
@@ -161,20 +170,30 @@ export default {
 
             // Record xMove for grade-bar css (see computed: cssVars)
             this.xMove = firstTouch.clientX
-            // this.yMove = firstTouch.clientY
+            this.yMove = firstTouch.clientY
 
             this.touchMacro(event, 0, undefined, 
             () => {
                 // Swapping movement flags
                 // console.log("right")
-                this.moveLeft = false
-                this.moveRight = true
+                if (this.percent <= -1) {
+                    this.moveLeft = false
+                    this.moveRight = true
+                } else {
+                    this.moveLeft = false
+                    this.moveRight = false
+                }
             }, 
             undefined, 
             () => {
                 // console.log("left")
-                this.moveLeft = true
-                this.moveRight = false
+                if (this.percent >= 1) {
+                    this.moveLeft = true
+                    this.moveRight = false
+                } else {
+                    this.moveLeft = false
+                    this.moveRight = false
+                }
             })
         },
 
@@ -185,7 +204,7 @@ export default {
                                         this.touchEvent.originalEvent.touches
                 if (touchList.length == 1) {
                     // touchend event has an empty `touches` list, so we pass the touchmove event instead
-                    this.touchMacro(this.touchEvent, 100, () => {
+                    this.touchMacro(this.touchEvent, this.swipeDistance, () => {
                         this.commenting = true
                     }, () => {
                         this.onClick('yes-cancer')
@@ -205,6 +224,7 @@ export default {
             this.xMove = null
             this.yMove = null
             this.touchEvent = null // important to clear touchmove event to avoid tapping causing submissions
+            this.percent = 0.0
         },
 
         touchMacro(event, margin = 0, top = undefined, right = undefined, bottom = undefined, left = undefined) {
@@ -218,6 +238,10 @@ export default {
 
             const xDiff = this.xDown - touches[0].clientX
             const yDiff = this.yDown - touches[0].clientY
+            
+            // this.percent = xDiff/(this.innerWidth*0.5)
+            this.percent = xDiff/(this.swipeDistance)
+            
 
             // Interesting callbacks are not undefined and they are not empty functions
             const interesting = {
@@ -264,6 +288,27 @@ $grade-bar-radius: 1rem;
 $grade-bar-speed: 200ms;
 $yes-cancer-color: #5A46B9;
 $no-cancer-color: #ff6184;
+
+.bg {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.0;
+    transition: opacity 50ms;
+
+
+    &.no {
+        background-color: lighten($no-cancer-color, 10%);
+        opacity: var(--bg-no-opacity);
+    }
+    
+    &.yes {
+        background-color: lighten($yes-cancer-color, 10%);
+        opacity: var(--bg-yes-opacity);
+    }
+}
+
 .grade-bar {
     /* flush with navbar and behind everything */
     position: fixed;
