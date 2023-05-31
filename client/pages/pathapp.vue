@@ -57,12 +57,23 @@ export default {
     },
 
     mounted() {
+        document.documentElement.style.setProperty('--overscroll', 'none')
+        
         this.nextImage()
-
+        
         // Required for touches
         document.addEventListener('touchstart', this.handleTouchStart, false)
         document.addEventListener('touchmove', this.handleTouchMove, false)
         document.addEventListener('touchend', this.handleTouchEnd, false)
+    },
+    
+    destroyed() {
+        document.documentElement.style.setProperty('--overscroll', 'auto')
+
+        // We need to cleanup our event listeners. So we don't have duplicates when we return.
+        document.removeEventListener('touchstart', this.handleTouchStart, false)
+        document.removeEventListener('touchmove', this.handleTouchMove, false)
+        document.removeEventListener('touchend', this.handleTouchEnd, false)
     },
 
     computed: {
@@ -155,13 +166,13 @@ export default {
             this.touchMacro(event, 0, undefined, 
             () => {
                 // Swapping movement flags
-                console.log("right")
+                // console.log("right")
                 this.moveLeft = false
                 this.moveRight = true
             }, 
             undefined, 
             () => {
-                console.log("left")
+                // console.log("left")
                 this.moveLeft = true
                 this.moveRight = false
             })
@@ -246,7 +257,6 @@ export default {
     /* To prevent scrolling */
     height: 100%;
     overflow: hidden;
-
     display: flex;
 }
 /* Grade Bars */
