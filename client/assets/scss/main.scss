@@ -13,6 +13,22 @@
     @import '../../node_modules/bulma/bulma.sass';
 }
 
+:root {
+    --overscroll: auto;
+}
+
+html {
+    // When 'none': Overscroll stopped to prevent "Pull to Refresh". Fixes bug
+    // in firefox mobile that caused swipe functionality to hang when any down
+    // swiping motion was involved.
+    overscroll-behavior: var(--overscroll);
+    overflow: hidden;
+}
+
+body {
+    font-family: sans-serif;
+}
+
 .navbar {
 
     .navbar-item.logo {
