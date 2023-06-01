@@ -76,7 +76,7 @@ export default {
     '@nuxtjs/axios',
   ],
   axios: {
-    baseURL: process.env.API_URL, // api URL
+    baseURL: process.env.API_URL.replace(/\/+$/, ''), // api URL, remove ending slash
     credentials: true,
     https: (process.env.PROTOCOL == 'https'),
     debug: false,
@@ -98,7 +98,7 @@ export default {
     base: new URL(process.env.PUBLIC_PATH).pathname,
     // Middleware runs on every page
     // middleware: [
-    //   'isLoggedIn',
+      // 'auth',
     //   'authError'
     // ]
   },

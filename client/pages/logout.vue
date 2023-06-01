@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="content section">
         You have been logged out.
     </div>
 </template>

@@ -146,8 +146,12 @@ function setup(app) {
     
     // Handle successful authentications
     app.get('/auth/success', (req, res) => {
-        // redirect successful logins to the homepage
-        res.redirect(frontendURL.href)
+        // redirect successful logins
+        const redirectLink = new URL(frontendURL.href)
+        // add the authentication referral path if it existss
+        redirectLink.pathname = path.join(redirectLink.pathname, req.query.ref_path || '/')
+
+        res.redirect(redirectLink.href)
     })
     
     // Failed authorization
@@ -174,14 +178,21 @@ function setup(app) {
      * GOOGLE AUTHENTICATION
      */
     //                                                  Interested in: email
-    app.get('/auth/google', passport.authenticate('google', { scope: ['email'] }))
+    app.get('/auth/google', (req, res, next) => {
+        passport.authenticate('google', {
+            scope: ['email'],
+            state:  req.query.ref_path || '/' // pass referral to auth callback
+        })(req, res, next)
+    })
     
     // You need to tell google where to go for successful and failed authorizations
-    app.get('/auth/google/callback',
-        passport.authenticate('google', {
-            failureRedirect: path.join(backendURL.pathname, '/auth/failure'), failureMessage: true,
-            successRedirect: path.join(backendURL.pathname, '/auth/success')
-        })
+    app.get('/auth/google/callback', (req, res, next) => {
+            const query = `?ref_path=${req.query.state}`
+            passport.authenticate('google', {
+                failureRedirect: path.join(backendURL.pathname, '/auth/failure'), failureMessage: true,
+                successRedirect: `${path.join(backendURL.pathname, '/auth/success')}${query}`
+            })(req,res,next)
+        }
     )
 }
 

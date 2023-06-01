@@ -33,14 +33,14 @@
                 </nuxt-link>
 
                 <!-- CancerNotCancer -->
-                <nuxt-link to='/pathapp' v-if='this.permissions.pathologist' class="navbar-item">
+                <nuxt-link to='/pathapp' v-if='isPathologist' class="navbar-item">
                     CancerNotCancer
                 </nuxt-link>
 
                 <!-- Admin -->
                 <nuxt-link 
-                    :to='`/admin/${this.permissions.uploader ? "images" : "users" /* Location changes with permissions */}`' 
-                    v-if='this.permissions.uploader || this.permissions.admin' 
+                    :to='`/admin/${isUploader ? "images" : "users" /* Location changes with permissions */}`' 
+                    v-if='isUploader || isAdmin' 
                     class="navbar-item"
                 >
                     Admin
@@ -72,7 +72,7 @@
                         }</nuxt-link> -->
 
                         <nuxt-link v-if='isLoggedIn' to='/logout' class='button is-light'>Log Out</nuxt-link>
-                        <a v-else :href='api + "/auth/google"' class='button is-light'>Log In</a>
+                        <a v-else :href='loginLink' class='button is-light'>Log In</a>
                     </div>
                 </div>
             </div>
@@ -81,35 +81,33 @@
 </template>
 
 <script>
+import { mapGetters } from "vuex";
+
 export default {
     data() {
         return {
             // State for the burger menu
             showNav: false,
             showAnimation: false,
-            api: this.$axios.defaults.baseURL.replace(/\/+$/, '') // remove ending slash
+            loginLink: this.getLoginURL(),
         }
     },
 
     // Shorthand to check permissions + isLoggedIn
     computed: {
-        isLoggedIn() {
-            return this.$store.state.user.isLoggedIn
-        },
-        permissions() {
-            return this.$store.state.user.permissions
-        }
+        ...mapGetters('user', ['isLoggedIn', 'isAdmin', 'isPathologist', 'isUploader'])
     },
 
     // Run onload as soon as this is created
     created() {
-       this.$store.dispatch('user/onload')
+       this.$store.dispatch('user/login')
     },
 
     // Fine grained control of the burger animation
     watch:{
         $route: {
             handler(to, from) {
+                this.loginLink = this.getLoginURL()
                 this.showAnimation = false
                 setTimeout(() => {
                     this.showNav = false
@@ -122,6 +120,13 @@ export default {
     methods: {
         setIsLoggedIn(value) {
             this.$store.commit('user/isLoggedIn', value)
+        },
+        getLoginURL() {
+            const loginParams = new URLSearchParams({
+                'ref_path': this.$router.currentRoute.fullPath
+            })
+            const loginURL = new URL(`${this.$axios.defaults.baseURL}/auth/google?${loginParams}`)
+            return loginURL.href
         }
     }
 }
