@@ -147,15 +147,18 @@ export default {
 
             } catch (error) {
                 // Reroute if you aren't logged in
-                if ([401, 403].includes(error.response.status)) { this.$router.push('/login') }
-                else { console.error(error) }
+                if ([401, 403].includes(error.response.status)) {
+                    this.$router.push('/login')
+                } else {
+                    console.error(error)
 
-                this.submittedUsers[error.response.data.user.id].submittionSuccess = false // Note failure
-                this.submittedUsers[error.response.data.user.id].message = error.response.data.message
+                    this.submittedUsers[error.response.data.user.id].submittionSuccess = false // Note failure
+                    this.submittedUsers[error.response.data.user.id].message = error.response.data.message
 
-                setTimeout(() => {
-                    this.submittedUsers[error.response.data.user.id].submittionSuccess = -1
-                }, this.notificationTime) // "kill" notification
+                    setTimeout(() => {
+                        this.submittedUsers[error.response.data.user.id].submittionSuccess = -1
+                    }, this.notificationTime) // "kill" notification
+                }
             }
         }
     }
