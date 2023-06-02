@@ -3,6 +3,7 @@
         <!-- Every page should have the navbar + body -->
         <NavBar class='main-nav' />
         <nuxt class='nuxt-tag' />
+        <Login class='login-modal' />
     </div>
 </template>
 

@@ -35,6 +35,7 @@
 </template>
 
 <script>
+import { mapGetters } from "vuex";
 
 export default {
     data() {
@@ -82,6 +83,8 @@ export default {
     },
 
     computed: {
+        ...mapGetters('user', ['isLoggedIn', 'isPathologist']),
+
         // give the attribute `:style='cssVars'` to anything that should have access to these variables
         cssVars() {
             return {
@@ -92,7 +95,16 @@ export default {
             }
         }
     },
-
+    watch: {
+        isLoggedIn: {
+            handler(loggedIn) {
+                if (loggedIn) {
+                    // Previously not logged in, and now logged in.
+                    this.nextImage()
+                }
+            }
+        },
+    },
     methods: {
         /**********************************************
         * App Control
@@ -115,6 +127,8 @@ export default {
             }).then((res) => {
                 // move on to the next image
                 this.nextImage()
+            }).catch((error) => {
+                console.error(error)
             })
 
             /* reset */
@@ -125,23 +139,31 @@ export default {
 
         async postData(pathHistory) {
             // POST with axios
-            return await this.$axios.$post('/hotornot', pathHistory).catch(error => {
+            try {
+                await this.$axios.$post('/hotornot', pathHistory)
+            } catch(error) {
                 if ([401, 403].includes(error.response.status)) {
-                    this.$router.push('/login')
+                    // unauthorized, update login status
+                    await this.$store.dispatch('user/login')
                 } else {
-                    console.error(error);
+                    // throw other errors so they can be caught upstream
+                    throw error
                 }
-            })
+            }
         },
 
         async nextImage() {
-            // try-catch is needed for async/await
-            try {
-                const response = await this.$axios.get('/nextImage')
-                this.image = response.data
-            } catch (error) {
-                if ([401, 403].includes(error.response.status)) this.$router.push('/login')
-                console.error(error);
+            if (this.isPathologist) {
+                // try-catch is needed for async/await
+                try {
+                    const response = await this.$axios.get('/nextImage')
+                    this.image = response.data
+                } catch (error) {
+                    if ([401, 403].includes(error.response.status)) this.$router.push('/')
+                    console.error(error);
+                }
+            } else {
+                console.log('Not a pathologist or not logged in.')
             }
         },
 

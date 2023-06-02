@@ -181,6 +181,7 @@ function setup(app) {
     app.get('/auth/google', (req, res, next) => {
         passport.authenticate('google', {
             scope: ['email'],
+            prompt: "select_account",
             state:  req.query.ref_path || '/' // pass referral to auth callback
         })(req, res, next)
     })

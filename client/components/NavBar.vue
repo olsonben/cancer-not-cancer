@@ -62,15 +62,6 @@
                 <div class="navbar-item">
                     <!-- Logout/Login -->
                     <div class="buttons">
-                        <!-- This is for having an onsite login page -->
-                        <!-- <nuxt-link 
-                            :to="isLoggedIn ? '/logout' :  '/login'" 
-                            @click="setIsLoggedIn(!isLoggedIn)" 
-                            class="button is-light"
-                        >
-                            {{ isLoggedIn ? 'Log Out' : 'Log In' }
-                        }</nuxt-link> -->
-
                         <nuxt-link v-if='isLoggedIn' to='/logout' class='button is-light'>Log Out</nuxt-link>
                         <a v-else :href='loginLink' class='button is-light'>Log In</a>
                     </div>
@@ -89,7 +80,7 @@ export default {
             // State for the burger menu
             showNav: false,
             showAnimation: false,
-            loginLink: this.getLoginURL(),
+            loginLink: this.$common.getLoginURL(),
         }
     },
 
@@ -98,16 +89,14 @@ export default {
         ...mapGetters('user', ['isLoggedIn', 'isAdmin', 'isPathologist', 'isUploader'])
     },
 
-    // Run onload as soon as this is created
     created() {
-       this.$store.dispatch('user/login')
     },
 
     // Fine grained control of the burger animation
     watch:{
         $route: {
             handler(to, from) {
-                this.loginLink = this.getLoginURL()
+                this.loginLink = this.$common.getLoginURL()
                 this.showAnimation = false
                 setTimeout(() => {
                     this.showNav = false
@@ -116,18 +105,7 @@ export default {
         }
     },
 
-    // Handle isLoggedIn state
     methods: {
-        setIsLoggedIn(value) {
-            this.$store.commit('user/isLoggedIn', value)
-        },
-        getLoginURL() {
-            const loginParams = new URLSearchParams({
-                'ref_path': this.$router.currentRoute.fullPath
-            })
-            const loginURL = new URL(`${this.$axios.defaults.baseURL}/auth/google?${loginParams}`)
-            return loginURL.href
-        }
     }
 }
 </script>

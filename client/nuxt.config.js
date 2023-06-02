@@ -60,6 +60,7 @@ export default {
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
+    '~/plugins/common.js'
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -97,10 +98,10 @@ export default {
   router: {
     base: new URL(process.env.PUBLIC_PATH).pathname,
     // Middleware runs on every page
-    // middleware: [
-      // 'auth',
-    //   'authError'
-    // ]
+    middleware: [
+      'auth',
+      'authError'
+    ]
   },
   
   // Server side rendering :: removes the server
