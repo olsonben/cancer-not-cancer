@@ -26,7 +26,12 @@ const getDefaultState = () => {
 export const state = getDefaultState
 
 // For special types of getters (eg. a list without a certain item)
-export const getters = {}
+export const getters = {
+    isLoggedIn: (state) => state.isLoggedIn,
+    isAdmin: (state) => state.permissions.admin && state.permissions.enabled,
+    isUploader: (state) => state.permissions.uploader && state.permissions.enabled,
+    isPathologist: (state) => state.permissions.pathologist && state.permissions.enabled
+}
 
 /**
  * Used to set the state
@@ -35,7 +40,7 @@ export const getters = {}
  *              this.$store.commit('user/isLoggedIn', true)
  */
 export const mutations = {
-    isLoggedIn(state, value) {
+    setLoggedIn(state, value) {
         state.isLoggedIn = value
     },
     // Permissions mutable either by key or as a whole
@@ -63,16 +68,18 @@ export const mutations = {
  */
 export const actions = {
     // Get permissions and isLoggedIn on loading the site (called in ~middleware/onload.js)
-    async onload({ commit, dispatch}) {
+    async login({commit}) {
         try {
             const response = await this.$axios.get('/isLoggedIn')
-            
             if (response.data) {
-                // Since `context` only references this module and submodules, the 'user/' identifier should not be used
-                commit('isLoggedIn', true)
+                commit('setLoggedIn', true)
                 commit('permissions', response.data.permissions)
+            } else {
+                // Not logged in
+                commit('resetState')
             }
-        } catch(error) {
+        } catch (error) {
+            console.log('login:', 'FAILURE')
             console.error(error)
         }
     },
