@@ -1,4 +1,6 @@
 const base = new URL(process.env.PUBLIC_PATH).pathname
+// const api = process.env.API_URL.replace(/\/+$/, '')
+
 export default {
   globalName: 'pathapp',
   // Target: https://go.nuxtjs.dev/config-target
@@ -7,12 +9,9 @@ export default {
 
   publicRuntimeConfig: {
     uploadSizeLimit: process.env.UPLOAD_SIZE_LIMIT,
-    url: {
-      // TODO: REMOVE, not needed
-      // base: process.env.DOMAIN,
-      // api: process.env.API_URL,
-      // client: `${process.env.PROTOCOL}://${process.env.SUB_DOMAIN_CLIENT}${process.env.DOMAIN}`
-    }
+    // url: {
+    //   api: process.env.API_URL,
+    // }
   },
   privateRuntimeConfig: {},
 
@@ -77,7 +76,7 @@ export default {
     '@nuxtjs/axios',
   ],
   axios: {
-    baseURL: process.env.API_URL.replace(/\/+$/, ''), // api URL, remove ending slash
+    baseURL: process.env.API_URL,
     credentials: true,
     https: (process.env.PROTOCOL == 'https'),
     debug: false,
@@ -92,11 +91,9 @@ export default {
     ]
   },
 
-  // TODO: can we use this to pre-authenticate users?
-  // Note: Why would we want to pre-authenticate users? Seems like it could be a security risk.
   // // Customization for vue-router: https://nuxtjs.org/docs/configuration-glossary/configuration-router
   router: {
-    base: new URL(process.env.PUBLIC_PATH).pathname,
+    base: base,
     // Middleware runs on every page
     middleware: [
       'auth',
