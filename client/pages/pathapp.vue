@@ -8,6 +8,7 @@
 
         <!-- Image to grade -->
         <div class='prompt'>
+            <div class="task">Cancer?</div>
             <div class="image-container">
                 <div class='roi'></div>
                 <img :src='this.image.url' :alt='image.url' />
@@ -16,7 +17,7 @@
         
         <!-- Response section: grade + comment --> 
         <div class='response-area'>
-            <div v-if='!commenting' class="has-text-centered swipe-pad">
+            <div class="has-text-centered swipe-pad" :class="{ 'shown': !commenting }">
                 <span class='icon swipe left'>
                     <img src="~assets/icons/arrow-set.svg" alt="swipe left">
                 </span>
@@ -27,9 +28,9 @@
 
             <!-- Grade buttons -->
             <div class='block grade-buttons'>
-                <button class='button no' :class="{ 'shown': moveLeft }" @click="onClick('no-cancer')">No Cancer</button>
-                <button class='button maybe' @click="onClick('maybe-cancer')">Maybe Cancer</button>
-                <button class='button yes' :class="{ 'shown': moveRight }" @click="onClick('yes-cancer')">Yes Cancer</button>
+                <button class='button no' :class="{ 'shown': moveLeft }" @click="onClick('no-cancer')">No</button>
+                <button class='button maybe' @click="onClick('maybe-cancer')">Maybe</button>
+                <button class='button yes' :class="{ 'shown': moveRight }" @click="onClick('yes-cancer')">Yes</button>
             </div>
 
             <!-- Comment -->
@@ -38,7 +39,9 @@
                     <img src="~assets/icons/pencil.svg" alt="pencil" width="32" height="32">
                 </span>
             </button>
-            <textarea v-if='commenting' class='textarea block' placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
+            <div class="container">
+                <textarea class='textarea block' :class="{ 'shown': commenting }" placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
+            </div>
 
         </div>
     </div>
@@ -242,6 +245,7 @@ export default {
                         this.onClick('yes-cancer')
                     }, () => {
                         // this.onClick('maybe-cancer')
+                        this.commenting = false
                     }, () => {
                         this.onClick('no-cancer')
                     })
@@ -314,6 +318,7 @@ export default {
     height: 100%;
     overflow: hidden;
     display: flex;
+    flex-direction: column;
 }
 /* Grade Bars */
 $grade-bar-radius: 1rem;
@@ -328,6 +333,7 @@ $no-cancer-color: #ff6184;
     height: 100%;
     opacity: 0.0;
     transition: opacity 50ms;
+    // display: none;
 
 
     &.no {
@@ -368,17 +374,26 @@ $no-cancer-color: #ff6184;
 .prompt {
     margin: auto;
     position: relative;
-    width: 50vh;
+    max-width: 50vh;
+    padding-bottom: $block-margin;
 
     @include for-size(mobile) {
-        padding: $block-margin;
+        padding: 0 $block-margin $block-margin;
+        max-width: 100%;
     }
 
-    // Trick to keep aspect ratio square in .prompt
-    &:after {
-        content: '';
-        display: block;
-        padding-top: calc(100%);
+    // // Trick to keep aspect ratio square in .prompt
+    // &:after {
+    //     content: '';
+    //     display: block;
+    //     display: none;
+    //     padding-top: calc(100%);
+    // }
+
+    .task {
+        font-size: 1.5rem;
+        font-weight: bold;
+        text-align: center;
     }
 
     .image-container {
@@ -421,23 +436,23 @@ $no-cancer-color: #ff6184;
 }
 /* stuck to the bottom of the screen */
 .response-area {
-    position: fixed;
-    bottom: $button-margin;
-    left: 0;
-    right: 0;
     margin: 0 auto;
+    width: 100%;
     max-width: 50vh;
+    
     display: flex;
     justify-content: center;
     flex-direction: column;
 
     @include for-size(mobile) {
-        padding: $block-margin;
+        padding: 0 $block-margin $block-margin;
+        max-width: 100%;
     }
 
     /* special for extra-small mobile */
     @include for-size(small_mobile) {
         margin: 0 9px;
+        max-width: 100%;
     }
 
     & .swipe-pad {
@@ -446,26 +461,53 @@ $no-cancer-color: #ff6184;
         display: flex;
         flex-direction: row;
         justify-content: space-between;
+
+        .icon.swipe {
+            width: 6.625rem;
+            height: 0rem;
+            pointer-events: none;
+            opacity: 0;
+
+            transition-property: height, opacity;
+            transition-duration: 0.25s;
+            transition-timing-function: ease-out;
+            
+
+            &.left {
+                align-self: flex-start;
+            }
+
+            &.right {
+                align-self: flex-end;
+                transform: rotate(180deg);
+            }
+        }
+
+        &.shown {
+            .icon.swipe {
+                height: 3.125rem;
+                opacity: 0.4;
+            }
+        }
     }
-}
 
-.icon {
-    &.swipe {
-        width: 6.625rem;
-        height: 3.125rem;
-        pointer-events: none;
-        opacity: 0.4;
-        
+    .container {
+        margin: 0;
 
-        &.left {
-            align-self: flex-start;
+        textarea {
+            min-height: 0;
+            height: 0px;
+            opacity: 0;
+            // transition: height 0.25s ease-out;
+            transition-property: height, opacity;
+            transition-duration: 0.25s;
+            transition-timing-function: ease-out;
+    
+            &.shown {
+                height: 99px;
+                opacity: 1;
+            }
         }
-
-        &.right {
-            align-self: flex-end;
-            transform: rotate(180deg);
-        }
-        
     }
 }
 
@@ -490,6 +532,7 @@ $no-cancer-color: #ff6184;
         /* coloration for "yes" and "no" buttons to match grade bars */
         border-color: #00000033;
         padding: 0.75rem 0.875rem;
+        width: 5.5rem;
 
         &.no {
                         /* lighten is a native sass function */
