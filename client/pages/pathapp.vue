@@ -13,23 +13,33 @@
                 <img :src='this.image.url' :alt='image.url' />
             </div>
         </div>
-
+        
         <!-- Response section: grade + comment --> 
         <div class='response-area'>
+            <div v-if='!commenting' class="has-text-centered swipe-pad">
+                <span class='icon swipe left'>
+                    <img src="~assets/icons/arrow-set.svg" alt="swipe left">
+                </span>
+                <span class='icon swipe right'>
+                    <img src="~assets/icons/arrow-set.svg" alt="swipe right">
+                </span>
+            </div>
+
+            <!-- Grade buttons -->
+            <div class='block grade-buttons'>
+                <button class='button no' :class="{ 'shown': moveLeft }" @click="onClick('no-cancer')">No Cancer</button>
+                <button class='button maybe' @click="onClick('maybe-cancer')">Maybe Cancer</button>
+                <button class='button yes' :class="{ 'shown': moveRight }" @click="onClick('yes-cancer')">Yes Cancer</button>
+            </div>
+
             <!-- Comment -->
-            <button class='button icon-button' @click='commenting = !commenting'>
+            <button class='button icon-button comment' @click='commenting = !commenting'>
                 <span class='icon'>
                     <img src="~assets/icons/pencil.svg" alt="pencil" width="32" height="32">
                 </span>
             </button>
             <textarea v-if='commenting' class='textarea block' placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
 
-            <!-- Grade buttons -->
-            <div class='block buttons'>
-                <button class='button no' :class="{ 'shown': moveLeft }" @click="onClick('no-cancer')">Not Cancer</button>
-                <button class='button maybe' @click="onClick('maybe-cancer')">Maybe Cancer</button>
-                <button class='button yes' :class="{ 'shown': moveRight }" @click="onClick('yes-cancer')">Yes, Cancer</button>
-            </div>
         </div>
     </div>
 </template>
@@ -416,40 +426,86 @@ $no-cancer-color: #ff6184;
     left: 0;
     right: 0;
     margin: 0 auto;
-    width: fit-content;
-
+    max-width: 50vh;
     display: flex;
     justify-content: center;
     flex-direction: column;
+
+    @include for-size(mobile) {
+        padding: $block-margin;
+    }
 
     /* special for extra-small mobile */
     @include for-size(small_mobile) {
         margin: 0 9px;
     }
+
+    & .swipe-pad {
+        width: 100%;
+        padding-bottom: 1.25rem;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
 }
+
+.icon {
+    &.swipe {
+        width: 6.625rem;
+        height: 3.125rem;
+        pointer-events: none;
+        opacity: 0.4;
+        
+
+        &.left {
+            align-self: flex-start;
+        }
+
+        &.right {
+            align-self: flex-end;
+            transform: rotate(180deg);
+        }
+        
+    }
+}
+
 .icon-button {
     /* centered circle */
     border-radius: 50%;
     margin: 0 auto $button-margin auto;
-}
-.buttons {
-    width: fit-content;
-    justify-content: center;
-}
-.button {
-    /* coloration for "yes" and "no" buttons to match grade bars */
-    &.no {
-                    /* lighten is a native sass function */
-        background-color: lighten($no-cancer-color, 20%);
-        &.shown {
-            background-color: $no-cancer-color;
-        }
-    }
-    &.yes {
-        background-color: lighten($yes-cancer-color, 30%);
-        &.shown {
-            background-color: $yes-cancer-color;
-        }
+
+    &.comment {
+        background-color: rgba(0,0,0,0);
     }
 }
+.grade-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    // justify-content: center;
+    flex-wrap: nowrap;
+    width: 100%;
+
+    .button {
+        /* coloration for "yes" and "no" buttons to match grade bars */
+        border-color: #00000033;
+        padding: 0.75rem 0.875rem;
+
+        &.no {
+                        /* lighten is a native sass function */
+            background-color: lighten($no-cancer-color, 20%);
+            &.shown {
+                background-color: $no-cancer-color;
+            }
+        }
+        &.yes {
+            background-color: lighten($yes-cancer-color, 30%);
+            &.shown {
+                background-color: $yes-cancer-color;
+            }
+        }
+    }
+
+}
+
 </style>
