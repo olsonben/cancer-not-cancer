@@ -3,13 +3,13 @@
         <div class="bg no" :style='cssVars'></div>
         <div class="bg yes" :style='cssVars'></div>
         <!-- Grade bars for clear user response -->
-        <span class='grade-bar no' :class="{ 'shown': moveLeft }" :style='cssVars'></span>
-        <span class='grade-bar yes' :class="{ 'shown': moveRight }" :style='cssVars'></span>
+        <!-- <span class='grade-bar no' :class="{ 'shown': moveLeft }" :style='cssVars'></span>
+        <span class='grade-bar yes' :class="{ 'shown': moveRight }" :style='cssVars'></span> -->
 
         <!-- Image to grade -->
         <div class='prompt'>
             <div class="task">Cancer?</div>
-            <div class="image-container">
+            <div class="image-container" :class="{ 'shown': !swappingImage }" :style='cssVars'>
                 <div class='roi'></div>
                 <img :src='this.image.url' :alt='image.url' />
             </div>
@@ -50,6 +50,9 @@
 <script>
 import { mapGetters } from "vuex";
 
+var reloadstart = null
+const imageTransitionTime = 500
+
 export default {
     data() {
         return {
@@ -71,11 +74,15 @@ export default {
             moveLeft: false,
             percent: 0.0,
             innerWidth: window.innerWidth,
-            swipeDistance: 100
+            swipeDistance: 100,
+            swappingImage: false
         }
     },
 
     mounted() {
+        // Fixes a firefox swipe conflict. When swiping if the reload page
+        // swipe starts to engage, other animations freeze and hang. The
+        // following line deactivates swiping to reload page.
         document.documentElement.style.setProperty('--overscroll', 'none')
         
         this.nextImage()
@@ -87,6 +94,7 @@ export default {
     },
     
     destroyed() {
+        // Reactivates swipe to reload (deactivated in the mount method)
         document.documentElement.style.setProperty('--overscroll', 'auto')
 
         // We need to cleanup our event listeners. So we don't have duplicates when we return.
@@ -101,10 +109,12 @@ export default {
         // give the attribute `:style='cssVars'` to anything that should have access to these variables
         cssVars() {
             return {
-                // '--x-diff': (this.xMove !== null ? this.xMove - this.xDown : 0) + 'px',
-                '--x-diff': '0px',
+                '--x-diff': (this.xMove !== null ? this.xMove - this.xDown : 0) + 'px',
+                '--y-diff': (this.xMove !== null ? Math.abs(this.xMove - this.xDown) * -1 : 0) + 'px',
+                '--rot-diff': (this.percent),
                 '--bg-no-opacity': (this.percent > 0 ? this.percent : 0),
                 '--bg-yes-opacity': (this.percent < 0 ? this.percent*-1.0 : 0),
+                '--img-trans': imageTransitionTime + 'ms'
             }
         }
     },
@@ -138,6 +148,7 @@ export default {
                 rating: this.rating,
                 comment: this.comment
             }).then((res) => {
+
                 // move on to the next image
                 this.nextImage()
             }).catch((error) => {
@@ -170,7 +181,13 @@ export default {
                 // try-catch is needed for async/await
                 try {
                     const response = await this.$axios.get('/nextImage')
-                    this.image = response.data
+                    const diff = reloadstart ? new Date() - reloadstart : 5000
+                    const tTime = imageTransitionTime + 200
+
+                    setTimeout(() => {
+                        this.image = response.data
+                        this.swappingImage = false
+                    }, diff > tTime ? 0 : tTime - diff);
                 } catch (error) {
                     if ([401, 403].includes(error.response.status)) this.$router.push('/')
                     console.error(error);
@@ -242,25 +259,34 @@ export default {
                     this.touchMacro(this.touchEvent, this.swipeDistance, () => {
                         this.commenting = true
                     }, () => {
+                        this.swappingImage = true
+                        reloadstart = new Date()
                         this.onClick('yes-cancer')
                     }, () => {
                         // this.onClick('maybe-cancer')
                         this.commenting = false
                     }, () => {
+                        this.swappingImage = true
+                        reloadstart = new Date()
                         this.onClick('no-cancer')
                     })
                 } 
             }
 
-            /* reset values */
-            this.moveLeft = false
-            this.moveRight = false
-            this.xDown = null
-            this.yDown = null
-            this.xMove = null
-            this.yMove = null
-            this.touchEvent = null // important to clear touchmove event to avoid tapping causing submissions
-            this.percent = 0.0
+            // reloadstart = new Date()
+            setTimeout(() => {
+                /* reset values */
+                this.moveLeft = false
+                this.moveRight = false
+                this.xDown = null
+                this.yDown = null
+                this.xMove = null
+                this.yMove = null
+                this.touchEvent = null // important to clear touchmove event to avoid tapping causing submissions
+                this.percent = 0.0
+            }, this.swappingImage ? imageTransitionTime : 0);
+
+            
         },
 
         touchMacro(event, margin = 0, top = undefined, right = undefined, bottom = undefined, left = undefined) {
@@ -401,6 +427,14 @@ $no-cancer-color: #ff6184;
         width: 100%;
         height: 100%;
         line-height: 0;
+        opacity: 0;
+        transition: opacity var(--img-trans) ease-out;
+
+        transform: translate(var(--x-diff), calc(var(--y-diff) / -6)) rotate(calc( var(--rot-diff) * -12deg));
+
+        &.shown {
+            opacity: 1;
+        }
 
         img {
             object-fit: contain;
