@@ -8,7 +8,7 @@
 
         <!-- Image to grade -->
         <div class='prompt'>
-            <div class="task">Cancer?</div>
+            <div class="task">Is the ROI cancer?</div>
             <div class="image-container" :class="{ 'shown': !swappingImage }" :style='cssVars'>
                 <div class='roi'></div>
                 <img :src='this.image.url' :alt='image.url' />
