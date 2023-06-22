@@ -1,7 +1,7 @@
 <template>
-    <div class='app'>
-        <div class="bg no" :style='cssVars'></div>
-        <div class="bg yes" :style='cssVars'></div>
+    <div class='app' :style='cssVars'>
+        <div class="bg no"></div>
+        <div class="bg yes"></div>
         <!-- Grade bars for clear user response -->
         <!-- <span class='grade-bar no' :class="{ 'shown': moveLeft }" :style='cssVars'></span>
         <span class='grade-bar yes' :class="{ 'shown': moveRight }" :style='cssVars'></span> -->
@@ -9,9 +9,11 @@
         <!-- Image to grade -->
         <div class='prompt'>
             <div class="task">Is the ROI cancer?</div>
-            <div class="image-container" :class="{ 'shown': !swappingImage }" :style='cssVars'>
-                <div class='roi'></div>
-                <img :src='this.image.url' :alt='image.url' />
+            <div class="image-container" :class="{ 'shown': !swappingImage }" @click="zoom=!zoom">
+                <div class="zoom-box" :class="{'zoom': zoom }">
+                    <div class='roi'></div>
+                    <img :src='this.image.url' :alt='image.url' />
+                </div>
             </div>
         </div>
         
@@ -63,6 +65,10 @@ export default {
             rating: '',
             comment: '',
             commenting: false,
+            zoom: false,
+
+            // To be updated dynamically from Db in the future
+            roiRatio: 128/911,
 
             // For swiping
             xDown: null,
@@ -114,7 +120,8 @@ export default {
                 '--rot-diff': (this.percent),
                 '--bg-no-opacity': (this.percent > 0 ? this.percent : 0),
                 '--bg-yes-opacity': (this.percent < 0 ? this.percent*-1.0 : 0),
-                '--img-trans': imageTransitionTime + 'ms'
+                '--img-trans': imageTransitionTime + 'ms',
+                '--roi-ratio': this.roiRatio
             }
         }
     },
@@ -187,6 +194,7 @@ export default {
                     setTimeout(() => {
                         this.image = response.data
                         this.swappingImage = false
+                        this.zoom = false
                     }, diff > tTime ? 0 : tTime - diff);
                 } catch (error) {
                     if ([401, 403].includes(error.response.status)) this.$router.push('/')
@@ -402,6 +410,7 @@ $no-cancer-color: #ff6184;
     position: relative;
     max-width: 50vh;
     padding-bottom: $block-margin;
+    width: 100%;
 
     @include for-size(mobile) {
         padding: 0 $block-margin $block-margin;
@@ -425,46 +434,66 @@ $no-cancer-color: #ff6184;
     .image-container {
         position: relative;
         width: 100%;
-        height: 100%;
+        height: calc(50vh - $block-margin - $block-margin);
         line-height: 0;
         opacity: 0;
+        overflow: hidden;
         transition: opacity var(--img-trans) ease-out;
 
+
         transform: translate(var(--x-diff), calc(var(--y-diff) / -6)) rotate(calc( var(--rot-diff) * -12deg));
+
+        @include for-size(mobile) {
+            height: calc(100vw - $block-margin - $block-margin);
+        }
 
         &.shown {
             opacity: 1;
         }
 
-        img {
-            object-fit: contain;
+        .zoom-box {
             width: 100%;
             height: 100%;
-        }
+            position: relative;
 
-        /**
-        * ROI is a white box centered in the image
-        *
-        * Important for .roi to be `position: absolute` and parent `position: relative`
-        * That way the overlay will be centered on the image.
-        */
-        .roi {
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 0;
-            bottom: 0;
+            transition-property: transform;
+            transition-duration: 0.5s;
+            transition-timing-function: ease-out;
 
-            // TODO: make this sizing dynamic
-            // ROI fallback
+            &.zoom {
+                transform: scale(4);
+            }
+
+            img {
+                // object-fit: contain;
+                width: 100%;
+                height: 100%;
+            }
+    
+            /**
+            * ROI is a white box centered in the image
+            *
+            * Important for .roi to be `position: absolute` and parent `position: relative`
+            * That way the overlay will be centered on the image.
+            */
+            .roi {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                bottom: 0;
+    
+                // TODO: make this sizing dynamic
+                // ROI fallback
             width: 14.05%;
             height: 14.05%;
-            // ROI most accurate
-            width: calc(100% * 128/911);
-            height: calc(100% * 128/911);
-            margin: auto;
-            border: 1px solid white;
-            pointer-events: none;
+                // ROI most accurate
+                width: calc(100% * var(--roi-ratio));
+                height: calc(100% * var(--roi-ratio));
+                margin: auto;
+                border: 1px solid white;
+                pointer-events: none;
+            }
         }
     }    
 }
