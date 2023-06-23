@@ -1,7 +1,7 @@
 <template>
     <div class='app' :style='cssVars'>
-        <div class="bg no"></div>
-        <div class="bg yes"></div>
+        <div class="bg no" :class="{'fade-out': transitioningOut}"></div>
+        <div class="bg yes" :class="{'fade-out': transitioningOut}"></div>
         <!-- Grade bars for clear user response -->
         <!-- <span class='grade-bar no' :class="{ 'shown': moveLeft }" :style='cssVars'></span>
         <span class='grade-bar yes' :class="{ 'shown': moveRight }" :style='cssVars'></span> -->
@@ -9,11 +9,18 @@
         <!-- Image to grade -->
         <div class='prompt'>
             <div class="task">Is the ROI cancer?</div>
-            <div class="image-container" :class="{ 'shown': !swappingImage }" @click="zoom=!zoom">
-                <div class="zoom-box" :class="{'zoom': zoom }">
-                    <div class='roi'></div>
-                    <img :src='this.image.url' :alt='image.url' />
-                </div>
+            <div class="image-container" @click="zoom=!zoom">
+                <transition
+                    name="swap-img"
+                    @after-leave="afterLeave"
+                    @before-leave="beforeLeave"
+                    appear
+                >
+                    <div v-if="showImage" class="zoom-box" :class="{'zoom': zoom }">
+                        <div class='roi'></div>
+                        <img :src='this.image.url' :alt='image.url'/>
+                    </div>
+                </transition>
             </div>
         </div>
         
@@ -52,20 +59,22 @@
 <script>
 import { mapGetters } from "vuex";
 
-var reloadstart = null
-const imageTransitionTime = 500
+const IMAGE_TRANSITION_TIME = 250 // ms
 
 export default {
     data() {
         return {
             // Information to display and grade the current image
             image: {},
+            onDeck: null,
 
             // State information
             rating: '',
             comment: '',
             commenting: false,
             zoom: false,
+            showImage: true,
+            transitioningOut: false,
 
             // To be updated dynamically from Db in the future
             roiRatio: 128/911,
@@ -80,8 +89,7 @@ export default {
             moveLeft: false,
             percent: 0.0,
             innerWidth: window.innerWidth,
-            swipeDistance: 100,
-            swappingImage: false
+            swipeDistance: 100
         }
     },
 
@@ -120,7 +128,7 @@ export default {
                 '--rot-diff': (this.percent),
                 '--bg-no-opacity': (this.percent > 0 ? this.percent : 0),
                 '--bg-yes-opacity': (this.percent < 0 ? this.percent*-1.0 : 0),
-                '--img-trans': imageTransitionTime + 'ms',
+                '--img-trans': IMAGE_TRANSITION_TIME + 'ms',
                 '--roi-ratio': this.roiRatio
             }
         }
@@ -149,6 +157,10 @@ export default {
             } else if (source === 'maybe-cancer') {
                 this.rating = 0
             }
+
+            // Begin Image swap
+            this.showImage = false
+
             // record the response
             this.postData({
                 id: this.image.id,
@@ -188,14 +200,17 @@ export default {
                 // try-catch is needed for async/await
                 try {
                     const response = await this.$axios.get('/nextImage')
-                    const diff = reloadstart ? new Date() - reloadstart : 5000
-                    const tTime = imageTransitionTime + 200
-
-                    setTimeout(() => {
-                        this.image = response.data
-                        this.swappingImage = false
-                        this.zoom = false
-                    }, diff > tTime ? 0 : tTime - diff);
+                    // We preload the image asynchronously allowing for smooth
+                    // fade in and out between images. The image is loaded
+                    // outside the DOM, but that data will be cached for the
+                    // actually image load.
+                    var preloadImage = new Image()
+                    preloadImage.onload = () => {
+                        this.onDeck = response.data
+                        this.updateImage()
+                    }
+                    preloadImage.src = response.data.url
+                    
                 } catch (error) {
                     if ([401, 403].includes(error.response.status)) this.$router.push('/')
                     console.error(error);
@@ -203,6 +218,30 @@ export default {
             } else {
                 console.log('Not a pathologist or not logged in.')
             }
+        },
+
+        // Called at the end of image transition out and upon completion of 
+        // image preloading. If both are complete we can move ahead with
+        // updating the image element.
+        updateImage() {
+            if (!this.transitioningOut && this.onDeck) {
+                this.image = this.onDeck
+                this.onDeck = null
+                this.zoom = false
+                this.showImage = true
+            }
+        },
+
+        // After the image fully transitions out. 
+        afterLeave() {
+            // reset img props here
+            this.resetImagePos()
+            this.transitioningOut = false
+            this.updateImage()
+        },
+        // Before the image starts transitioning out.
+        beforeLeave() {
+            this.transitioningOut = true
         },
 
         /*************************************************************
@@ -257,6 +296,18 @@ export default {
             })
         },
 
+        resetImagePos() {
+            /* reset values */
+            this.moveLeft = false
+            this.moveRight = false
+            this.xDown = null
+            this.yDown = null
+            this.xMove = null
+            this.yMove = null
+            this.touchEvent = null // important to clear touchmove event to avoid tapping causing submissions
+            this.percent = 0.0
+        },
+
         // Handler for touchend event
         handleTouchEnd(event) {
             if (this.touchEvent != null) {
@@ -267,34 +318,19 @@ export default {
                     this.touchMacro(this.touchEvent, this.swipeDistance, () => {
                         this.commenting = true
                     }, () => {
-                        this.swappingImage = true
-                        reloadstart = new Date()
                         this.onClick('yes-cancer')
                     }, () => {
                         // this.onClick('maybe-cancer')
                         this.commenting = false
                     }, () => {
-                        this.swappingImage = true
-                        reloadstart = new Date()
                         this.onClick('no-cancer')
                     })
                 } 
             }
 
-            // reloadstart = new Date()
-            setTimeout(() => {
-                /* reset values */
-                this.moveLeft = false
-                this.moveRight = false
-                this.xDown = null
-                this.yDown = null
-                this.xMove = null
-                this.yMove = null
-                this.touchEvent = null // important to clear touchmove event to avoid tapping causing submissions
-                this.percent = 0.0
-            }, this.swappingImage ? imageTransitionTime : 0);
-
-            
+            if (this.showImage) {
+                this.resetImagePos()
+            }
         },
 
         touchMacro(event, margin = 0, top = undefined, right = undefined, bottom = undefined, left = undefined) {
@@ -373,11 +409,23 @@ $no-cancer-color: #ff6184;
     &.no {
         background-color: lighten($no-cancer-color, 10%);
         opacity: var(--bg-no-opacity);
+
+        // override existing transtion for transitioning image
+        &.fade-out {
+            transition: opacity var(--img-trans) ease-out;
+            opacity: 0;
+        }
     }
     
     &.yes {
         background-color: lighten($yes-cancer-color, 10%);
         opacity: var(--bg-yes-opacity);
+
+        // override existing transtion for transitioning image
+        &.fade-out {
+            transition: opacity var(--img-trans) ease-out;
+            opacity: 0;
+        }
     }
 }
 
@@ -417,14 +465,6 @@ $no-cancer-color: #ff6184;
         max-width: 100%;
     }
 
-    // // Trick to keep aspect ratio square in .prompt
-    // &:after {
-    //     content: '';
-    //     display: block;
-    //     display: none;
-    //     padding-top: calc(100%);
-    // }
-
     .task {
         font-size: 1.5rem;
         font-weight: bold;
@@ -436,9 +476,7 @@ $no-cancer-color: #ff6184;
         width: 100%;
         height: calc(50vh - $block-margin - $block-margin);
         line-height: 0;
-        opacity: 0;
         overflow: hidden;
-        transition: opacity var(--img-trans) ease-out;
 
 
         transform: translate(var(--x-diff), calc(var(--y-diff) / -6)) rotate(calc( var(--rot-diff) * -12deg));
@@ -447,15 +485,12 @@ $no-cancer-color: #ff6184;
             height: calc(100vw - $block-margin - $block-margin);
         }
 
-        &.shown {
-            opacity: 1;
-        }
-
         .zoom-box {
             width: 100%;
             height: 100%;
             position: relative;
 
+            /** Image zooming */
             transition-property: transform;
             transition-duration: 0.5s;
             transition-timing-function: ease-out;
@@ -464,8 +499,22 @@ $no-cancer-color: #ff6184;
                 transform: scale(4);
             }
 
+            /** Transitions for image container during swap */
+            &.swap-img-enter-active {
+                transition: all var(--img-trans) ease-in;
+            }
+            &.swap-img-leave-active {
+                transition: all var(--img-trans) ease-out;
+            }
+
+            &.swap-img-enter,
+            &.swap-img-leave-to {
+                opacity: 0;
+            }
+
+            
+
             img {
-                // object-fit: contain;
                 width: 100%;
                 height: 100%;
             }
@@ -485,8 +534,8 @@ $no-cancer-color: #ff6184;
     
                 // TODO: make this sizing dynamic
                 // ROI fallback
-            width: 14.05%;
-            height: 14.05%;
+                width: 14.05%;
+                height: 14.05%;
                 // ROI most accurate
                 width: calc(100% * var(--roi-ratio));
                 height: calc(100% * var(--roi-ratio));
@@ -587,7 +636,6 @@ $no-cancer-color: #ff6184;
     display: flex;
     flex-direction: row;
     justify-content: space-around;
-    // justify-content: center;
     flex-wrap: nowrap;
     width: 100%;
 
