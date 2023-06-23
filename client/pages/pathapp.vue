@@ -515,6 +515,7 @@ $no-cancer-color: #ff6184;
             
 
             img {
+                object-fit: contain;
                 width: 100%;
                 height: 100%;
             }
