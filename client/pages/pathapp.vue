@@ -575,6 +575,11 @@ $no-cancer-color: #ff6184;
         flex-direction: row;
         justify-content: space-between;
 
+        // Don't show the swipe arrows on none touch devices
+        @media (hover: hover) {
+            display: none;
+        }
+
         .icon.swipe {
             width: 6.625rem;
             height: 0rem;
