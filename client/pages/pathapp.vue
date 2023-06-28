@@ -1,35 +1,57 @@
 <template>
-    <div class='app'>
-        <div class="bg no" :style='cssVars'></div>
-        <div class="bg yes" :style='cssVars'></div>
+    <div class='app' :style='cssVars'>
+        <div class="bg no" :class="{'fade-out': transitioningOut}"></div>
+        <div class="bg yes" :class="{'fade-out': transitioningOut}"></div>
         <!-- Grade bars for clear user response -->
-        <span class='grade-bar no' :class="{ 'shown': moveLeft }" :style='cssVars'></span>
-        <span class='grade-bar yes' :class="{ 'shown': moveRight }" :style='cssVars'></span>
+        <!-- <span class='grade-bar no' :class="{ 'shown': moveLeft }" :style='cssVars'></span>
+        <span class='grade-bar yes' :class="{ 'shown': moveRight }" :style='cssVars'></span> -->
 
         <!-- Image to grade -->
         <div class='prompt'>
-            <div class="image-container">
-                <div class='roi'></div>
-                <img :src='this.image.url' :alt='image.url' />
+            <div class="task">Is the ROI cancer?</div>
+            <div class="image-container" @click="zoom=!zoom">
+                <transition
+                    name="swap-img"
+                    @after-leave="afterLeave"
+                    @before-leave="beforeLeave"
+                    appear
+                >
+                    <div v-if="showImage" class="zoom-box" :class="{'zoom': zoom }">
+                        <div class='roi'></div>
+                        <img :src='this.image.url' :alt='image.url'/>
+                    </div>
+                </transition>
             </div>
         </div>
-
+        
         <!-- Response section: grade + comment --> 
         <div class='response-area'>
+            <div class="has-text-centered swipe-pad" :class="{ 'shown': !commenting }">
+                <span class='icon swipe left'>
+                    <img src="~assets/icons/arrow-set.svg" alt="swipe left">
+                </span>
+                <span class='icon swipe right'>
+                    <img src="~assets/icons/arrow-set.svg" alt="swipe right">
+                </span>
+            </div>
+
+            <!-- Grade buttons -->
+            <div class='block grade-buttons'>
+                <button class='button no' :class="{ 'shown': moveLeft }" @click="onClick('no-cancer')">No</button>
+                <button class='button maybe' @click="onClick('maybe-cancer')">Maybe</button>
+                <button class='button yes' :class="{ 'shown': moveRight }" @click="onClick('yes-cancer')">Yes</button>
+            </div>
+
             <!-- Comment -->
-            <button class='button icon-button' @click='commenting = !commenting'>
+            <button class='button icon-button comment' @click='commenting = !commenting'>
                 <span class='icon'>
                     <img src="~assets/icons/pencil.svg" alt="pencil" width="32" height="32">
                 </span>
             </button>
-            <textarea v-if='commenting' class='textarea block' placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
-
-            <!-- Grade buttons -->
-            <div class='block buttons'>
-                <button class='button no' :class="{ 'shown': moveLeft }" @click="onClick('no-cancer')">Not Cancer</button>
-                <button class='button maybe' @click="onClick('maybe-cancer')">Maybe Cancer</button>
-                <button class='button yes' :class="{ 'shown': moveRight }" @click="onClick('yes-cancer')">Yes, Cancer</button>
+            <div class="container">
+                <textarea class='textarea block' :class="{ 'shown': commenting }" placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
             </div>
+
         </div>
     </div>
 </template>
@@ -37,16 +59,25 @@
 <script>
 import { mapGetters } from "vuex";
 
+const IMAGE_TRANSITION_TIME = 250 // ms
+
 export default {
     data() {
         return {
             // Information to display and grade the current image
             image: {},
+            onDeck: null,
 
             // State information
             rating: '',
             comment: '',
             commenting: false,
+            zoom: false,
+            showImage: true,
+            transitioningOut: false,
+
+            // To be updated dynamically from Db in the future
+            roiRatio: 128/911,
 
             // For swiping
             xDown: null,
@@ -63,6 +94,9 @@ export default {
     },
 
     mounted() {
+        // Fixes a firefox swipe conflict. When swiping if the reload page
+        // swipe starts to engage, other animations freeze and hang. The
+        // following line deactivates swiping to reload page.
         document.documentElement.style.setProperty('--overscroll', 'none')
         
         this.nextImage()
@@ -74,6 +108,7 @@ export default {
     },
     
     destroyed() {
+        // Reactivates swipe to reload (deactivated in the mount method)
         document.documentElement.style.setProperty('--overscroll', 'auto')
 
         // We need to cleanup our event listeners. So we don't have duplicates when we return.
@@ -88,10 +123,13 @@ export default {
         // give the attribute `:style='cssVars'` to anything that should have access to these variables
         cssVars() {
             return {
-                // '--x-diff': (this.xMove !== null ? this.xMove - this.xDown : 0) + 'px',
-                '--x-diff': '0px',
+                '--x-diff': (this.xMove !== null ? this.xMove - this.xDown : 0) + 'px',
+                '--y-diff': (this.xMove !== null ? Math.abs(this.xMove - this.xDown) * -1 : 0) + 'px',
+                '--rot-diff': (this.percent),
                 '--bg-no-opacity': (this.percent > 0 ? this.percent : 0),
                 '--bg-yes-opacity': (this.percent < 0 ? this.percent*-1.0 : 0),
+                '--img-trans': IMAGE_TRANSITION_TIME + 'ms',
+                '--roi-ratio': this.roiRatio
             }
         }
     },
@@ -119,12 +157,17 @@ export default {
             } else if (source === 'maybe-cancer') {
                 this.rating = 0
             }
+
+            // Begin Image swap
+            this.showImage = false
+
             // record the response
             this.postData({
                 id: this.image.id,
                 rating: this.rating,
                 comment: this.comment
             }).then((res) => {
+
                 // move on to the next image
                 this.nextImage()
             }).catch((error) => {
@@ -157,7 +200,17 @@ export default {
                 // try-catch is needed for async/await
                 try {
                     const response = await this.$axios.get('/nextImage')
-                    this.image = response.data
+                    // We preload the image asynchronously allowing for smooth
+                    // fade in and out between images. The image is loaded
+                    // outside the DOM, but that data will be cached for the
+                    // actually image load.
+                    var preloadImage = new Image()
+                    preloadImage.onload = () => {
+                        this.onDeck = response.data
+                        this.updateImage()
+                    }
+                    preloadImage.src = response.data.url
+                    
                 } catch (error) {
                     if ([401, 403].includes(error.response.status)) this.$router.push('/')
                     console.error(error);
@@ -165,6 +218,30 @@ export default {
             } else {
                 console.log('Not a pathologist or not logged in.')
             }
+        },
+
+        // Called at the end of image transition out and upon completion of 
+        // image preloading. If both are complete we can move ahead with
+        // updating the image element.
+        updateImage() {
+            if (!this.transitioningOut && this.onDeck) {
+                this.image = this.onDeck
+                this.onDeck = null
+                this.zoom = false
+                this.showImage = true
+            }
+        },
+
+        // After the image fully transitions out. 
+        afterLeave() {
+            // reset img props here
+            this.resetImagePos()
+            this.transitioningOut = false
+            this.updateImage()
+        },
+        // Before the image starts transitioning out.
+        beforeLeave() {
+            this.transitioningOut = true
         },
 
         /*************************************************************
@@ -219,6 +296,18 @@ export default {
             })
         },
 
+        resetImagePos() {
+            /* reset values */
+            this.moveLeft = false
+            this.moveRight = false
+            this.xDown = null
+            this.yDown = null
+            this.xMove = null
+            this.yMove = null
+            this.touchEvent = null // important to clear touchmove event to avoid tapping causing submissions
+            this.percent = 0.0
+        },
+
         // Handler for touchend event
         handleTouchEnd(event) {
             if (this.touchEvent != null) {
@@ -232,21 +321,16 @@ export default {
                         this.onClick('yes-cancer')
                     }, () => {
                         // this.onClick('maybe-cancer')
+                        this.commenting = false
                     }, () => {
                         this.onClick('no-cancer')
                     })
                 } 
             }
 
-            /* reset values */
-            this.moveLeft = false
-            this.moveRight = false
-            this.xDown = null
-            this.yDown = null
-            this.xMove = null
-            this.yMove = null
-            this.touchEvent = null // important to clear touchmove event to avoid tapping causing submissions
-            this.percent = 0.0
+            if (this.showImage) {
+                this.resetImagePos()
+            }
         },
 
         touchMacro(event, margin = 0, top = undefined, right = undefined, bottom = undefined, left = undefined) {
@@ -304,6 +388,7 @@ export default {
     height: 100%;
     overflow: hidden;
     display: flex;
+    flex-direction: column;
 }
 /* Grade Bars */
 $grade-bar-radius: 1rem;
@@ -318,16 +403,29 @@ $no-cancer-color: #ff6184;
     height: 100%;
     opacity: 0.0;
     transition: opacity 50ms;
+    // display: none;
 
 
     &.no {
         background-color: lighten($no-cancer-color, 10%);
         opacity: var(--bg-no-opacity);
+
+        // override existing transtion for transitioning image
+        &.fade-out {
+            transition: opacity var(--img-trans) ease-out;
+            opacity: 0;
+        }
     }
     
     &.yes {
         background-color: lighten($yes-cancer-color, 10%);
         opacity: var(--bg-yes-opacity);
+
+        // override existing transtion for transitioning image
+        &.fade-out {
+            transition: opacity var(--img-trans) ease-out;
+            opacity: 0;
+        }
     }
 }
 
@@ -358,98 +456,217 @@ $no-cancer-color: #ff6184;
 .prompt {
     margin: auto;
     position: relative;
-    width: 50vh;
+    max-width: 50vh;
+    padding-bottom: $block-margin;
+    width: 100%;
 
     @include for-size(mobile) {
-        padding: $block-margin;
+        padding: 0 $block-margin $block-margin;
+        max-width: 100%;
     }
 
-    // Trick to keep aspect ratio square in .prompt
-    &:after {
-        content: '';
-        display: block;
-        padding-top: calc(100%);
+    .task {
+        font-size: 1.5rem;
+        font-weight: bold;
+        text-align: center;
     }
 
     .image-container {
         position: relative;
         width: 100%;
-        height: 100%;
+        height: calc(50vh - $block-margin - $block-margin);
         line-height: 0;
+        overflow: hidden;
 
-        img {
-            object-fit: contain;
-            width: 100%;
-            height: 100%;
+
+        transform: translate(var(--x-diff), calc(var(--y-diff) / -6)) rotate(calc( var(--rot-diff) * -12deg));
+
+        @include for-size(mobile) {
+            height: calc(100vw - $block-margin - $block-margin);
         }
 
-        /**
-        * ROI is a white box centered in the image
-        *
-        * Important for .roi to be `position: absolute` and parent `position: relative`
-        * That way the overlay will be centered on the image.
-        */
-        .roi {
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 0;
-            bottom: 0;
+        .zoom-box {
+            width: 100%;
+            height: 100%;
+            position: relative;
 
-            // TODO: make this sizing dynamic
-            // ROI fallback
-            width: 14.05%;
-            height: 14.05%;
-            // ROI most accurate
-            width: calc(100% * 128/911);
-            height: calc(100% * 128/911);
-            margin: auto;
-            border: 1px solid white;
-            pointer-events: none;
+            /** Image zooming */
+            transition-property: transform;
+            transition-duration: 0.5s;
+            transition-timing-function: ease-out;
+
+            &.zoom {
+                transform: scale(4);
+            }
+
+            /** Transitions for image container during swap */
+            &.swap-img-enter-active {
+                transition: all var(--img-trans) ease-in;
+            }
+            &.swap-img-leave-active {
+                transition: all var(--img-trans) ease-out;
+            }
+
+            &.swap-img-enter,
+            &.swap-img-leave-to {
+                opacity: 0;
+            }
+
+            
+
+            img {
+                object-fit: contain;
+                width: 100%;
+                height: 100%;
+            }
+    
+            /**
+            * ROI is a white box centered in the image
+            *
+            * Important for .roi to be `position: absolute` and parent `position: relative`
+            * That way the overlay will be centered on the image.
+            */
+            .roi {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                bottom: 0;
+    
+                // TODO: make this sizing dynamic
+                // ROI fallback
+                width: 14.05%;
+                height: 14.05%;
+                // ROI most accurate
+                width: calc(100% * var(--roi-ratio));
+                height: calc(100% * var(--roi-ratio));
+                margin: auto;
+                border: 1px solid white;
+                pointer-events: none;
+            }
         }
     }    
 }
 /* stuck to the bottom of the screen */
 .response-area {
-    position: fixed;
-    bottom: $button-margin;
-    left: 0;
-    right: 0;
     margin: 0 auto;
-    width: fit-content;
-
+    width: 100%;
+    max-width: 50vh;
+    
     display: flex;
     justify-content: center;
     flex-direction: column;
 
+    @include for-size(mobile) {
+        padding: 0 $block-margin $block-margin;
+        max-width: 100%;
+    }
+
     /* special for extra-small mobile */
     @include for-size(small_mobile) {
         margin: 0 9px;
+        max-width: 100%;
+    }
+
+    & .swipe-pad {
+        width: 100%;
+        padding-bottom: 1.25rem;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+
+        // Don't show the swipe arrows on none touch devices
+        // https://stackoverflow.com/a/11387852
+        @media (hover: hover) {
+            display: none;
+        }
+
+        .icon.swipe {
+            width: 6.625rem;
+            height: 0rem;
+            pointer-events: none;
+            opacity: 0;
+
+            transition-property: height, opacity;
+            transition-duration: 0.25s;
+            transition-timing-function: ease-out;
+            
+
+            &.left {
+                align-self: flex-start;
+            }
+
+            &.right {
+                align-self: flex-end;
+                transform: rotate(180deg);
+            }
+        }
+
+        &.shown {
+            .icon.swipe {
+                height: 3.125rem;
+                opacity: 0.4;
+            }
+        }
+    }
+
+    .container {
+        margin: 0;
+
+        textarea {
+            min-height: 0;
+            height: 0px;
+            opacity: 0;
+            // transition: height 0.25s ease-out;
+            transition-property: height, opacity;
+            transition-duration: 0.25s;
+            transition-timing-function: ease-out;
+    
+            &.shown {
+                height: 99px;
+                opacity: 1;
+            }
+        }
     }
 }
+
 .icon-button {
     /* centered circle */
     border-radius: 50%;
     margin: 0 auto $button-margin auto;
-}
-.buttons {
-    width: fit-content;
-    justify-content: center;
-}
-.button {
-    /* coloration for "yes" and "no" buttons to match grade bars */
-    &.no {
-                    /* lighten is a native sass function */
-        background-color: lighten($no-cancer-color, 20%);
-        &.shown {
-            background-color: $no-cancer-color;
-        }
-    }
-    &.yes {
-        background-color: lighten($yes-cancer-color, 30%);
-        &.shown {
-            background-color: $yes-cancer-color;
-        }
+
+    &.comment {
+        background-color: rgba(0,0,0,0);
     }
 }
+.grade-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    flex-wrap: nowrap;
+    width: 100%;
+
+    .button {
+        /* coloration for "yes" and "no" buttons to match grade bars */
+        border-color: #00000033;
+        padding: 0.75rem 0.875rem;
+        width: 5.5rem;
+
+        &.no {
+                        /* lighten is a native sass function */
+            background-color: lighten($no-cancer-color, 20%);
+            &.shown {
+                background-color: $no-cancer-color;
+            }
+        }
+        &.yes {
+            background-color: lighten($yes-cancer-color, 30%);
+            &.shown {
+                background-color: $yes-cancer-color;
+            }
+        }
+    }
+
+}
+
 </style>
