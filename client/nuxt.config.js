@@ -37,7 +37,13 @@ export default {
       { rel:'icon', type:'image/png', sizes:'32x32', href: base + 'favicon-32x32.png' },
       { rel: 'icon', type: 'image/png', sizes: '16x16', href: base + 'favicon-16x16.png' },
       { rel: 'manifest', href: base + 'site.webmanifest' }
-    ]
+    ],
+    noscript: [{
+      innerHTML: "\<img src=\"https://client.milmed.ai/b/js/?idsite=1&amp;rec=1\" style=\"border: 0\" alt=\"\" />"
+      // < img referrerpolicy="no-referrer-when-downgrade" src="https://client.milmed.ai/b/?idsite=1&amp;rec=1" style="border:0" alt="" />
+    }],
+    __dangerouslyDisableSanitizers: ['noscript'] //stop sanitizing img above
+    // { src: '/customscript.js' } // customscript.js located in "static/" directory
   },
 
   watchers: {
@@ -74,6 +80,7 @@ export default {
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
     '@nuxtjs/axios',
+    ['nuxt-matomo', { matomoUrl: 'https://client.milmed.ai/b/', siteId: 1, trackerUrl: 'https://client.milmed.ai/b/js/', scriptUrl: 'https://client.milmed.ai/b/js/',cookies: false}],
   ],
   axios: {
     baseURL: process.env.API_URL,
