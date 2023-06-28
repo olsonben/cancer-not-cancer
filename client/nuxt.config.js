@@ -113,12 +113,8 @@ export default {
   ssr: false,
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
-  // publicPath: when specified, creates absolute links.
-  //   ex. publicPath: 'https://my.app.com'
-  //   would change /about to https://my.app.com/about
-  //   This is needed for CDNs
   build: {
-    publicPath: process.env.PUBLIC_PATH, // create absolute links
+    publicPath: '/cncclient/',
     devtools: false,
   }
 }
