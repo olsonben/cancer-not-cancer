@@ -576,6 +576,7 @@ $no-cancer-color: #ff6184;
         justify-content: space-between;
 
         // Don't show the swipe arrows on none touch devices
+        // https://stackoverflow.com/a/11387852
         @media (hover: hover) {
             display: none;
         }
