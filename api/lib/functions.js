@@ -23,6 +23,8 @@ export function isValid (req, res, next) {
     if (req.route.methods.get) {
         if (req.route.path === '/nextImage') {
             perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
+        } else if (req.route.path.includes('/getData')) {
+            perms.uploader && perms.enabled ? next() : res.sendStatus(401)
         }
     } else if (req.route.methods.post) {
         // Checking enabled is redundant but safe

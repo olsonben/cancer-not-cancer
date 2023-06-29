@@ -101,3 +101,35 @@ export async function addImage(path, hash, from_ip, user_id) {
         }
     }
 }
+
+// TODO: change to be task and owner oriented
+export async function getData() {
+    const query = `SELECT
+                        count(*) AS total,
+                        sum(case when rating = 1 then 1 else 0 end) AS yes,
+                        sum(case when rating = -1 then 1 else 0 end) AS no,
+                        sum(case when rating = 0 then 1 else 0 end) AS maybe
+                    FROM hotornot`
+    const rows = await dbOps.select(query)
+    return rows[0]
+}
+
+export async function getDataPerUsers() {
+    const query = `
+        SELECT
+            h.user_id,
+            u.fullname,
+            COUNT(*) AS total,
+            SUM(CASE WHEN h.rating = 1 THEN 1 ELSE 0 END) AS yes,
+            SUM(CASE WHEN h.rating = -1 THEN 1 ELSE 0 END) AS no,
+            SUM(CASE WHEN h.rating = 0 THEN 1 ELSE 0 END) AS maybe
+        FROM
+            hotornot as h
+        LEFT JOIN users as u ON
+            h.user_id = u.id
+        GROUP BY
+            h.user_id`
+
+    const rows = await dbOps.select(query)
+    return rows
+}

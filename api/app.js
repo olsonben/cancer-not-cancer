@@ -31,7 +31,7 @@ const imageBaseURL = process.env.IMAGE_URL
 /******************
  * DATABASE Methods
  ******************/
-import { getNextImage, addRating, createUser, addImage } from './lib/database.js'
+import { getNextImage, addRating, createUser, addImage, getData, getDataPerUsers } from './lib/database.js'
 
 /******************
  * REQUEST PARSING
@@ -93,6 +93,26 @@ app.get('/isLoggedIn', (req, res) => {
     } else {
         // Send false/no user data
         res.status(200).send(false)
+    }
+})
+
+// For data view
+app.get('/getData', isLoggedIn, isValid, async (req, res) => {
+    try {
+        const data = await getData()
+        res.send(data)
+    } catch (err) {
+        res.status(500).send({})
+    }
+})
+
+app.get('/getDataPerUsers', isLoggedIn, isValid, async (req, res) => {
+    try {
+        const data = await getDataPerUsers()
+        res.send(data)
+    } catch (err) {
+        console.error(err)
+        res.status(500).send({})
     }
 })
 
