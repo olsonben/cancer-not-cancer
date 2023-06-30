@@ -1,7 +1,7 @@
 <template>
     <div>
         <!-- Main dataview -->
-        <section class='section'>
+        <section class='section dataview'>
             <h1 class='title'>Data View</h1>
             <div>
                 <div class='task-title'><strong>Task:</strong> Is the ROI cancer?</div>
@@ -13,8 +13,11 @@
                         <li>Maybe: {{ maybe }}%</li>
                     </ul>
                 </div>
-                <div class="box table-container">
-                    <Table :tableData="tableData" />
+                <div class="box table-container table-limiter">
+                    <Table :tableData="userTableData" />
+                </div>
+                <div class="box table-container table-limiter">
+                    <Table :tableData="imageTableData" />
                 </div>
             </div>
         </section>
@@ -35,13 +38,14 @@ export default {
             yes: 0,
             no: 0,
             maybe: 0,
-            chart: []
+            userChart: [],
+            imageChart: []
         }
     },
     computed: {
-        tableData() {
+        userTableData() {
             const tableBodyData = []
-            for (const user of this.chart) {
+            for (const user of this.userChart) {
                 const yes = percentage(user.yes, user.total)
                 const no = percentage(user.no, user.total)
                 const maybe = percentage(user.maybe, user.total)
@@ -60,7 +64,29 @@ export default {
                 indexProp: 'user_id',
                 bodyData: tableBodyData,
             }
-        } 
+        },
+        imageTableData() {
+            const tableBodyData = []
+            for (const image of this.imageChart) {
+                const yes = percentage(image.yes, image.total)
+                const no = percentage(image.no, image.total)
+                const maybe = percentage(image.maybe, image.total)
+                tableBodyData.push({
+                    'image_id': image.image_id,
+                    'total': image.total,
+                    'yes': `${yes}%`,
+                    'no': `${no}%`,
+                    'maybe': `${maybe}%`,
+                })
+            }
+            tableBodyData.sort((a,b) => b.total - a.total)
+            return {
+                columns: ['Image', 'Total', 'Yes', 'No', 'Maybe'],
+                order: ['image_id', 'total', 'yes', 'no', 'maybe'],
+                indexProp: 'image_id',
+                bodyData: tableBodyData,
+            }
+        }
     },
     watch: {
         data(newData) {
@@ -76,12 +102,17 @@ export default {
     },
 
     mounted() {
-        
+        // Allowing scrolling because some table are really long
+        document.documentElement.style.setProperty('--overflow', 'initial')
+    },
+    destroyed() {
+        // Turn scrolling off when leaving dataview
+        document.documentElement.style.setProperty('--overflow', 'hidden')
     },
 
     methods: {
         async lookupData() {
-            // try-catch is needed for async/await
+            // get general task data
             try {
                 const response = await this.$axios.get('/getData')
                 this.data = response.data
@@ -89,9 +120,18 @@ export default {
                 console.error(err);
             }
 
+            // get task data grouped by users
             try {
                 const response = await this.$axios.get('/getDataPerUsers')
-                this.chart = response.data
+                this.userChart = response.data
+            } catch (err) {
+                console.error(err);
+            }
+
+            // get task data grouped by images
+            try {
+                const response = await this.$axios.get('/getDataPerImages')
+                this.imageChart = response.data
             } catch (err) {
                 console.error(err);
             }
@@ -102,8 +142,25 @@ export default {
 
 <!-- Cannot scope this for some reason -->
 <style lang='scss'>
+.dataview {
+    // display: flex;
+    // flex-direction: column;
+}
+
 .box.table-container {
-    padding: 0.5rem
+    padding: 0.5rem;
+}
+
+.table-limiter {
+    // th {
+    //     position: sticky;
+    //     top: 0px;
+    // }
+
+    // tbody {
+    //     overflow: auto;
+    //     max-height: 150px;
+    // }
 }
 
 .task-title {

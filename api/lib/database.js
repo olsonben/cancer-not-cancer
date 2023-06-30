@@ -133,3 +133,23 @@ export async function getDataPerUsers() {
     const rows = await dbOps.select(query)
     return rows
 }
+
+export async function getDataPerImages() {
+    const query = `
+        SELECT
+            h.image_id,
+            im.path,
+            COUNT(*) AS total,
+            SUM(CASE WHEN h.rating = 1 THEN 1 ELSE 0 END) AS yes,
+            SUM(CASE WHEN h.rating = -1 THEN 1 ELSE 0 END) AS no,
+            SUM(CASE WHEN h.rating = 0 THEN 1 ELSE 0 END) AS maybe
+        FROM
+            hotornot as h
+        LEFT JOIN images as im ON
+            h.image_id = im.id
+        GROUP BY
+            im.id`
+
+    const rows = await dbOps.select(query)
+    return rows
+}

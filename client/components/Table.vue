@@ -4,7 +4,7 @@
             <th v-for="header in headers">{{ header }}</th>
         </thead>
         <tbody>
-            <Row v-for="row in body" :key="row[indexProp]" :row="row" :order="order" />
+            <Row v-for="row in body" :key="row[indexProp]" :class="{ 'is-selected': false}"  :row="row" :order="order"/>
         </tbody>
     </table>
 </template>
@@ -21,7 +21,8 @@
                 headers:[],
                 body: [],
                 indexProp: '',
-                order: []
+                order: [],
+                selected: null
             }
         },
         watch: {
@@ -33,6 +34,12 @@
                     this.indexProp = newTableData.indexProp
                     this.order = newTableData.order
                 }
+            }
+        },
+        methods: {
+            // TODO: get row clicks working
+            selectRow(row) {
+                console.log('Selected', row)
             }
         }
     }
