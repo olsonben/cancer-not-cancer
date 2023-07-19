@@ -180,26 +180,26 @@ export default {
 </script>
 
 <style lang='scss'>
-.dataview {
-    // display: flex;
-    // flex-direction: column;
-}
+// .dataview {
+//     display: flex;
+//     flex-direction: column;
+// }
 
 .box.table-container {
     padding: 0.5rem;
 }
 
-.table-limiter {
-    // th {
-    //     position: sticky;
-    //     top: 0px;
-    // }
+// .table-limiter {
+//     th {
+//         position: sticky;
+//         top: 0px;
+//     }
 
-    // tbody {
-    //     overflow: auto;
-    //     max-height: 150px;
-    // }
-}
+//     tbody {
+//         overflow: auto;
+//         max-height: 150px;
+//     }
+// }
 
 .task-title {
     color: hsl(0deg, 0%, 29%);
