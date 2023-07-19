@@ -38,7 +38,8 @@ import {
     addImage,
     getData,
     getDataPerUsers,
-    getDataPerImages
+    getDataPerImages,
+    getTasks
  } from './lib/database.js'
 
 /******************
@@ -106,8 +107,20 @@ app.get('/isLoggedIn', (req, res) => {
 
 // For data view
 app.get('/getData', isLoggedIn, isValid, async (req, res) => {
+    const taskId = req.query.task_id
+    const investigatorId = req.user.id
     try {
-        const data = await getData()
+        const data = await getData(investigatorId, taskId)
+        res.send(data)
+    } catch (err) {
+        res.status(500).send({})
+    }
+})
+
+app.get('/allTasks', isLoggedIn, isValid, async (req, res) => {
+    const investigatorId = req.user.id
+    try {
+        const data = await getTasks(investigatorId)
         res.send(data)
     } catch (err) {
         res.status(500).send({})
@@ -115,8 +128,10 @@ app.get('/getData', isLoggedIn, isValid, async (req, res) => {
 })
 
 app.get('/getDataPerUsers', isLoggedIn, isValid, async (req, res) => {
+    const taskId = req.query.task_id
+    const investigatorId = req.user.id
     try {
-        const data = await getDataPerUsers()
+        const data = await getDataPerUsers(investigatorId, taskId)
         res.send(data)
     } catch (err) {
         console.error(err)
@@ -125,8 +140,10 @@ app.get('/getDataPerUsers', isLoggedIn, isValid, async (req, res) => {
 })
 
 app.get('/getDataPerImages', isLoggedIn, isValid, async (req, res) => {
+    const taskId = req.query.task_id
+    const investigatorId = req.user.id
     try {
-        const data = await getDataPerImages()
+        const data = await getDataPerImages(investigatorId, taskId)
         res.send(data)
     } catch (err) {
         console.error(err)

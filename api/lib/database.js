@@ -102,19 +102,30 @@ export async function addImage(path, hash, from_ip, user_id) {
     }
 }
 
+export async function getTasks(userId) {
+    const query = `SELECT id, prompt, short_name
+                FROM tasks
+                WHERE investigator = ?`
+    const rows = await dbOps.select(query, [userId])
+    
+    return rows
+}
+
 // TODO: change to be task and owner oriented
-export async function getData() {
+export async function getData(userId, taskId) {
     const query = `SELECT
-                        count(*) AS total,
-                        sum(case when rating = 1 then 1 else 0 end) AS yes,
-                        sum(case when rating = -1 then 1 else 0 end) AS no,
-                        sum(case when rating = 0 then 1 else 0 end) AS maybe
-                    FROM hotornot`
-    const rows = await dbOps.select(query)
+                    count(*) AS total,
+                    sum(case when rating = 1 then 1 else 0 end) AS yes,
+                    sum(case when rating = -1 then 1 else 0 end) AS no,
+                    sum(case when rating = 0 then 1 else 0 end) AS maybe
+                FROM hotornot
+                WHERE task_id = ? OR ? is NULL`
+    const rows = await dbOps.select(query, [taskId, taskId])
+    
     return rows[0]
 }
 
-export async function getDataPerUsers() {
+export async function getDataPerUsers(userId, taskId) {
     const query = `
         SELECT
             h.user_id,
@@ -127,14 +138,15 @@ export async function getDataPerUsers() {
             hotornot as h
         LEFT JOIN users as u ON
             h.user_id = u.id
+        WHERE task_id = ? OR ? is NULL
         GROUP BY
             h.user_id`
 
-    const rows = await dbOps.select(query)
+    const rows = await dbOps.select(query, [taskId, taskId])
     return rows
 }
 
-export async function getDataPerImages() {
+export async function getDataPerImages(userId, taskId) {
     const query = `
         SELECT
             h.image_id,
@@ -147,9 +159,10 @@ export async function getDataPerImages() {
             hotornot as h
         LEFT JOIN images as im ON
             h.image_id = im.id
+        WHERE task_id = ? OR ? is NULL
         GROUP BY
             im.id`
 
-    const rows = await dbOps.select(query)
+    const rows = await dbOps.select(query, [taskId, taskId])
     return rows
 }

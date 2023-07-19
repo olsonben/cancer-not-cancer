@@ -25,6 +25,8 @@ export function isValid (req, res, next) {
             perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
         } else if (req.route.path.includes('/getData')) {
             perms.uploader && perms.enabled ? next() : res.sendStatus(401)
+        } else if (req.route.path === '/allTasks') {
+            perms.uploader && perms.enabled ? next() : res.sendStatus(401)
         }
     } else if (req.route.methods.post) {
         // Checking enabled is redundant but safe

@@ -4,7 +4,11 @@
         <section class='section dataview'>
             <h1 class='title'>Data View</h1>
             <div>
-                <div class='task-title'><strong>Task:</strong> Is the ROI cancer?</div>
+                <div class='task-title'><strong>Task:</strong> <div class="select is-medium">
+                    <select v-model="selectedTask">
+                        <option v-for="task in tasks" :value="task.id">{{ task.prompt }}</option>
+                    </select>
+                </div></div>
                 <div class="task-stats">
                     <ul>
                         <li>Total: {{ total }}</li>
@@ -30,9 +34,19 @@ const percentage = (part, total) => {
     return percent.toFixed(2)
 }
 
+const theAllTask = () => {
+    return [{
+        'id': null,
+        'prompt': 'All',
+        'short_name': 'all'
+    }]
+}
+
 export default {
     data() {
         return {
+            tasks: theAllTask(),
+            selectedTask: null,
             data: {},
             total: 0,
             yes: 0,
@@ -95,9 +109,13 @@ export default {
             this.yes = percentage(newData.yes, t),
             this.no = percentage(newData.no, t),
             this.maybe = percentage(newData.maybe, t)
+        },
+        selectedTask(newTaskId) {
+            this.lookupData()
         }
     },
     created() {
+        this.getTasks()
         this.lookupData()
     },
 
@@ -114,7 +132,11 @@ export default {
         async lookupData() {
             // get general task data
             try {
-                const response = await this.$axios.get('/getData')
+                const response = await this.$axios.get('/getData', {
+                    params: {
+                        task_id: this.selectedTask
+                    }
+                })
                 this.data = response.data
             } catch (err) {
                 console.error(err);
@@ -122,7 +144,11 @@ export default {
 
             // get task data grouped by users
             try {
-                const response = await this.$axios.get('/getDataPerUsers')
+                const response = await this.$axios.get('/getDataPerUsers', {
+                    params: {
+                        task_id: this.selectedTask
+                    }
+                })
                 this.userChart = response.data
             } catch (err) {
                 console.error(err);
@@ -130,8 +156,21 @@ export default {
 
             // get task data grouped by images
             try {
-                const response = await this.$axios.get('/getDataPerImages')
+                const response = await this.$axios.get('/getDataPerImages', {
+                    params: {
+                        task_id: this.selectedTask
+                    }
+                })
                 this.imageChart = response.data
+            } catch (err) {
+                console.error(err);
+            }
+        },
+        async getTasks() {
+            try {
+                const response = await this.$axios.$get('/allTasks')
+                const tasks = theAllTask().concat(response)
+                this.tasks = tasks
             } catch (err) {
                 console.error(err);
             }
@@ -140,7 +179,6 @@ export default {
 }
 </script>
 
-<!-- Cannot scope this for some reason -->
 <style lang='scss'>
 .dataview {
     // display: flex;
@@ -167,9 +205,14 @@ export default {
     color: hsl(0deg, 0%, 29%);
     font-size: 1.25rem;
     font-weight: 400;
-    line-height: 1.25;
+    line-height: 1.5;
     width: 100%;
     border-bottom: 1px solid hsl(0deg, 0%, 82%);
+
+    strong {
+        padding-top: 0.8rem;
+        display: inline-block;
+    }
 }
 
 .task-stats {
