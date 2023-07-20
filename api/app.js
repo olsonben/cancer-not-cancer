@@ -39,7 +39,8 @@ import {
     getData,
     getDataPerUsers,
     getDataPerImages,
-    getTasks
+    getTasks,
+    getUsers
  } from './lib/database.js'
 
 /******************
@@ -105,10 +106,26 @@ app.get('/isLoggedIn', (req, res) => {
     }
 })
 
+app.get('/getUsers', isLoggedIn, isValid, async (req, res) => {
+    const adminUserId = req.user.id
+    try {
+        const data = await getUsers(adminUserId)
+        res.send(data)
+    } catch (err) {
+        res.status(500).send({})
+    }
+})
+
 // For data view
+// TODO: Add some better data checking to make sure the user owns the data they
+//       are looking at.
 app.get('/getData', isLoggedIn, isValid, async (req, res) => {
     const taskId = req.query.task_id
-    const investigatorId = req.user.id
+    let investigatorId = req.user.id
+    if (req.query.user_id && req.user.permissions.admin) {
+        investigatorId = req.query.user_id
+    }
+
     try {
         const data = await getData(investigatorId, taskId)
         res.send(data)
@@ -118,7 +135,10 @@ app.get('/getData', isLoggedIn, isValid, async (req, res) => {
 })
 
 app.get('/allTasks', isLoggedIn, isValid, async (req, res) => {
-    const investigatorId = req.user.id
+    let investigatorId = req.user.id
+    if (req.query.user_id && req.user.permissions.admin) {
+        investigatorId = req.query.user_id
+    }
     try {
         const data = await getTasks(investigatorId)
         res.send(data)
@@ -129,7 +149,10 @@ app.get('/allTasks', isLoggedIn, isValid, async (req, res) => {
 
 app.get('/getDataPerUsers', isLoggedIn, isValid, async (req, res) => {
     const taskId = req.query.task_id
-    const investigatorId = req.user.id
+    let investigatorId = req.user.id
+    if (req.query.user_id && req.user.permissions.admin) {
+        investigatorId = req.query.user_id
+    }
     try {
         const data = await getDataPerUsers(investigatorId, taskId)
         res.send(data)
@@ -141,7 +164,10 @@ app.get('/getDataPerUsers', isLoggedIn, isValid, async (req, res) => {
 
 app.get('/getDataPerImages', isLoggedIn, isValid, async (req, res) => {
     const taskId = req.query.task_id
-    const investigatorId = req.user.id
+    let investigatorId = req.user.id
+    if (req.query.user_id && req.user.permissions.admin) {
+        investigatorId = req.query.user_id
+    }
     try {
         const data = await getDataPerImages(investigatorId, taskId)
         res.send(data)

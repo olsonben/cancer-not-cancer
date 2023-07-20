@@ -4,11 +4,15 @@
         <section class='section dataview'>
             <h1 class='title'>Data View</h1>
             <div>
-                <div class='task-title'><strong>Task:</strong> <div class="select is-medium">
-                    <select v-model="selectedTask">
-                        <option v-for="task in tasks" :value="task.id">{{ task.prompt }}</option>
-                    </select>
-                </div></div>
+                <div class='controls level'>
+                    <div class='task-picker level-left'>
+                        <strong>Task:</strong> <div class="select is-medium">
+                            <select v-model="selectedTask">
+                                <option v-for="task in tasks" :value="task.id">{{ task.prompt }}</option>
+                            </select>
+                    </div></div>
+                    <Userview class="level-right" v-if='this.$store.state.user.permissions.admin' :userId.sync="userId"/>
+                </div>
                 <div class="task-stats">
                     <ul>
                         <li>Total: {{ total }}</li>
@@ -53,7 +57,8 @@ export default {
             no: 0,
             maybe: 0,
             userChart: [],
-            imageChart: []
+            imageChart: [],
+            userId: null
         }
     },
     computed: {
@@ -112,6 +117,18 @@ export default {
         },
         selectedTask(newTaskId) {
             this.lookupData()
+        },
+        userId(newUserID) {
+            // If user id changes, we need to pull task associated with that id.
+            this.getTasks()
+            // If the selectedTask isn't on the all/default/null, reset it
+            // and since selectedTask is being watch, we use this if to update
+            // the data if the task didn't change but the user did.
+            if (this.selectedTask) {
+                this.selectedTask = null
+            } else {
+                this.lookupData()
+            }
         }
     },
     created() {
@@ -134,7 +151,8 @@ export default {
             try {
                 const response = await this.$axios.get('/getData', {
                     params: {
-                        task_id: this.selectedTask
+                        task_id: this.selectedTask,
+                        user_id: this.userId
                     }
                 })
                 this.data = response.data
@@ -146,7 +164,8 @@ export default {
             try {
                 const response = await this.$axios.get('/getDataPerUsers', {
                     params: {
-                        task_id: this.selectedTask
+                        task_id: this.selectedTask,
+                        user_id: this.userId
                     }
                 })
                 this.userChart = response.data
@@ -158,7 +177,8 @@ export default {
             try {
                 const response = await this.$axios.get('/getDataPerImages', {
                     params: {
-                        task_id: this.selectedTask
+                        task_id: this.selectedTask,
+                        user_id: this.userId
                     }
                 })
                 this.imageChart = response.data
@@ -168,7 +188,11 @@ export default {
         },
         async getTasks() {
             try {
-                const response = await this.$axios.$get('/allTasks')
+                const response = await this.$axios.$get('/allTasks', {
+                    params: {
+                        user_id: this.userId
+                    }
+                })
                 const tasks = theAllTask().concat(response)
                 this.tasks = tasks
             } catch (err) {
@@ -200,8 +224,7 @@ export default {
 //         max-height: 150px;
 //     }
 // }
-
-.task-title {
+.controls {
     color: hsl(0deg, 0%, 29%);
     font-size: 1.25rem;
     font-weight: 400;
