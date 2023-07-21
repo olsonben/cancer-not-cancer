@@ -21,11 +21,15 @@
                         <li>Maybe: {{ maybe }}%</li>
                     </ul>
                 </div>
-                <div class="box table-container table-limiter">
-                    <Table :tableData="userTableData" />
+                <div class="box">
+                    <div class="table-container table-limiter">
+                        <Table :tableData="userTableData" />
+                    </div>
                 </div>
-                <div class="box table-container table-limiter">
-                    <Table :tableData="imageTableData" />
+                <div class="box">
+                    <div class="table-container table-limiter">
+                        <Table :tableData="imageTableData" />
+                    </div>
                 </div>
             </div>
         </section>
@@ -209,21 +213,30 @@ export default {
 //     flex-direction: column;
 // }
 
-.box.table-container {
+.box {
     padding: 0.5rem;
 }
 
-// .table-limiter {
-//     th {
-//         position: sticky;
-//         top: 0px;
-//     }
+.table-container {
+    overflow: auto;
+    border: 1px solid hsl(0deg, 0%, 86%);
+}
 
-//     tbody {
-//         overflow: auto;
-//         max-height: 150px;
-//     }
-// }
+// limit table height, so tables are scrollable instead of a long page
+.table-limiter {
+    max-height: 500px;
+    
+    table {
+        border-collapse: separate;
+    }
+
+    thead {
+        position: sticky;
+        top: 0px;
+        background-color: white;
+        border: 1px solid hsl(0deg, 0%, 86%);
+    }
+}
 .controls {
     color: hsl(0deg, 0%, 29%);
     font-size: 1.25rem;
