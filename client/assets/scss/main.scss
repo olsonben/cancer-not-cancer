@@ -6,6 +6,7 @@
 // DEV: Make sure new scss files are added to nuxt.config.js under styleResources.scss to make them globally available
 @import 'colors.scss';
 @import 'variables.scss';
+@import 'font-icon.scss';
 
 // Make bulma a layer so it is easier to overwrite 
 // https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity#precedence_over_third-party_css
