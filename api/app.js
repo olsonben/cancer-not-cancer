@@ -40,7 +40,8 @@ import {
     getDataPerUsers,
     getDataPerImages,
     getTasks,
-    getUsers
+    getUsers,
+    getTaskTable
  } from './lib/database.js'
 
 /******************
@@ -146,6 +147,18 @@ app.get('/allTasks', isLoggedIn, isValid, async (req, res) => {
         res.status(500).send({})
     }
 })
+
+app.get('/getTaskTable', isLoggedIn, isValid, async (req, res) => {
+    let investigatorId = req.user.id
+
+    try {
+        const data = await getTaskTable(investigatorId)
+        res.send(data)
+    } catch (err) {
+        res.status(500).send({})
+    }
+})
+
 
 app.get('/getDataPerUsers', isLoggedIn, isValid, async (req, res) => {
     const taskId = req.query.task_id

@@ -25,7 +25,7 @@ export function isValid (req, res, next) {
             perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
         } else if (req.route.path.includes('/getData')) {
             perms.uploader && perms.enabled ? next() : res.sendStatus(401)
-        } else if (req.route.path === '/allTasks') {
+        } else if (req.route.path === '/allTasks' || req.route.path === '/getTaskTable') {
             perms.uploader && perms.enabled ? next() : res.sendStatus(401)
         } else if (req.route.path === '/getUsers') {
             perms.admin && perms.enabled ? next() : res.sendStatus(401)
