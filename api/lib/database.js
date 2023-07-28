@@ -120,6 +120,42 @@ export async function getTasks(userId) {
     return rows
 }
 
+export async function createTask(userId, short_name, prompt) {
+    const query = `INSERT INTO tasks (short_name, prompt, investigator) VALUES (?, ?, ?);`
+    try {
+        const results = await dbOps.executeWithResults(query, [short_name, prompt, userId])
+        return results.insertId
+    } catch (err) {
+        throw(err)
+    }
+
+}
+
+export async function updateTask(userId, taskId, short_name, prompt) {
+    const query = `UPDATE tasks
+                SET short_name = ?,
+                    prompt = ?
+                WHERE investigator = ?
+                    AND id = ?`
+    try {
+        await dbOps.execute(query, [short_name, prompt, userId, taskId])
+        return true
+    } catch (err) {
+        throw (err)
+    }
+
+}
+
+export async function deleteTask(userId, taskId) {
+    const query = `DELETE FROM tasks WHERE tasks.investigator = ? AND tasks.id = ?;`
+    try {
+        await dbOps.execute(query, [userId, taskId])
+        return true
+    } catch (err) {
+        throw (err)
+    }
+}
+
 // export async function getTask(userId, taskId) {
 //     const query = `SELECT id, prompt, short_name
 //                 FROM tasks

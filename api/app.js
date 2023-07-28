@@ -41,7 +41,10 @@ import {
     getDataPerImages,
     getTasks,
     getUsers,
-    getTaskTable
+    getTaskTable,
+    createTask,
+    deleteTask,
+    updateTask
  } from './lib/database.js'
 
 /******************
@@ -193,6 +196,52 @@ app.get('/getDataPerImages', isLoggedIn, isValid, async (req, res) => {
 /*****************
  * POST
  *****************/
+
+app.post('/createTask', isLoggedIn, isValid, async (req, res, next) => {
+    let investigatorId = req.user.id
+    const short_name = req.body.short_name
+    const prompt = req.body.prompt
+    console.log('create task:', short_name, prompt)
+    try {
+        const insertId = await createTask(investigatorId, short_name, prompt)
+        console.log('createTask data')
+        console.log(insertId)
+        res.send({ newTaskId: insertId})
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
+})
+
+app.post('/updateTask', isLoggedIn, isValid, async (req, res, next) => {
+    let investigatorId = req.user.id
+    const taskId = req.body.id
+    const short_name = req.body.short_name
+    const prompt = req.body.prompt
+    try {
+        const updateSuccess = await updateTask(investigatorId, taskId, short_name, prompt)
+        if (updateSuccess) {
+            res.sendStatus(200)
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
+})
+
+app.post('/deleteTask', isLoggedIn, isValid, async (req, res, next) => {
+    let investigatorId = req.user.id
+    const taskId = req.body.id
+    try {
+        const deleteSuccess = await deleteTask(investigatorId, taskId)
+        if (deleteSuccess) {
+            res.sendStatus(200)
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
+})
 
 // Insert the hotornots
 app.post('/hotornot', isLoggedIn, isValid, async (req, res, next) => {

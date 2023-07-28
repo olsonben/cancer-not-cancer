@@ -48,7 +48,7 @@
             </div>
         </section>
         <!-- Edit Task -->
-        <!-- <TaskEdit class='login-modal' /> -->
+        <TaskEdit v-if="taskToEdit != null" class='login-modal' :task="taskToEdit" @save="taskToEdit = null" @cancel="taskToEdit = null"/>
     </div>
 </template>
 
@@ -92,6 +92,7 @@ export default {
             order: ['short_name', 'prompt', 'image_count', 'observer_count', 'progress', 'action'],
             indexProp: 'id',
             taskData: [],
+            taskToEdit: null,
         }
     },
     computed: {
@@ -112,21 +113,45 @@ export default {
     },
 
     methods: {
-        createTask() {
-            console.log('Submit task')
-            console.log(this.task)
+        async createTask() {
+            try {
+                const response = await this.$axios.$post('/createTask', {
+                    short_name: this.task.name,
+                    prompt: this.task.prompt,
+                })
+                this.taskData.push({
+                    id: response.newTaskId,
+                    short_name: this.task.name,
+                    prompt: this.task.prompt,
+                    image_count: 0,
+                    observer_count: 0,
+                    progress: 0
+                })
+                this.task.name = null
+                this.task.prompt = null
+            } catch (err) {
+                console.log(err)
+            }
         },
         editTask(task) {
             console.log('editTask')
-            console.log(task)
+            this.taskToEdit = task
         },
-        deleteTask(task) {
+        async deleteTask(task) {
             console.log('deleteTask')
+            try {
+                await this.$axios.$post('/deleteTask', {
+                    id: task.id
+                })
+                const index = this.taskData.findIndex(curTask => curTask.id === task.id)
+                this.taskData.splice(index, 1)
+            } catch (err) {
+                console.log(err)
+            }
         },
         async getTasksTable() {
             try {
                 const response = await this.$axios.$get('/getTaskTable')
-                console.log(response)
                 this.taskData = response
             } catch (err) {
                 console.error(err);

@@ -7,7 +7,7 @@
                 </progress>
             </template>
             <template v-else-if="propName === 'action'">
-                <div class="buttons is-right">
+                <div class="buttons is-center">
                     <button class="button is-small is-info" type="button" @click="editRow">
                         <span class="icon"><i class="cnc-pen-to-square"></i></span>
                     </button>

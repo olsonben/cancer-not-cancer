@@ -39,7 +39,10 @@ export function isValid (req, res, next) {
         // Checking enabled is redundant but safe
         if (req.route.path === '/hotornot') {
             perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
-        } else if (req.route.path === '/images') {
+        } else if (req.route.path === '/images' ||
+            req.route.path === '/createTask' ||
+            req.route.path === '/updateTask' ||
+            req.route.path === '/deleteTask') {
             perms.uploader && perms.enabled ? next() : res.sendStatus(401)
         } else if (req.route.path === '/users') {
             perms.admin && perms.enabled ? next() : res.sendStatus(401)

@@ -101,7 +101,20 @@ class DatabaseOps {
     async execute(sql, values) {
         const db = await this.db
         await db._execute(sql, values)
+        
         return true
+    }
+
+    /**
+     * Process queries other than select(UPDATE, INSERT, etc.) and get results obj
+     * @param {string} sql Sql string template - 'Select * From tbl Where id=?'
+     * @param {Array.<*>} values Values to populate sql template
+     * @returns {Object} Returns the results object which has insertId
+     */
+    async executeWithResults(sql, values) {
+        const db = await this.db
+        const [results, fields] = await db._execute(sql, values)
+        return results
     }
 
     // NOTE: Consider adding transaction methods for more complex DB operaions.
