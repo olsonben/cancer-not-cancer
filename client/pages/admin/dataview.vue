@@ -192,7 +192,7 @@ export default {
         },
         async getTasks() {
             try {
-                const response = await this.$axios.$get('/allTasks', {
+                const response = await this.$axios.$get('/tasks/', {
                     params: {
                         user_id: this.userId
                     }

@@ -57,7 +57,7 @@ export default {
     methods: {
         async saveChanges() {
             try {
-                const response = await this.$axios.$post('/updateTask', {
+                const response = await this.$axios.$post('/tasks/update', {
                     id: this.localTask.id,
                     short_name: this.localTask.short_name,
                     prompt: this.localTask.prompt,

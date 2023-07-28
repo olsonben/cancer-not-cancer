@@ -16,6 +16,41 @@ export function getIP (req) {
     return ip
 }
 
+export function isEnabled (req, res, next) {
+    if (req.user.permissions.enabled) {
+        next()
+    } else {
+        // User is not enabled
+        res.sendStatus(401)
+    }
+}
+
+export function isAdmin(req, res, next) {
+    if (req.user.permissions.admin) {
+        next()
+    } else {
+        res.sendStatus(401)
+    }
+}
+
+export function isPathologist(req, res, next) {
+    if (req.user.permissions.pathologist) {
+        next()
+    } else {
+        // User is not enabled
+        res.sendStatus(401)
+    }
+}
+
+export function isUploader(req, res, next) {
+    if (req.user.permissions.enabled) {
+        next()
+    } else {
+        // User is not enabled
+        res.sendStatus(401)
+    }
+}
+
 // Checking if a user is allowed to make a specific request
 export function isValid (req, res, next) {
     // Each method and source has specific requirements to be valid
@@ -24,6 +59,9 @@ export function isValid (req, res, next) {
         if (req.route.path === '/nextImage') {
             perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
         } else if (req.route.path.includes('/getData')) {
+            console.log('PATH LOOK')
+            console.log(req.route.path)
+            console.log(req.path)
             perms.uploader && perms.enabled ? next() : res.sendStatus(401)
         } else if (req.route.path === '/allTasks' || req.route.path === '/getTaskTable') {
             perms.uploader && perms.enabled ? next() : res.sendStatus(401)
@@ -55,4 +93,4 @@ export function isValid (req, res, next) {
 }
 
 // export default wraps all the functions in one object
-export default { isLoggedIn, getIP, isValid }
+export default { isLoggedIn, getIP, isValid, isEnabled, isAdmin, isUploader, isPathologist }

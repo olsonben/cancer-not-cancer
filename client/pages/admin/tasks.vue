@@ -115,7 +115,7 @@ export default {
     methods: {
         async createTask() {
             try {
-                const response = await this.$axios.$post('/createTask', {
+                const response = await this.$axios.$post('/tasks/', {
                     short_name: this.task.name,
                     prompt: this.task.prompt,
                 })
@@ -140,7 +140,7 @@ export default {
         async deleteTask(task) {
             console.log('deleteTask')
             try {
-                await this.$axios.$post('/deleteTask', {
+                await this.$axios.$post('/tasks/delete', {
                     id: task.id
                 })
                 const index = this.taskData.findIndex(curTask => curTask.id === task.id)
@@ -151,7 +151,7 @@ export default {
         },
         async getTasksTable() {
             try {
-                const response = await this.$axios.$get('/getTaskTable')
+                const response = await this.$axios.$get('/tasks/table')
                 this.taskData = response
             } catch (err) {
                 console.error(err);

@@ -39,13 +39,10 @@ import {
     getData,
     getDataPerUsers,
     getDataPerImages,
-    getTasks,
-    getUsers,
-    getTaskTable,
-    createTask,
-    deleteTask,
-    updateTask
- } from './lib/database.js'
+    getUsers
+ } from './dbOperations/database.js'
+
+import taskRoutes from './routes/tasks.js'
 
 /******************
  * REQUEST PARSING
@@ -138,30 +135,7 @@ app.get('/getData', isLoggedIn, isValid, async (req, res) => {
     }
 })
 
-app.get('/allTasks', isLoggedIn, isValid, async (req, res) => {
-    let investigatorId = req.user.id
-    if (req.query.user_id && req.user.permissions.admin) {
-        investigatorId = req.query.user_id
-    }
-    try {
-        const data = await getTasks(investigatorId)
-        res.send(data)
-    } catch (err) {
-        res.status(500).send({})
-    }
-})
-
-app.get('/getTaskTable', isLoggedIn, isValid, async (req, res) => {
-    let investigatorId = req.user.id
-
-    try {
-        const data = await getTaskTable(investigatorId)
-        res.send(data)
-    } catch (err) {
-        res.status(500).send({})
-    }
-})
-
+app.use('/tasks', taskRoutes)
 
 app.get('/getDataPerUsers', isLoggedIn, isValid, async (req, res) => {
     const taskId = req.query.task_id
@@ -197,51 +171,6 @@ app.get('/getDataPerImages', isLoggedIn, isValid, async (req, res) => {
  * POST
  *****************/
 
-app.post('/createTask', isLoggedIn, isValid, async (req, res, next) => {
-    let investigatorId = req.user.id
-    const short_name = req.body.short_name
-    const prompt = req.body.prompt
-    console.log('create task:', short_name, prompt)
-    try {
-        const insertId = await createTask(investigatorId, short_name, prompt)
-        console.log('createTask data')
-        console.log(insertId)
-        res.send({ newTaskId: insertId})
-    } catch (err) {
-        console.log(err)
-        res.status(500).send({})
-    }
-})
-
-app.post('/updateTask', isLoggedIn, isValid, async (req, res, next) => {
-    let investigatorId = req.user.id
-    const taskId = req.body.id
-    const short_name = req.body.short_name
-    const prompt = req.body.prompt
-    try {
-        const updateSuccess = await updateTask(investigatorId, taskId, short_name, prompt)
-        if (updateSuccess) {
-            res.sendStatus(200)
-        }
-    } catch (err) {
-        console.log(err)
-        res.status(500).send({})
-    }
-})
-
-app.post('/deleteTask', isLoggedIn, isValid, async (req, res, next) => {
-    let investigatorId = req.user.id
-    const taskId = req.body.id
-    try {
-        const deleteSuccess = await deleteTask(investigatorId, taskId)
-        if (deleteSuccess) {
-            res.sendStatus(200)
-        }
-    } catch (err) {
-        console.log(err)
-        res.status(500).send({})
-    }
-})
 
 // Insert the hotornots
 app.post('/hotornot', isLoggedIn, isValid, async (req, res, next) => {

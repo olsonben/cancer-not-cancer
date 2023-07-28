@@ -8,7 +8,7 @@
  * https://youtu.be/Q0a0594tOrc
  */
 
-import { getUserByUsername, getUserById } from './database.js'
+import { getUserByUsername, getUserById } from '../dbOperations/database.js'
 import * as path from 'path'
 
 // Manage Cross Origin Resource Sharing
