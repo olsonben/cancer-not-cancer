@@ -153,7 +153,7 @@ export default {
         async lookupData() {
             // get general task data
             try {
-                const response = await this.$axios.get('/getData', {
+                const response = await this.$axios.get('/data/', {
                     params: {
                         task_id: this.selectedTask,
                         user_id: this.userId
@@ -166,7 +166,7 @@ export default {
 
             // get task data grouped by users
             try {
-                const response = await this.$axios.get('/getDataPerUsers', {
+                const response = await this.$axios.get('/data/perUsers', {
                     params: {
                         task_id: this.selectedTask,
                         user_id: this.userId
@@ -179,7 +179,7 @@ export default {
 
             // get task data grouped by images
             try {
-                const response = await this.$axios.get('/getDataPerImages', {
+                const response = await this.$axios.get('/data/perImages', {
                     params: {
                         task_id: this.selectedTask,
                         user_id: this.userId

@@ -199,7 +199,7 @@ export default {
             if (this.isPathologist) {
                 // try-catch is needed for async/await
                 try {
-                    const response = await this.$axios.get('/nextImage')
+                    const response = await this.$axios.get('/images/')
                     // We preload the image asynchronously allowing for smooth
                     // fade in and out between images. The image is loaded
                     // outside the DOM, but that data will be cached for the

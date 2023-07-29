@@ -25,7 +25,7 @@ export default {
         }
     },
     async fetch() {
-        const response = await this.$axios.$get('/getUsers')
+        const response = await this.$axios.$get('/users/')
         this.users = defaultUserArray().concat(response)
     },
     fetchOnServer: false,

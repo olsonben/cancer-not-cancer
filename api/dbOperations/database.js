@@ -12,7 +12,7 @@ export async function getUserById(id) {
     return rows[0]
 }
 
-export async function getNextImage() {
+async function getNextImage() {
     // NOTE: this is not very efficient, but it works
     const query = `SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;`
     const rows = await dbOps.select(query, [])
@@ -35,7 +35,7 @@ export async function addRating(userId, imageId, rating, comment, fromIp) {
     return true
 }
 
-export async function createUser(fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) {
+async function createUser(fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) {
     const addUserQuery = `INSERT INTO users (
         fullname,
         username,
@@ -74,7 +74,7 @@ export async function createUser(fullname, username, password, is_enabled, is_pa
     
 }
 
-export async function addImage(path, hash, from_ip, user_id) {
+async function addImage(path, hash, from_ip, user_id) {
     const addImageQuery = `INSERT INTO images (path, hash, from_ip, user_id) VALUES (?, ?, ?, ?);` // insert image
 
     try {
@@ -90,7 +90,7 @@ export async function addImage(path, hash, from_ip, user_id) {
     }
 }
 
-export async function getUsers(userId) {
+async function getUsers(userId) {
     const query = `SELECT id, fullname, username
                 FROM users
                 WHERE id != ?`
@@ -99,7 +99,7 @@ export async function getUsers(userId) {
     return rows
 }
 
-export async function getData(userId, taskId) {
+async function getData(userId, taskId) {
     const query = `SELECT
                     count(*) AS total,
                     sum(case when rating = 1 then 1 else 0 end) AS yes,
@@ -114,7 +114,7 @@ export async function getData(userId, taskId) {
     return rows[0]
 }
 
-export async function getDataPerUsers(userId, taskId) {
+async function getDataPerUsers(userId, taskId) {
     const query = `
         SELECT
             h.user_id,
@@ -137,7 +137,7 @@ export async function getDataPerUsers(userId, taskId) {
     return rows
 }
 
-export async function getDataPerImages(userId, taskId) {
+async function getDataPerImages(userId, taskId) {
     const query = `
         SELECT
             h.image_id,
@@ -159,3 +159,21 @@ export async function getDataPerImages(userId, taskId) {
     const rows = await dbOps.select(query, [taskId, taskId, userId])
     return rows
 }
+
+const userOps = {
+    getUsers,
+    createUser
+}
+
+const imageOps = {
+    getNextImage,
+    addImage,
+}
+
+const dataOps = {
+    getData,
+    getDataPerUsers,
+    getDataPerImages,
+}
+
+export { userOps, imageOps, dataOps }

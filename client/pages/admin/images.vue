@@ -182,7 +182,7 @@ export default {
             })
 
             try {
-                const response = await this.$axios.post('/images', data)
+                const response = await this.$axios.post('/images/', data)
 
                 // Handling 0 file upload edge case
                 if (response.data !== 'No files uploaded.') {
