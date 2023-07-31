@@ -1,8 +1,12 @@
 import { dataOps } from '../dbOperations/database.js'
 
-// For data view
+// For Data View
+// =====================
+
 // TODO: Add some better data checking to make sure the user owns the data they
 //       are looking at.
+// Return overview data for a task, admins can change the visible data by
+// switching user id.
 const getData = async (req, res) => {
     const taskId = req.query.task_id
     let investigatorId = req.user.id
@@ -18,6 +22,7 @@ const getData = async (req, res) => {
     }
 }
 
+// Return per user overview data for a task, admins can change user id.
 const getDataPerUsers = async (req, res) => {
     const taskId = req.query.task_id
     let investigatorId = req.user.id
@@ -33,6 +38,7 @@ const getDataPerUsers = async (req, res) => {
     }
 }
 
+// Return per image overview data for a task, admins can change user id.
 const getDataPerImages = async (req, res) => {
     const taskId = req.query.task_id
     let investigatorId = req.user.id

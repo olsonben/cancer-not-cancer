@@ -7,10 +7,12 @@ const getUsers = async (req, res) => {
         res.send(data)
     } catch (err) {
         res.status(500).send({})
+        // Allow unified error handling by passing the err along.
+        next(err)
     }
 }
 
-// Insert new user
+// Insert new user via post
 const createUser = async (req, res, next) => {
     console.log("Post /users");
 
@@ -25,7 +27,6 @@ const createUser = async (req, res, next) => {
     // Check string lengths
     let flag = false
     let message = []
-    console.log(req.body)
     if (req.body.fullname.length > 256) {
         flag = true
         message += "Name too long"
@@ -60,7 +61,7 @@ const createUser = async (req, res, next) => {
             })
         }
     } catch (err) {
-        // TODO: This seems wrong unless this is how we catch errors in the main app.
+        // Allow unified error handling by passing the err along.
         next(err)
     }
 }

@@ -1,6 +1,6 @@
 import taskOps from '../dbOperations/taskOps.js'
 
-// all tasks
+// Returns all tasks associated with a user id. Admins can change user id.
 const getAllTasks = async (req, res) => {
     let investigatorId = req.user.id
     if (req.query.user_id && req.user.permissions.admin) {
@@ -14,6 +14,7 @@ const getAllTasks = async (req, res) => {
     }
 }
 
+// Returns all data needed to build a task table associated with a user id.
 const getTaskTable = async (req, res) => {
     let investigatorId = req.user.id
     try {
@@ -24,6 +25,7 @@ const getTaskTable = async (req, res) => {
     }
 }
 
+// Handle a post request to create a new task. Returns new task id.
 const createTask = async (req, res) => {
     let investigatorId = req.user.id
     const short_name = req.body.short_name
@@ -40,6 +42,7 @@ const createTask = async (req, res) => {
     }
 }
 
+// Handle a post request to update a task.
 const updateTask = async (req, res) => {
     let investigatorId = req.user.id
     const taskId = req.body.id
@@ -56,6 +59,7 @@ const updateTask = async (req, res) => {
     }
 }
 
+// Handle a post request to delete a task.
 const deleteTask = async (req, res) => {
     let investigatorId = req.user.id
     const taskId = req.body.id

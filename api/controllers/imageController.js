@@ -1,7 +1,11 @@
+import { Router } from 'express'
 import { imageOps } from '../dbOperations/database.js'
+import { uploadImages, removeFile, removeEmptyImageFolders } from '../lib/upload.js' // middleware to handle uploads
+import { getIP } from '../lib/functions.js' // Helper functions
 
 const imageBaseURL = process.env.IMAGE_URL
 
+// Returns the url of the next image for grading.
 const nextImage = async (req, res, next) => {
     console.log("GET: nextImage");
     try {
@@ -26,7 +30,50 @@ const nextImage = async (req, res, next) => {
     }
 }
 
+// Save successfull image uploads with the uploaders ip
+async function saveUploadsToDb(req, res, next) {
+    const ip = getIP(req)
+    for (const file of req.files) {
+        if (file.success) {
+            try {
+                // TODO: consider moving to imageController
+                const insertImageSuccess = await imageOps.addImage(
+                    // TODO: move this concatenation to upload.js
+                    file.relPath, // safe: created by the server
+                    file.hash || null,
+                    ip,
+                    req.user.id
+                )
+
+                if (!insertImageSuccess) {
+                    console.log('File already exists:', file.sanitizedName)
+                    file.success = false
+                    file.message = 'File already exists.'
+                }
+            } catch (err) {
+                // database error
+                console.error(err)
+                file.success = false
+                file.message = 'Upload Error. Please try again later.'
+            }
+        }
+    }
+    next()
+}
+
+// If an image database save wasn't successful, we want to remove the file.
+async function removeFailedImageSaves(req, res, next) {
+    for (const file of req.files) {
+        if (!file.success) {
+            await removeFile(file.savePath)
+        }
+    }
+    removeEmptyImageFolders()
+    next()
+}
+
 // TODO: update the image pipeline to use unified error handler via `next(err)`
+// Return to sender the status of the upload.
 const saveImages = async (req, res, next) => {
     if (req.files.length === 0) {
         res.status(200).send('No files uploaded.')
@@ -46,9 +93,18 @@ const saveImages = async (req, res, next) => {
     }
 }
 
+// Join all the middleware pieces need for uploading images.
+// This list is order specific.
+const uploadAndSaveImages = Router().use([
+    uploadImages,
+    saveUploadsToDb,
+    removeFailedImageSaves,
+    saveImages
+])
+
 const imageController = {
     nextImage,
-    saveImages,
+    uploadAndSaveImages,
 }
 
 export default imageController

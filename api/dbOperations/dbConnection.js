@@ -1,3 +1,6 @@
+// Initialize database connection for app. Subsequent imports of dbConnection with
+// be a cache of the exported connection.
+
 import { DatabaseOps } from "../lib/dbops.js";
 
 const dbConfig = {

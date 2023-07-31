@@ -1,11 +1,12 @@
-import express from 'express'
+import { Router } from 'express'
 import taskController from '../controllers/taskController.js'
 import { isLoggedIn, isEnabled, isUploader } from '../lib/functions.js' // Helper functions
 
-const router = express.Router()
+const router = Router()
 
 const isValid = [isLoggedIn, isEnabled, isUploader]
 
+// routes for /tasks
 router.get('/', isValid, taskController.getAllTasks)
 router.get('/table', isValid, taskController.getTaskTable)
 router.post('/', isValid, taskController.createTask)
