@@ -74,12 +74,42 @@ const deleteTask = async (req, res) => {
     }
 }
 
+// Handle a get request for a tasks observers(users).
+const getObservers = async (req, res) => {
+    let investigatorId = req.user.id
+    const taskId = req.query.task_id
+    try {
+        const observers = await taskOps.getObservers(investigatorId, taskId)
+        res.send(observers)
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
+}
+
+const updateObservers = async (req, res) => {
+    let investigatorId = req.user.id
+    const taskId = req.body.task_id
+    const observerIds = JSON.parse(req.body.observerIds)
+    try {
+        const updateSuccess = await taskOps.updateObservers(investigatorId, taskId, observerIds)
+        if (updateSuccess) {
+            res.sendStatus(200)
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
+}
+
 const taskController = {
     getAllTasks,
     getTaskTable,
     createTask,
     updateTask,
     deleteTask,
+    getObservers,
+    updateObservers
 }
 
 export default taskController

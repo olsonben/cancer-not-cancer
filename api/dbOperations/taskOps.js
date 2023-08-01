@@ -104,6 +104,35 @@ const taskOps = {
         return rows
 
     },
+
+    async getObservers(userId, taskId) {
+        const query = `SELECT
+              users.id,
+              users.fullname as name,
+              CASE WHEN task_id is NULL THEN 0 ELSE 1 END applied
+            FROM users
+              LEFT JOIN observers ON observers.user_id = users.id AND task_id = ?
+            WHERE users.is_enabled = 1 AND users.is_pathologist = 1
+            ORDER BY users.id`
+
+        const rows = await dbOps.select(query, [taskId])
+        return rows
+
+    },
+
+    async updateObservers(userId, taskId, observerIds) {
+        const deleteQuery = `DELETE FROM observers WHERE task_id = ?`
+        const insertQuery = `INSERT INTO observers (task_id, user_id) values (?, ?)`
+        try {
+            await dbOps.execute(deleteQuery, [taskId])
+            for (const observerId of observerIds) {
+                await dbOps.execute(insertQuery, [taskId, observerId])
+            }
+            return true
+        } catch (err) {
+            throw (err)
+        }
+    },
 }
 
 export default taskOps

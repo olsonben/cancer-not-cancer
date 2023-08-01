@@ -48,7 +48,7 @@
             </div>
         </section>
         <!-- Edit Task -->
-        <TaskEdit v-if="taskToEdit != null" class='login-modal' :task="taskToEdit" @save="taskToEdit = null" @cancel="taskToEdit = null"/>
+        <TaskEdit v-if="taskToEdit != null" class='login-modal' :task="taskToEdit" @save="finishTaskEdit" @cancel="taskToEdit = null"/>
     </div>
 </template>
 
@@ -88,7 +88,7 @@ export default {
                 name: null,
                 prompt: null,
             },
-            columns: ['Name', 'Prompt', 'Image Count', 'Observer Count', 'Progress', 'Actions'],
+            columns: ['Name', 'Prompt', 'Images', 'Observers', 'Progress', 'Actions'],
             order: ['short_name', 'prompt', 'image_count', 'observer_count', 'progress', 'action'],
             indexProp: 'id',
             taskData: [],
@@ -134,8 +134,12 @@ export default {
             }
         },
         editTask(task) {
-            console.log('editTask')
             this.taskToEdit = task
+        },
+        finishTaskEdit(auxData) {
+            const index = this.taskData.findIndex(task => task.id == this.taskToEdit.id)
+            this.taskData[index].observer_count = auxData.observers
+            this.taskToEdit = null
         },
         async deleteTask(task) {
             console.log('deleteTask')

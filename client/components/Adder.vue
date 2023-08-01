@@ -5,12 +5,10 @@
                 <h2 class="has-text-weight-semibold">Active</h2>
                 <ul>
                     <li
-                        v-for="tag in appliedTags"
+                        v-for="tag in localTags.applied"
                         :key="tag.id"
                         v-draggable="{ tag, type: 'applied' }"
                         draggable
-                        @dragstart="onDragStart"
-                        @dragend="onDragEnd"
                         class="tag is-info"
                     >
                         {{ tag.name }}
@@ -21,12 +19,10 @@
                 <h2 class="has-text-weight-semibold">Available</h2>
                 <ul>
                     <li
-                        v-for="tag in availableTags"
+                        v-for="tag in localTags.available"
                         :key="tag.id"
                         v-draggable="{ tag, type: 'available' }"
                         draggable
-                        @dragstart="onDragStart"
-                        @dragend="onDragEnd"
                         class="tag is-success"
                     >
                         {{ tag.name }}
@@ -38,40 +34,44 @@
 </template>
 
 <script>
+const dummyTagsData = {
+    applied: [
+        { id: 1, name: "Tag A" },
+        { id: 2, name: "Tag B" },
+    ],
+    available: [
+        { id: 3, name: "Tag C" },
+        { id: 4, name: "Tag D" },
+    ]
+}
+
 export default {
-    data() {
-        return {
-            appliedTags: [
-                { id: 1, name: "Tag A" },
-                { id: 2, name: "Tag B" },
-            ],
-            availableTags: [
-                { id: 3, name: "Tag C" },
-                { id: 4, name: "Tag D" },
-            ]
+    props: ['tags'],
+    computed: {
+        localTags() {
+            return {
+                applied: Array.from(this.tags.applied),
+                available: Array.from(this.tags.available),
+            }
         }
     },
     methods: {
-        onDragStart(event, tag, type) {
-            // event.dataTransfer.setData('text/plain', JSON.stringify({tag, type}))
-        },
-        onDragEnd() {
-            // update styling
-        },
         onDrop(event, column) {
             const data = JSON.parse(event.dataTransfer.getData('application/json'))
             if (column !== data.type) {
                 if (column === 'applied') {
-                    this.appliedTags.push(data.tag)
-                    this.availableTags = this.availableTags.filter((obj) =>  {
+                    this.localTags.available = this.localTags.available.filter((obj) =>  {
                         return obj.id !== data.tag.id
                     })
+                    this.localTags.applied.push(data.tag)
                 } else {
-                    this.availableTags.push(data.tag)
-                    this.appliedTags = this.appliedTags.filter((obj) => {
+                    this.localTags.applied = this.localTags.applied.filter((obj) => {
                         return obj.id !== data.tag.id
                     })
+                    this.localTags.available.push(data.tag)
                 }
+                
+                this.$emit('update', this.localTags)
             }
             
         }
@@ -83,12 +83,9 @@ export default {
 .adder {
 
     .column {
-        // flex: 1;
         margin: 10px;
-        // padding: 10px;
         border: 1px solid #ccc;
         border-radius: 4px;
-        // background-color: #f9f9f9;
 
         ul {
             list-style: none;
@@ -99,7 +96,6 @@ export default {
                 padding: 5px;
                 border: 1px solid #ddd;
                 border-radius: 4px;
-                // background-color: #fff;
                 cursor: move;
             }
         }

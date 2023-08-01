@@ -12,5 +12,7 @@ router.get('/table', isValid, taskController.getTaskTable)
 router.post('/', isValid, taskController.createTask)
 router.post('/update', isValid, taskController.updateTask)
 router.post('/delete', isValid, taskController.deleteTask)
+router.get('/observers', isValid, taskController.getObservers)
+router.post('/observers', isValid, taskController.updateObservers)
 
 export default router

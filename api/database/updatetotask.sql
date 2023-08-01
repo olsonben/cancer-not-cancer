@@ -3,7 +3,7 @@ CREATE TABLE `tasks`(
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `short_name` VARCHAR(100) NOT NULL,
     `prompt` TEXT NOT NULL,
-    `investigator` BIGINT UNSIGNED NOT NULL,
+    `investigator` BIGINT UNSIGNED NULL,
     `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -53,26 +53,31 @@ CREATE INDEX parent_task_id_index ON task_relations(parent_task_id);
 ALTER TABLE hotornot ADD COLUMN (task_id BIGINT UNSIGNED);
 
 ALTER TABLE
-    `task_relations` ADD CONSTRAINT `task_relations_task_id_foreign` FOREIGN KEY(`task_id`) REFERENCES `tasks`(`id`);
+    `task_relations` ADD CONSTRAINT `task_relations_task_id_foreign` FOREIGN KEY(`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE
-    `task_relations` ADD CONSTRAINT `task_relations_parent_task_id_foreign` FOREIGN KEY(`parent_task_id`) REFERENCES `tasks`(`id`);
+    `task_relations` ADD CONSTRAINT `task_relations_parent_task_id_foreign` FOREIGN KEY(`parent_task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE
-    `tag_relations` ADD CONSTRAINT `tag_relations_tag_id_foreign` FOREIGN KEY(`tag_id`) REFERENCES `tags`(`id`);
+    `tag_relations` ADD CONSTRAINT `tag_relations_tag_id_foreign` FOREIGN KEY(`tag_id`) REFERENCES `tags`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE
-    `tag_relations` ADD CONSTRAINT `tag_relations_parent_tag_id_foreign` FOREIGN KEY(`parent_tag_id`) REFERENCES `tags`(`id`);
+    `tag_relations` ADD CONSTRAINT `tag_relations_parent_tag_id_foreign` FOREIGN KEY(`parent_tag_id`) REFERENCES `tags`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE
-    `observers` ADD CONSTRAINT `observers_task_id_foreign` FOREIGN KEY(`task_id`) REFERENCES `tasks`(`id`);
+    `observers` ADD CONSTRAINT `observers_task_id_foreign` FOREIGN KEY(`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE
-    `observers` ADD CONSTRAINT `observers_user_id_foreign` FOREIGN KEY(`user_id`) REFERENCES `users`(`id`);
+    `observers` ADD CONSTRAINT `observers_user_id_foreign` FOREIGN KEY(`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE
-    `image_tags` ADD CONSTRAINT `image_tag_image_id_foreign` FOREIGN KEY(`image_id`) REFERENCES `images`(`id`);
+    `image_tags` ADD CONSTRAINT `image_tag_image_id_foreign` FOREIGN KEY(`image_id`) REFERENCES `images`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE
-    `image_tags` ADD CONSTRAINT `image_tag_tag_id_foreign` FOREIGN KEY(`tag_id`) REFERENCES `tags`(`id`);
+    `image_tags` ADD CONSTRAINT `image_tag_tag_id_foreign` FOREIGN KEY(`tag_id`) REFERENCES `tags`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE
-    `task_tags` ADD CONSTRAINT `task_tag_task_id_foreign` FOREIGN KEY(`task_id`) REFERENCES `tasks`(`id`);
+    `task_tags` ADD CONSTRAINT `task_tag_task_id_foreign` FOREIGN KEY(`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE
-    `task_tags` ADD CONSTRAINT `task_tag_tag_id_foreign` FOREIGN KEY(`tag_id`) REFERENCES `tags`(`id`);
+    `task_tags` ADD CONSTRAINT `task_tag_tag_id_foreign` FOREIGN KEY(`tag_id`) REFERENCES `tags`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE
-    `tags` ADD CONSTRAINT `tags_user_id_foreign` FOREIGN KEY(`user_id`) REFERENCES `users`(`id`);
-ALTER TABLE
-    `tasks` ADD CONSTRAINT `tasks_investigator_foreign` FOREIGN KEY(`investigator`) REFERENCES `users`(`id`);
+    `tags` ADD CONSTRAINT `tags_user_id_foreign` FOREIGN KEY(`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE `tasks`
+ADD CONSTRAINT `tasks_investigator_foreign`
+FOREIGN KEY(`investigator`)
+REFERENCES `users`(`id`)
+ON DELETE SET NULL
+ON UPDATE CASCADE;
