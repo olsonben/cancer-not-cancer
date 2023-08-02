@@ -117,7 +117,8 @@ app.post('/hotornot', isLoggedIn, isEnabled, isPathologist, async (req, res, nex
             req.body.id,
             req.body.rating,
             req.body.comment,
-            getIP(req))
+            getIP(req),
+            req.body.taskId)
 
         if (insertSuccess) {
             res.sendStatus(200)

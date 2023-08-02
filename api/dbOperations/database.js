@@ -16,15 +16,16 @@ export async function getUserById(id) {
     return rows[0]
 }
 
-export async function addRating(userId, imageId, rating, comment, fromIp) {
-    const ratingQuery = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) 
-        VALUES (?, ?, ?, ?, ?);`
+export async function addRating(userId, imageId, rating, comment, fromIp, taskId) {
+    const ratingQuery = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip, task_id) 
+        VALUES (?, ?, ?, ?, ?, ?)`
     const updateQuery = `UPDATE images 
         SET times_graded = times_graded + 1 
         WHERE id = ?;`
     
+    // TODO: user the transaction method
     await Promise.all([
-        dbOps.execute(ratingQuery, [userId, imageId, rating, comment, fromIp]),
+        dbOps.execute(ratingQuery, [userId, imageId, rating, comment, fromIp, taskId]),
         dbOps.execute(updateQuery, [imageId])
     ])
 
@@ -36,11 +37,35 @@ export async function addRating(userId, imageId, rating, comment, fromIp) {
 // IMAGE BASED DATABASE METHODS
 // ---------------------------------
 const imageOps = {
-    async getNextImage() {
+    async getNextImage(imageId) {
         // NOTE: this is not very efficient, but it works
-        const query = `SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;`
-        const rows = await dbOps.select(query, [])
+        const query = `SELECT id, path FROM images WHERE images.id = ?`
+        const rows = await dbOps.select(query, [imageId])
         return rows[0]
+    },
+
+    async getNextImageIds(userId, taskId) {
+        const query = `
+            (
+                SELECT images.id as image_id
+                FROM images 
+                LEFT JOIN image_tags ON image_tags.image_id = images.id
+                    AND image_tags.tag_id in
+                (
+                    SELECT task_tags.tag_id
+                    FROM task_tags
+                    WHERE task_tags.task_id = ?
+                )
+                WHERE image_tags.tag_id IS NOT NULL
+            )
+            EXCEPT
+            (
+                SELECT hotornot.image_id as image_id
+                FROM hotornot
+                WHERE user_id = ? AND task_id = ?
+            )`
+        const rows = await dbOps.select(query, [taskId, userId, taskId])
+        return rows.map(row => row.image_id)
     },
 
     async addImage(path, hash, from_ip, user_id) {

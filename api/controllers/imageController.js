@@ -7,9 +7,10 @@ const imageBaseURL = process.env.IMAGE_URL
 
 // Returns the url of the next image for grading.
 const nextImage = async (req, res, next) => {
-    console.log("GET: nextImage");
+    let imageId = req.query.imageId
+    console.log("GET: nextImage", imageId);
     try {
-        const img = await imageOps.getNextImage()
+        const img = await imageOps.getNextImage(imageId)
         // TODO: Use URLs and Path Join instead of this logic
         let imagePath = img.path
         if (imageBaseURL.slice(-1) == "/") {
@@ -27,6 +28,17 @@ const nextImage = async (req, res, next) => {
         })
     } catch (err) {
         next(err)
+    }
+}
+
+const getNextImageIds = async (req, res, next) => {
+    let userId = req.user.id
+    let taskId = req.query.taskId
+    try {
+        const data = await imageOps.getNextImageIds(userId, taskId)
+        res.send(data)
+    } catch (err) {
+        res.status(500).send({})
     }
 }
 
@@ -105,6 +117,7 @@ const uploadAndSaveImages = Router().use([
 const imageController = {
     nextImage,
     uploadAndSaveImages,
+    getNextImageIds,
 }
 
 export default imageController

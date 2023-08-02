@@ -8,6 +8,7 @@ const isLoggedAndEnabled = [isLoggedIn, isEnabled]
 
 // routes for /images
 router.get('/', isLoggedAndEnabled, isPathologist, imageController.nextImage)
+router.get('/queue', isLoggedAndEnabled, isPathologist, imageController.getNextImageIds)
 router.post('/', isLoggedAndEnabled, isUploader, imageController.uploadAndSaveImages)
 
 export default router
