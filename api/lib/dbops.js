@@ -117,7 +117,32 @@ class DatabaseOps {
         return results
     }
 
-    // NOTE: Consider adding transaction methods for more complex DB operaions.
+    // NOTE: Not tested with sqlite
+    // https://github.com/sidorares/node-mysql2/issues/384#issuecomment-673726520
+    async executeTransactions(sqlQueries, queryValues) {
+        let conn = null;
+        try {
+            const db = await this.db // the await is needed to enter the promise chain
+            conn = await db.getConnection()
+            await conn.beginTransaction()
+            for (let i in sqlQueries) {
+                // check if there are queryValues
+                if (queryValues[i] && queryValues[i].length) {
+                    await conn.query(sqlQueries[i], queryValues[i])
+                } else {
+                    // NOTE: It is up to the user not to submit an empty query
+                    await conn.query(sqlQueries[i])
+                }
+            }
+            // const [response, meta] = await conn.query('')
+            await conn.commit()
+        } catch (error) {
+            if (conn) await conn.rollback()
+            throw error
+        } finally {
+            if (conn) await conn.release()
+        }
+    }
 
 }
 

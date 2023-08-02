@@ -120,14 +120,22 @@ const taskOps = {
 
     },
 
+    // Update observers using transactions, if something fails nothing will be commited.s
     async updateObservers(userId, taskId, observerIds) {
-        const deleteQuery = `DELETE FROM observers WHERE task_id = ?`
-        const insertQuery = `INSERT INTO observers (task_id, user_id) values (?, ?)`
+        const allQueries = []
+        const allValues = []
+
+        const observerRowValues = observerIds.map((id) => [taskId, id])
+
+        allQueries.push(`DELETE FROM observers WHERE task_id = ?`)
+        allValues.push([taskId])
+        if (observerRowValues && observerRowValues.length) {
+            allQueries.push(`INSERT INTO observers (task_id, user_id) VALUES ?`)
+            allValues.push([observerRowValues,])
+        }
+
         try {
-            await dbOps.execute(deleteQuery, [taskId])
-            for (const observerId of observerIds) {
-                await dbOps.execute(insertQuery, [taskId, observerId])
-            }
+            await dbOps.executeTransactions(allQueries, allValues)
             return true
         } catch (err) {
             throw (err)
