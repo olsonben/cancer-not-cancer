@@ -1,7 +1,19 @@
 import taskOps from '../dbOperations/taskOps.js'
 
-// Returns all tasks associated with a user id. Admins can change user id.
+
+// Returns all task assigned to the user/observer.
 const getAllTasks = async (req, res) => {
+    let observerId = req.user.id
+    try {
+        const data = await taskOps.getTasked(observerId)
+        res.send(data)
+    } catch (err) {
+        res.status(500).send({})
+    }
+}
+
+// Returns all tasks owned/associated with a user id. Admins can change user id.
+const getOwnedTasks = async (req, res) => {
     let investigatorId = req.user.id
     if (req.query.user_id && req.user.permissions.admin) {
         investigatorId = req.query.user_id
@@ -104,6 +116,7 @@ const updateObservers = async (req, res) => {
 
 const taskController = {
     getAllTasks,
+    getOwnedTasks,
     getTaskTable,
     createTask,
     updateTask,

@@ -8,6 +8,7 @@ const isValid = [isLoggedIn, isEnabled, isUploader]
 
 // routes for /tasks
 router.get('/', isValid, taskController.getAllTasks)
+router.get('/owned', isValid, taskController.getOwnedTasks)
 router.get('/table', isValid, taskController.getTaskTable)
 router.post('/', isValid, taskController.createTask)
 router.post('/update', isValid, taskController.updateTask)

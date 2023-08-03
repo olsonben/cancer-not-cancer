@@ -13,6 +13,17 @@ const taskOps = {
         return rows
     },
 
+    async getTasked(userId) {
+        const query = `SELECT tasks.id as id, tasks.short_name as short_name, tasks.prompt as prompt
+                    FROM observers
+                    LEFT JOIN tasks ON tasks.id = observers.task_id
+                    WHERE observers.user_id = ?
+                    ORDER BY tasks.id`
+        const rows = await dbOps.select(query, [userId])
+
+        return rows
+    },
+    
     async createTask(userId, short_name, prompt) {
         const query = `INSERT INTO tasks (short_name, prompt, investigator) VALUES (?, ?, ?);`
         try {
