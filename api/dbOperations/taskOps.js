@@ -131,7 +131,7 @@ const taskOps = {
 
     },
 
-    // Update observers using transactions, if something fails nothing will be commited.s
+    // Update observers using transactions, if something fails nothing will be committed.
     async updateObservers(userId, taskId, observerIds) {
         const allQueries = []
         const allValues = []
@@ -143,6 +143,44 @@ const taskOps = {
         if (observerRowValues && observerRowValues.length) {
             allQueries.push(`INSERT INTO observers (task_id, user_id) VALUES ?`)
             allValues.push([observerRowValues,])
+        }
+
+        try {
+            await dbOps.executeTransactions(allQueries, allValues)
+            return true
+        } catch (err) {
+            throw (err)
+        }
+    },
+
+    // get tags all tags owned, mark tags associated with task as applied
+    async getTags(userId, taskId) {
+        const query = `SELECT
+              tags.id,
+              tags.name as name,
+              CASE WHEN task_tags.task_id is NULL THEN 0 ELSE 1 END applied
+            FROM tags
+              LEFT JOIN task_tags ON task_tags.tag_id = tags.id AND task_id = ?
+            WHERE tags.user_id = ?
+            ORDER BY tags.id`
+
+        const rows = await dbOps.select(query, [taskId, userId])
+        return rows
+
+    },
+
+    // Update task_tags using transactions, if something fails nothing will be committed.
+    async updateTaskTags(userId, taskId, tagIds) {
+        const allQueries = []
+        const allValues = []
+
+        const taskTagRowValues = tagIds.map((id) => [taskId, id])
+
+        allQueries.push(`DELETE FROM task_tags WHERE task_id = ?`)
+        allValues.push([taskId])
+        if (taskTagRowValues && taskTagRowValues.length) {
+            allQueries.push(`INSERT INTO task_tags (task_id, tag_id) VALUES ?`)
+            allValues.push([taskTagRowValues,])
         }
 
         try {
