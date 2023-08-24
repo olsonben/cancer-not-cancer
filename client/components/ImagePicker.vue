@@ -1,12 +1,15 @@
 <template>
     <div class="image-picker">
 
-        <aside class="menu">
-            <p class="menu-label">Images Folders</p>
+        <div class="menu">
+            <p class="menu-label" @click="report">Images Folders</p>
             <ul class="menu-list">
+            <!-- <ul class="menu-list">
                 <File v-for="aFile in data" :key="aFile.id" :file="aFile" @selected="itemSelected"></File>
+            </ul> -->
+                <Folder :key="'root'" v-model="root"></Folder>
             </ul>
-        </aside>
+        </div>
 
     </div>
 </template>
@@ -18,7 +21,7 @@ const dummyFolderData = [
         name: 'Folder 1',
         contents: [],
         type: 'tag',
-        selected: false,
+        selected: [],
     },
     {
         id: 2,
@@ -32,7 +35,7 @@ const dummyFolderData = [
                         id: 495,
                         name: 'image_324.tiff',
                         type: 'img',
-                        selected: false,
+                        selected: true,
                     },
                     {
                         id: 496,
@@ -42,7 +45,7 @@ const dummyFolderData = [
                     }
                 ],
                 type: 'tag',
-                selected: false,
+                selected: [],
             },
             {
                 id: 6,
@@ -62,11 +65,11 @@ const dummyFolderData = [
                                 id: 46,
                                 name: 'carcinoma_3.tiff',
                                 type: 'img',
-                                selected: false,
+                                selected: true,
                             }
                         ],
                         type: 'tag',
-                        selected: false,
+                        selected: [],
                     },
                     {
                         id: 2893,
@@ -82,7 +85,7 @@ const dummyFolderData = [
                     }
                 ],
                 type: 'tag',
-                selected: false,
+                selected: [],
             },
             {
                 id: 7,
@@ -91,7 +94,6 @@ const dummyFolderData = [
                     {
                         id: 1,
                         name: 'cancer_A.tiff',
-                        contents: [],
                         type: 'img',
                         selected: false,
                     },
@@ -103,11 +105,11 @@ const dummyFolderData = [
                     }
                 ],
                 type: 'tag',
-                selected: false,
+                selected: [],
             }
         ],
         type: 'tag',
-        selected: false,
+        selected: [],
     },
     {
         id: 3,
@@ -127,7 +129,7 @@ const dummyFolderData = [
             }
         ],
         type: 'tag',
-        selected: false,
+        selected: [],
     },
 ]
 
@@ -135,7 +137,16 @@ export default {
     props: ['tags'],
     data() {
         return {
-            data: dummyFolderData,
+            // data: dummyFolderData,
+            root: {
+                id: 0,
+                name: 'root',
+                contents: dummyFolderData,
+                type: 'tag',
+                selected: [],
+            },
+            test: [],
+            expanded: false,
         }
     },
     computed: {
@@ -152,10 +163,12 @@ export default {
                 console.log('Data Change')
                 console.log(this.getSelectedArray(newData))
             }
-        }
-        
+        },        
     },
     methods: {
+        report() {
+            console.log(this.$common.getSelectedFiles(this.root))
+        },
         itemSelected(iArray) {
             console.log('IMAGE PICKER')
             console.log(iArray)
@@ -198,10 +211,15 @@ export default {
 
 <style lang='scss' scoped>
 .image-picker {
-    max-height: 300px;
-    overflow-y: scroll;
+    // max-height: 300px;
+    // overflow-y: scroll;
     transition: 0.5s ease;
     border: 1px solid $primary;
+
+    .menu {
+        max-height: 300px;
+        overflow-y: scroll;
+    }
 
 //     ul a +ul {
 //         max-height:0;
