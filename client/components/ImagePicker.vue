@@ -4,10 +4,7 @@
         <div class="menu">
             <p class="menu-label" @click="report">Images Folders</p>
             <ul class="menu-list">
-            <!-- <ul class="menu-list">
-                <File v-for="aFile in data" :key="aFile.id" :file="aFile" @selected="itemSelected"></File>
-            </ul> -->
-                <Folder :key="'root'" v-model="root"></Folder>
+                <Folder :key="'root'" v-model="root" @update="update"></Folder>
             </ul>
         </div>
 
@@ -150,60 +147,15 @@ export default {
         }
     },
     computed: {
-        localTags() {
-            return {
-                applied: Array.from(this.tags.applied),
-                available: Array.from(this.tags.available),
-            }
-        }
     },
-    watch: {
-        data: {
-            handler(newData) {
-                console.log('Data Change')
-                console.log(this.getSelectedArray(newData))
-            }
-        },        
+    watch: {      
     },
     methods: {
         report() {
             console.log(this.$common.getSelectedFiles(this.root))
         },
-        itemSelected(iArray) {
-            console.log('IMAGE PICKER')
-            console.log(iArray)
-        },
-        getSelectedArray(dataArray, memo=[]) {
-            for (const item of dataArray) {
-                memo = this.getSubSelectedArray(child, memo)
-            }
-            return memo
-        },
-        getSubSelectedArray(parent, memo=[]) {
-            memo.push(parent.id)
-            for (const child of parent.contents) {
-                memo = this.getSubSelectedArray(child, memo)
-            }
-            return memo
-        },
-        onDrop(event, column) {
-            const data = JSON.parse(event.dataTransfer.getData('application/json'))
-            if (column !== data.type) {
-                if (column === 'applied') {
-                    this.localTags.available = this.localTags.available.filter((obj) =>  {
-                        return obj.id !== data.tag.id
-                    })
-                    this.localTags.applied.push(data.tag)
-                } else {
-                    this.localTags.applied = this.localTags.applied.filter((obj) => {
-                        return obj.id !== data.tag.id
-                    })
-                    this.localTags.available.push(data.tag)
-                }
-                
-                this.$emit('update', this.localTags)
-            }
-            
+        update() {
+            console.log('Data has changed.')
         }
     }
 }

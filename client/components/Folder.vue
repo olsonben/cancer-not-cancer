@@ -7,8 +7,8 @@
             <ul class="menu-list" :class="{ 'is-expanded': expand }">
                 <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
                 <li v-for="(file, index) in value.contents" :key="file.id">
-                    <folder v-if="isFolder(file)" v-model="value.contents[index]"/>
-                    <File v-else v-model="value.contents[index]"></File>
+                    <folder v-if="isFolder(file)" v-model="value.contents[index]" @update="update"/>
+                    <File v-else v-model="value.contents[index]" @update="update"></File>
                 </li>
             </ul>
     </li>
@@ -73,6 +73,9 @@ export default {
         },
         isFolder(file) {
             return !!(file.contents && file.contents.length)
+        },
+        update() {
+            this.$emit('update')
         }
     }
 }
