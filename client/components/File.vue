@@ -18,15 +18,6 @@ export default {
     props: {
         value: Object,
     },
-    watch: {
-        value: {
-            handler(val) {
-                console.log('file update')
-                this.$emit('update')
-            },
-            deep: true
-        }
-    },
     computed: {
         inputName() {
             return `image-${this.value.id}`

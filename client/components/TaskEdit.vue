@@ -28,7 +28,7 @@
                     </div>
                     <div v-if="activeTab === 'images'" class="field">
                         <!-- <label class="label">Images</label> -->
-                        <ImagePicker :tags="tags" @update="updateTags"/>
+                        <ImagePicker :files="root.contents" @report="report"/>
                     </div>
                     <div class="field is-grouped">
                         <p class="control">
@@ -45,6 +45,124 @@
 </template>
 
 <script>
+const dummyFolderData = [
+    {
+        id: 1,
+        name: 'Folder 1',
+        contents: [],
+        type: 'tag',
+        selected: [],
+    },
+    {
+        id: 2,
+        name: 'Folder 2',
+        contents: [
+            {
+                id: 5,
+                name: 'Folder A',
+                contents: [
+                    {
+                        id: 495,
+                        name: 'image_324.tiff',
+                        type: 'img',
+                        selected: true,
+                    },
+                    {
+                        id: 496,
+                        name: 'image_325.tiff',
+                        type: 'img',
+                        selected: false,
+                    }
+                ],
+                type: 'tag',
+                selected: [],
+            },
+            {
+                id: 6,
+                name: 'Folder B',
+                contents: [
+                    {
+                        id: 100,
+                        name: 'Positive Set',
+                        contents: [
+                            {
+                                id: 45,
+                                name: 'carcinoma_2.tiff',
+                                type: 'img',
+                                selected: false,
+                            },
+                            {
+                                id: 46,
+                                name: 'carcinoma_3.tiff',
+                                type: 'img',
+                                selected: true,
+                            }
+                        ],
+                        type: 'tag',
+                        selected: [],
+                    },
+                    {
+                        id: 2893,
+                        name: 'pizza_22.tiff',
+                        type: 'img',
+                        selected: false,
+                    },
+                    {
+                        id: 2894,
+                        name: 'pizza_23.tiff',
+                        type: 'img',
+                        selected: false,
+                    }
+                ],
+                type: 'tag',
+                selected: [],
+            },
+            {
+                id: 7,
+                name: 'Folder C',
+                contents: [
+                    {
+                        id: 1,
+                        name: 'cancer_A.tiff',
+                        type: 'img',
+                        selected: false,
+                    },
+                    {
+                        id: 2,
+                        name: 'cancer_Z.tiff',
+                        type: 'img',
+                        selected: false,
+                    }
+                ],
+                type: 'tag',
+                selected: [],
+            }
+        ],
+        type: 'tag',
+        selected: [],
+    },
+    {
+        id: 3,
+        name: 'Folder 3',
+        contents: [
+            {
+                id: 13,
+                name: 'blood_parasite_1.tiff',
+                type: 'img',
+                selected: false,
+            },
+            {
+                id: 24,
+                name: 'blood_parasite_2.tiff',
+                type: 'img',
+                selected: false,
+            }
+        ],
+        type: 'tag',
+        selected: [],
+    },
+]
+
 export default {
     props: ['task'],
     data() {
@@ -58,6 +176,13 @@ export default {
             tags: {
                 applied: [],
                 available: [],
+            },
+            root: {
+                id: 0,
+                name: 'root',
+                contents: dummyFolderData,
+                type: 'tag',
+                selected: [],
             },
         }
     },
@@ -98,6 +223,10 @@ export default {
     methods: {
         async saveChanges() {
             try {
+                // TODO: Save files selected on the backend
+                console.log('Files selected')
+                console.log(this.$common.getSelectedFiles(this.root))
+
                 const [response, observerResponse, tagsResponse] = await Promise.all([
                     this.$axios.$post('/tasks/update', {
                         id: this.localTask.id,
@@ -133,6 +262,10 @@ export default {
         updateTags(tagsData) {
             this.tags.applied = tagsData.applied
             this.tags.available = tagsData.available
+        },
+        report() {
+            console.log('Files selected')
+            console.log(this.$common.getSelectedFiles(this.root))
         }
     }
 }
