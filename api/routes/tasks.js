@@ -10,6 +10,7 @@ const isValid = [isLoggedIn, isEnabled, isUploader]
 router.get('/', isValid, taskController.getAllTasks)
 router.get('/owned', isValid, taskController.getOwnedTasks)
 router.get('/table', isValid, taskController.getTaskTable)
+router.get('/progress', isValid, taskController.getTaskProgress)
 router.post('/', isValid, taskController.createTask)
 router.post('/update', isValid, taskController.updateTask)
 router.post('/delete', isValid, taskController.deleteTask)

@@ -37,6 +37,17 @@ const getTaskTable = async (req, res) => {
     }
 }
 
+const getTaskProgress = async (req, res) => {
+    let investigatorId = req.user.id
+    const taskId = req.query.task_id
+    try {
+        const data = await taskOps.getQuickTaskProgress(investigatorId, taskId)
+        res.send(data)
+    } catch (err) {
+        res.status(500).send({})
+    }
+}
+
 // Handle a post request to create a new task. Returns new task id.
 const createTask = async (req, res) => {
     let investigatorId = req.user.id
@@ -214,7 +225,8 @@ const taskController = {
     getTags,
     updateTaskTags,
     getImages,
-    setTaskImages
+    setTaskImages,
+    getTaskProgress
 }
 
 export default taskController

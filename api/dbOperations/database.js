@@ -47,16 +47,9 @@ const imageOps = {
     async getNextImageIds(userId, taskId) {
         const query = `
             (
-                SELECT images.id as image_id
-                FROM images 
-                LEFT JOIN image_tags ON image_tags.image_id = images.id
-                    AND image_tags.tag_id in
-                (
-                    SELECT task_tags.tag_id
-                    FROM task_tags
-                    WHERE task_tags.task_id = ?
-                )
-                WHERE image_tags.tag_id IS NOT NULL
+                SELECT task_images.image_id as image_id
+                FROM task_images 
+                WHERE task_images.task_id = ?
             )
             EXCEPT
             (

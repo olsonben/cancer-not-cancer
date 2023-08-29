@@ -140,6 +140,7 @@ export default {
             const index = this.taskData.findIndex(task => task.id == this.taskToEdit.id)
             this.taskData[index].observer_count = auxData.observers
             this.taskData[index].image_count = auxData.images
+            this.updateTaskProgress(index)
             this.taskToEdit = null
         },
         async deleteTask(task) {
@@ -160,6 +161,18 @@ export default {
                 this.taskData = response
             } catch (err) {
                 console.error(err);
+            }
+        },
+        async updateTaskProgress(taskIndex) {
+            try {
+                const response = await this.$axios.$get('/tasks/progress', {
+                    params: {
+                        task_id: this.taskData[taskIndex].id
+                    }
+                })
+                this.taskData[taskIndex].progress = response.progress ? response.progress : 0
+            } catch (err) {
+                console.log(err)
             }
         }
 

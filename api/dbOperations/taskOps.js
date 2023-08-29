@@ -67,13 +67,11 @@ const taskOps = {
         // getting image counts should only require the image_tags table,
         // and there maybe other redundant joins. For now it works!
         const query = `WITH image_count_table AS (
-        SELECT tasks.id AS task_id, COUNT(DISTINCT images.id) AS image_count
-        FROM tasks
-        LEFT JOIN task_tags ON task_tags.task_id = tasks.id
-        LEFT JOIN image_tags ON image_tags.tag_id = task_tags.tag_id
-        LEFT JOIN images ON images.id = image_tags.image_id
+        SELECT task_images.task_id AS task_id, COUNT(DISTINCT task_images.image_id) AS image_count
+        FROM task_images
+        LEFT JOIN tasks ON tasks.id = task_images.task_id
         WHERE tasks.investigator = ?
-        GROUP BY tasks.id
+        GROUP BY task_images.task_id
         ),
         observer_count_table AS (
         SELECT tasks.id AS task_id, COUNT(DISTINCT observers.user_id) AS observer_count
@@ -88,12 +86,9 @@ const taskOps = {
             (COUNT(DISTINCT hotornot.image_id) / total_images.total_images) AS progress_percentage
         FROM hotornot
         JOIN (
-            SELECT tasks.id as tt_id, COUNT(DISTINCT images.id) AS total_images
-            FROM tasks
-            LEFT JOIN task_tags ON task_tags.task_id = tasks.id
-            LEFT JOIN image_tags ON image_tags.tag_id = task_tags.tag_id
-            LEFT JOIN images ON images.id = image_tags.image_id
-            GROUP BY tasks.id
+            SELECT task_images.task_id as tt_id, COUNT(DISTINCT task_images.image_id) AS total_images
+            FROM task_images
+            GROUP BY task_images.task_id
         ) AS total_images ON total_images.tt_id = hotornot.task_id
         GROUP BY hotornot.task_id, hotornot.user_id
         ),
@@ -114,6 +109,28 @@ const taskOps = {
         const rows = await dbOps.select(query, [userId, userId])
         return rows
 
+    },
+
+    async getQuickTaskProgress(userId, taskId) {
+        const query = `SELECT gradings.total / (images.total* observers.total) AS progress
+        FROM (
+            SELECT COUNT(*) as total
+            FROM hotornot
+            WHERE hotornot.task_id = ?
+        ) AS gradings,
+        (
+            SELECT COUNT(*) AS total
+            FROM task_images
+            WHERE task_images.task_id = ?
+        ) AS images,
+        (
+            SELECT COUNT(DISTINCT observers.user_id) AS total
+            FROM observers
+            WHERE observers.task_id = ?
+        ) AS observers;`
+
+        const rows = await dbOps.select(query, [taskId, taskId, taskId])
+        return rows[0]
     },
 
     async getObservers(userId, taskId) {
@@ -194,19 +211,23 @@ const taskOps = {
     // get all images associated with a user and mark images that
     // are selected for the taskId
     async getImages(userId, taskId) {
-        const query = `SELECT
+        const query = `SELECT 
                 tags.id as tag_id,
                 tags.name as tag_name,
                 images.id as image_id,
                 images.path, images.hash,
                 images.user_id as owner_id,
-                CASE WHEN task_images.task_id = ? THEN TRUE ELSE FALSE END as selected
+                CASE WHEN selected.picked IS NOT NULL THEN TRUE ELSE FALSE END as selected
             FROM tags
             LEFT JOIN image_tags ON image_tags.tag_id = tags.id
             LEFT JOIN images ON images.id = image_tags.image_id
-            LEFT JOIN task_images ON task_images.image_id = images.id
+            LEFT JOIN (
+              SELECT DISTINCT task_images.image_id as image_id, TRUE AS picked
+              FROM task_images
+              WHERE task_id = ?
+            ) selected ON selected.image_id = images.id
             WHERE tags.user_id = ?
-            ORDER BY tags.id;`
+            ORDER BY tags.id`
 
         const rows = await dbOps.select(query, [taskId, userId])
         return rows
