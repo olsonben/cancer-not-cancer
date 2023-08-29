@@ -17,5 +17,7 @@ router.get('/observers', isValid, taskController.getObservers)
 router.post('/observers', isValid, taskController.updateObservers)
 router.get('/tags', isValid, taskController.getTags)
 router.post('/tags', isValid, taskController.updateTaskTags)
+router.get('/images', isValid, taskController.getImages)
+router.post('/images', isValid, taskController.setTaskImages)
 
 export default router

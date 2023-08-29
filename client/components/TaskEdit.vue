@@ -45,123 +45,124 @@
 </template>
 
 <script>
-const dummyFolderData = [
-    {
-        id: 1,
-        name: 'Folder 1',
-        contents: [],
-        type: 'tag',
-        selected: [],
-    },
-    {
-        id: 2,
-        name: 'Folder 2',
-        contents: [
-            {
-                id: 5,
-                name: 'Folder A',
-                contents: [
-                    {
-                        id: 495,
-                        name: 'image_324.tiff',
-                        type: 'img',
-                        selected: true,
-                    },
-                    {
-                        id: 496,
-                        name: 'image_325.tiff',
-                        type: 'img',
-                        selected: false,
-                    }
-                ],
-                type: 'tag',
-                selected: [],
-            },
-            {
-                id: 6,
-                name: 'Folder B',
-                contents: [
-                    {
-                        id: 100,
-                        name: 'Positive Set',
-                        contents: [
-                            {
-                                id: 45,
-                                name: 'carcinoma_2.tiff',
-                                type: 'img',
-                                selected: false,
-                            },
-                            {
-                                id: 46,
-                                name: 'carcinoma_3.tiff',
-                                type: 'img',
-                                selected: true,
-                            }
-                        ],
-                        type: 'tag',
-                        selected: [],
-                    },
-                    {
-                        id: 2893,
-                        name: 'pizza_22.tiff',
-                        type: 'img',
-                        selected: false,
-                    },
-                    {
-                        id: 2894,
-                        name: 'pizza_23.tiff',
-                        type: 'img',
-                        selected: false,
-                    }
-                ],
-                type: 'tag',
-                selected: [],
-            },
-            {
-                id: 7,
-                name: 'Folder C',
-                contents: [
-                    {
-                        id: 1,
-                        name: 'cancer_A.tiff',
-                        type: 'img',
-                        selected: false,
-                    },
-                    {
-                        id: 2,
-                        name: 'cancer_Z.tiff',
-                        type: 'img',
-                        selected: false,
-                    }
-                ],
-                type: 'tag',
-                selected: [],
-            }
-        ],
-        type: 'tag',
-        selected: [],
-    },
-    {
-        id: 3,
-        name: 'Folder 3',
-        contents: [
-            {
-                id: 13,
-                name: 'blood_parasite_1.tiff',
-                type: 'img',
-                selected: false,
-            },
-            {
-                id: 24,
-                name: 'blood_parasite_2.tiff',
-                type: 'img',
-                selected: false,
-            }
-        ],
-        type: 'tag',
-        selected: [],
-    },
-]
+// TODO: Remove when no longer needed.
+// const dummyFolderData = [
+//     {
+//         id: 1,
+//         name: 'Folder 1',
+//         contents: [],
+//         type: 'tag',
+//         selected: [],
+//     },
+//     {
+//         id: 2,
+//         name: 'Folder 2',
+//         contents: [
+//             {
+//                 id: 5,
+//                 name: 'Folder A',
+//                 contents: [
+//                     {
+//                         id: 495,
+//                         name: 'image_324.tiff',
+//                         type: 'img',
+//                         selected: true,
+//                     },
+//                     {
+//                         id: 496,
+//                         name: 'image_325.tiff',
+//                         type: 'img',
+//                         selected: false,
+//                     }
+//                 ],
+//                 type: 'tag',
+//                 selected: [],
+//             },
+//             {
+//                 id: 6,
+//                 name: 'Folder B',
+//                 contents: [
+//                     {
+//                         id: 100,
+//                         name: 'Positive Set',
+//                         contents: [
+//                             {
+//                                 id: 45,
+//                                 name: 'carcinoma_2.tiff',
+//                                 type: 'img',
+//                                 selected: false,
+//                             },
+//                             {
+//                                 id: 46,
+//                                 name: 'carcinoma_3.tiff',
+//                                 type: 'img',
+//                                 selected: true,
+//                             }
+//                         ],
+//                         type: 'tag',
+//                         selected: [],
+//                     },
+//                     {
+//                         id: 2893,
+//                         name: 'pizza_22.tiff',
+//                         type: 'img',
+//                         selected: false,
+//                     },
+//                     {
+//                         id: 2894,
+//                         name: 'pizza_23.tiff',
+//                         type: 'img',
+//                         selected: false,
+//                     }
+//                 ],
+//                 type: 'tag',
+//                 selected: [],
+//             },
+//             {
+//                 id: 7,
+//                 name: 'Folder C',
+//                 contents: [
+//                     {
+//                         id: 1,
+//                         name: 'cancer_A.tiff',
+//                         type: 'img',
+//                         selected: false,
+//                     },
+//                     {
+//                         id: 2,
+//                         name: 'cancer_Z.tiff',
+//                         type: 'img',
+//                         selected: false,
+//                     }
+//                 ],
+//                 type: 'tag',
+//                 selected: [],
+//             }
+//         ],
+//         type: 'tag',
+//         selected: [],
+//     },
+//     {
+//         id: 3,
+//         name: 'Folder 3',
+//         contents: [
+//             {
+//                 id: 13,
+//                 name: 'blood_parasite_1.tiff',
+//                 type: 'img',
+//                 selected: false,
+//             },
+//             {
+//                 id: 24,
+//                 name: 'blood_parasite_2.tiff',
+//                 type: 'img',
+//                 selected: false,
+//             }
+//         ],
+//         type: 'tag',
+//         selected: [],
+//     },
+// ]
 
 export default {
     props: ['task'],
@@ -180,7 +181,7 @@ export default {
             root: {
                 id: 0,
                 name: 'root',
-                contents: dummyFolderData,
+                contents: [],
                 type: 'tag',
                 selected: [],
             },
@@ -212,6 +213,12 @@ export default {
                     this.tags.available.push(tag)
                 }
             }
+            const images = await this.$axios.$get('/tasks/images', {
+                params: {
+                    task_id: this.task.id
+                }
+            })
+            this.root.contents = images
         } catch (error) {
             console.error(error)
         }
@@ -223,11 +230,9 @@ export default {
     methods: {
         async saveChanges() {
             try {
-                // TODO: Save files selected on the backend
-                console.log('Files selected')
-                console.log(this.$common.getSelectedFiles(this.root))
+                const selectedImages = this.$common.getSelectedFiles(this.root)
 
-                const [response, observerResponse, tagsResponse] = await Promise.all([
+                const [response, observerResponse, tagsResponse, imageResponse] = await Promise.all([
                     this.$axios.$post('/tasks/update', {
                         id: this.localTask.id,
                         short_name: this.localTask.short_name,
@@ -240,13 +245,20 @@ export default {
                     this.$axios.$post('/tasks/tags', {
                         task_id: this.localTask.id,
                         tagIds: JSON.stringify(this.tags.applied.map(tag => tag.id)),
+                    }),
+                    this.$axios.$post('/tasks/images', {
+                        task_id: this.localTask.id,
+                        imageIds: JSON.stringify(selectedImages),
                     })
                 ])
 
                 this.task.short_name = this.localTask.short_name
                 this.task.prompt = this.localTask.prompt
                 // TODO: recalc image count on save of tags
-                this.$emit('save', { observers: this.observers.applied.length })
+                this.$emit('save', {
+                    observers: this.observers.applied.length,
+                    images: selectedImages.length
+                })
             } catch (err) {
                 console.log(err)
             }

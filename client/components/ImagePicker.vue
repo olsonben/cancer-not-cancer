@@ -38,6 +38,7 @@ export default {
     .menu {
         max-height: 300px;
         overflow-y: scroll;
+        padding: 0.625rem;
     }
 }
 </style>

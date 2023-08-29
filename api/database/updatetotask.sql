@@ -7,6 +7,12 @@ CREATE TABLE `tasks`(
     `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE `task_images`(
+    `index` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `task_id` BIGINT UNSIGNED NOT NULL,
+    `image_id` BIGINT UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE `tags`(
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `name` TEXT NOT NULL,
@@ -56,6 +62,8 @@ ALTER TABLE
     `task_relations` ADD CONSTRAINT `task_relations_task_id_foreign` FOREIGN KEY(`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE
     `task_relations` ADD CONSTRAINT `task_relations_parent_task_id_foreign` FOREIGN KEY(`parent_task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE
+    `task_images` ADD CONSTRAINT `task_images_task_id_foreign` FOREIGN KEY(`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE
     `tag_relations` ADD CONSTRAINT `tag_relations_tag_id_foreign` FOREIGN KEY(`tag_id`) REFERENCES `tags`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE

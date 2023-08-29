@@ -190,6 +190,51 @@ const taskOps = {
             throw (err)
         }
     },
+
+    // get all images associated with a user and mark images that
+    // are selected for the taskId
+    async getImages(userId, taskId) {
+        const query = `SELECT
+                tags.id as tag_id,
+                tags.name as tag_name,
+                images.id as image_id,
+                images.path, images.hash,
+                images.user_id as owner_id,
+                CASE WHEN task_images.task_id = ? THEN TRUE ELSE FALSE END as selected
+            FROM tags
+            LEFT JOIN image_tags ON image_tags.tag_id = tags.id
+            LEFT JOIN images ON images.id = image_tags.image_id
+            LEFT JOIN task_images ON task_images.image_id = images.id
+            WHERE tags.user_id = ?
+            ORDER BY tags.id;`
+
+        const rows = await dbOps.select(query, [taskId, userId])
+        return rows
+
+    },
+
+    // Save a list of image ids for a specified task
+    async setTaskImages(userId, taskId, imageIds) {
+        const allQueries = []
+        const allValues = []
+
+        const taskImageRowValues = imageIds.map((id) => [taskId, id])
+
+        allQueries.push(`DELETE FROM task_images WHERE task_id = ?`)
+        allValues.push([taskId])
+        if (taskImageRowValues && taskImageRowValues.length) {
+            allQueries.push(`INSERT INTO task_images (task_id, image_id) VALUES ?`)
+            allValues.push([taskImageRowValues,])
+        }
+
+        try {
+            await dbOps.executeTransactions(allQueries, allValues)
+            return true
+        } catch (err) {
+            throw (err)
+        }
+
+    }
 }
 
 export default taskOps

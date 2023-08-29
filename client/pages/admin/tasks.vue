@@ -139,6 +139,7 @@ export default {
         finishTaskEdit(auxData) {
             const index = this.taskData.findIndex(task => task.id == this.taskToEdit.id)
             this.taskData[index].observer_count = auxData.observers
+            this.taskData[index].image_count = auxData.images
             this.taskToEdit = null
         },
         async deleteTask(task) {

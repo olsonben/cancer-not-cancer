@@ -30,49 +30,11 @@ export default {
 
 <style lang='scss' scoped>
 
-.menu-list li ul {
-    margin: 0;
-}
-
 .file-link {
     position: relative;
     
     &.folder {
         padding-right: 2rem;
-    }
-}
-
-span.expander {
-    font-weight: bold;
-
-    border: 3px solid $primary;
-    border-radius: 2px;
-    border-right: 0;
-    border-top: 0;
-    height: 0.625em;
-    margin-top: -0.4375em;
-    // pointer-events: none;
-    position: absolute;
-    top: 50%;
-    transform: rotate(-135deg);
-    transform-origin: center;
-    width: 0.625em;
-    margin-left: 0.5rem;
-
-    transition: transform 0.5s ease;
-
-    &.is-expanded {
-        transform: rotate(-45deg);
-    }
-}
-
-ul {
-    max-height: 0;
-    overflow: hidden;
-    transition: 0.5s ease;
-
-    &.is-expanded {
-        max-height: 15em;
     }
 }
 

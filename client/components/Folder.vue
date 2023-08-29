@@ -4,7 +4,7 @@
             <input type="checkbox" :value="inputName" v-model="checked" :indeterminate.prop="selectedState === 'partial'" @click="onCheck">
             <a class="file-link folder" @click="clickToExpand">{{ value.name }}<span class="expander" :class="{ 'is-expanded': expand }"></span></a>
         </div>
-            <ul class="menu-list" :class="{ 'is-expanded': expand }">
+            <ul v-if="value.contents.length > 0" class="menu-list" :class="{ 'is-expanded': expand }">
                 <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
                 <li v-for="(file, index) in value.contents" :key="file.id">
                     <folder v-if="isFolder(file)" v-model="value.contents[index]"/>
@@ -30,7 +30,7 @@ export default {
     data() {
         return {
             expand: false,
-            checked: false,
+            checked: !(this.$common.getSelectedState(this.value) === 'none'),
         }
     },
     watch: {
@@ -121,9 +121,9 @@ ul {
     transition: 0.5s ease;
 
     &.is-expanded {
-        // Note: Is there a better way to update a max-height from 0 for animations
-        // that doesn't require a specific size?
-        max-height: 300rem;
+        // TODO: figure out a way to get animations working with
+        // long list expansion.
+        max-height: fit-content;
     }
 }
 

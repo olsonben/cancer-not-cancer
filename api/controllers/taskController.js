@@ -114,6 +114,66 @@ const updateObservers = async (req, res) => {
     }
 }
 
+function createFolder(tag_id, tag_name, contents=[]) {
+    return {
+        id: tag_id,
+        name: tag_name,
+        contents: contents,
+        type: 'tag'
+    }
+}
+
+function createFile(image_id, image_path, selected = false) {
+    return {
+        id: image_id,
+        name: image_path,
+        selected: selected,
+        type: 'img'
+    }
+}
+
+const getImages = async (req, res) => {
+    let investigatorId = req.user.id
+    const taskId = req.query.task_id
+    try {
+        const images = await taskOps.getImages(investigatorId, taskId)
+        // build file structure
+        let files = {}
+        for (const image of images) {
+            let folder = files[image['tag_name']]
+            if (folder === undefined) {
+                folder = createFolder(image['tag_id'], image['tag_name'])
+            }
+            if (image['image_id'] !== null) {
+                const file = createFile(image['image_id'], image['path'], !!image['selected'])
+                folder.contents.push(file)
+            }
+            files[image['tag_name']] = folder
+        }
+        const fileArray = Object.values(files)
+        res.send(fileArray)
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
+}
+
+const setTaskImages = async(req, res) => {
+    let investigatorId = req.user.id
+    const taskId = req.body.task_id
+    const imageIds = JSON.parse(req.body.imageIds)
+
+    try {
+        const updateSuccess = await taskOps.setTaskImages(investigatorId, taskId, imageIds)
+        if (updateSuccess) {
+            res.sendStatus(200)
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
+}
+
 // Handle a get request for a task tags.
 const getTags = async (req, res) => {
     let investigatorId = req.user.id
@@ -152,7 +212,9 @@ const taskController = {
     getObservers,
     updateObservers,
     getTags,
-    updateTaskTags
+    updateTaskTags,
+    getImages,
+    setTaskImages
 }
 
 export default taskController
