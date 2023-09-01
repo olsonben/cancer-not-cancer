@@ -104,9 +104,10 @@ const taskOps = {
         FROM tasks
         LEFT JOIN image_count_table ON tasks.id = image_count_table.task_id
         LEFT JOIN observer_count_table ON tasks.id = observer_count_table.task_id
-        LEFT JOIN overall ON tasks.id = overall.task_id;`
+        LEFT JOIN overall ON tasks.id = overall.task_id
+        WHERE tasks.investigator = ?;`
 
-        const rows = await dbOps.select(query, [userId, userId])
+        const rows = await dbOps.select(query, [userId, userId, userId])
         return rows
 
     },
