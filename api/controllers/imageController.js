@@ -49,7 +49,6 @@ function createFolderStructure(filesArray, containerFolder) {
     folderStructure.add(containerFolder)
 
     for (const file of filesArray) {
-        console.log(file)
         if (file.success) {
             let folders = file.sanitizedName.split(path.sep)
             const fileName = folders.pop()
@@ -80,7 +79,7 @@ async function saveUploadsToDb(req, res, next) {
 
                     let location = file.sanitizedName.split(path.sep)
                     const originalFileName = location.pop()
-                    const folderName = `${masterFolderName}${path.sep}${location.join(path.sep)}`
+                    const folderName = location.length > 0 ? `${masterFolderName}${path.sep}${location.join(path.sep)}` : masterFolderName
                     const folderId = folders[folderName]['id']
 
                     const insertImageSuccess = await imageOps.addImage(
