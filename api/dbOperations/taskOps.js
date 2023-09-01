@@ -211,16 +211,22 @@ const taskOps = {
     // get all images associated with a user and mark images that
     // are selected for the taskId
     async getImages(userId, taskId) {
+
         const query = `SELECT 
                 tags.id as tag_id,
                 tags.name as tag_name,
+                tag_relations.parent_tag_id as parent_tag_id,
+                tags2.name as parent_tag_name,
                 images.id as image_id,
                 images.path, images.hash,
                 images.user_id as owner_id,
+                images.original_name as original_name,
                 CASE WHEN selected.picked IS NOT NULL THEN TRUE ELSE FALSE END as selected
             FROM tags
             LEFT JOIN image_tags ON image_tags.tag_id = tags.id
             LEFT JOIN images ON images.id = image_tags.image_id
+            LEFT JOIN tag_relations ON tag_relations.tag_id = tags.id
+            LEFT JOIN tags as tags2 ON tag_relations.parent_tag_id = tags2.id
             LEFT JOIN (
               SELECT DISTINCT task_images.image_id as image_id, TRUE AS picked
               FROM task_images

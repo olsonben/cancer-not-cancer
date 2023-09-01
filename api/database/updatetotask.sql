@@ -57,6 +57,7 @@ CREATE INDEX task_id_index ON task_relations(task_id);
 CREATE INDEX parent_task_id_index ON task_relations(parent_task_id);
 
 ALTER TABLE hotornot ADD COLUMN (task_id BIGINT UNSIGNED);
+ALTER TABLE images ADD COLUMN (original_name TEXT);
 
 ALTER TABLE
     `task_relations` ADD CONSTRAINT `task_relations_task_id_foreign` FOREIGN KEY(`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

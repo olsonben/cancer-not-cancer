@@ -12,7 +12,7 @@ export function isLoggedIn (req, res, next) {
 
 export function getIP (req) {
     let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
-    ip = '"' + ip.substring(ip.lastIndexOf(':')+1) + '"'
+    ip = ip.substring(ip.lastIndexOf(':')+1)
     return ip
 }
 

@@ -1,5 +1,6 @@
 // TODO: Consider breaking into smaller files, matching routes and controllers
 import dbOps from "./dbConnection.js"
+import * as path from 'path'
 
 // ---------------------------------
 // GENERAL USE DATABASE METHODS
@@ -61,17 +62,66 @@ const imageOps = {
         return rows.map(row => row.image_id)
     },
 
-    async addImage(path, hash, from_ip, user_id) {
-        const addImageQuery = `INSERT INTO images (path, hash, from_ip, user_id) VALUES (?, ?, ?, ?);` // insert image
+    // folders are saved as tags in the data base, and a tag can have parent tags (a tag_relation)
+    // folderStructure should be an array of every folder's full path
+    // ex. folders: root -> subFolder === ['root/subFolder', 'root']
+    async saveFolderStructure(folderStructure, user_id) {
+        const createFolderTags = `INSERT INTO tags (name, user_id) VALUES (?, ?)`
+        const createTagRelation = `INSERT INTO tag_relations (tag_id, parent_tag_id) VALUES (?, ?)`
+
+        let folders = {}
+        // first we iterate through and create all the folders/tags
+        for (const folderPath of folderStructure) {
+            let folderArray = folderPath.split(path.sep)
+            const folderName = folderArray.pop()
+            const parentFolderName = folderArray.join(path.sep)
+
+            try {
+                const results = await dbOps.executeWithResults(createFolderTags, [folderName, user_id])
+                folders[folderPath] = {
+                    'name': folderPath,
+                    'id': results.insertId,
+                    'parentFolderName': parentFolderName
+                }
+
+            } catch (error) {
+                console.error('Error creating folder tag!')
+                throw error
+            }
+        }
+
+        // now we create a relation for each folder with a parent folder
+        for (const folder of Object.values(folders)) {
+            if (folder.parentFolderName !== '') {
+                // add parent relationship
+                try {
+                    const parentFolder = folders[folder.parentFolderName]
+                    await dbOps.execute(createTagRelation, [folder.id, parentFolder.id])
+                } catch (error) {
+                    console.error('Error creating tag relation!')
+                    throw error
+                }
+            }
+        }
+
+        return folders
+    },
+
+    async addImage(path, hash, from_ip, user_id, original_name, folderId) {
+        const addImageQuery = `INSERT INTO images (path, hash, from_ip, user_id, original_name) VALUES (?, ?, ?, ?, ?)` // insert image
+        const addImageToTag = `INSERT INTO image_tags (image_id, tag_id) VALUES (?, ?)`
 
         try {
-            await dbOps.execute(addImageQuery, [path, hash, from_ip, user_id])
+            const results = await dbOps.executeWithResults(addImageQuery, [path, hash, from_ip, user_id, original_name])
             console.log(`Successful image insert query: ${path}`);
+            // its critical that we associate the images with a tag/folder, otherwise the frontend won't see the image
+            await dbOps.execute(addImageToTag, [results.insertId, folderId])
             return true
         } catch (err) {
             if (err.code === 'ER_DUP_ENTRY') {
                 return false
             } else {
+                console.error('Error saving image to database.')
                 throw (err)
             }
         }

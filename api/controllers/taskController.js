@@ -149,19 +149,44 @@ const getImages = async (req, res) => {
     try {
         const images = await taskOps.getImages(investigatorId, taskId)
         // build file structure
-        let files = {}
+        const folderMap = new Map()
+        const topFolders = new Set()
+        const folderContents = new Map()
         for (const image of images) {
-            let folder = files[image['tag_name']]
-            if (folder === undefined) {
-                folder = createFolder(image['tag_id'], image['tag_name'])
+            const tagId = image['tag_id']
+            const parentTagId = image['parent_tag_id']
+
+            if (!folderMap.has(tagId)) {
+                folderMap.set(tagId, createFolder(tagId, image['tag_name']))
+                folderContents.set(tagId, new Set())
             }
+
+            const folder = folderMap.get(tagId)
+
+            if (parentTagId !== null) {
+                if (!folderMap.has(parentTagId)) {
+                    folderMap.set(parentTagId, createFolder(parentTagId, image['parent_tag_name']))
+                    folderContents.set(parentTagId, new Set())
+                }
+
+                const parentFolder = folderMap.get(parentTagId)
+                const parentFolderContents = folderContents.get(parentTagId)
+
+                if (!parentFolderContents.has(folder)) {
+                    parentFolder.contents.push(folder)
+                    parentFolderContents.add(folder)
+                }
+            } else {
+                topFolders.add(folder)
+            }
+
             if (image['image_id'] !== null) {
-                const file = createFile(image['image_id'], image['path'], !!image['selected'])
+                const file = createFile(image['image_id'], image['original_name'], !!image['selected'])
                 folder.contents.push(file)
             }
-            files[image['tag_name']] = folder
         }
-        const fileArray = Object.values(files)
+
+        const fileArray = Array.from(topFolders)
         res.send(fileArray)
     } catch (err) {
         console.log(err)

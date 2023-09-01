@@ -199,7 +199,7 @@ export async function uploadImages(req, res, next) {
             fileInfo.savePath += '.jpeg'
             fileInfo.relPath += '.jpeg'
             isAcceptable = true
-        } else if (fileInfo.mimeType == 'image/jpeg') {
+        } else if (fileInfo.mimeType == 'image/png') {
             fileInfo.savePath += '.png'
             fileInfo.relPath += '.png'
             isAcceptable = true
