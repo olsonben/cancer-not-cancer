@@ -47,15 +47,6 @@ CREATE TABLE `tag_relations`(
 CREATE INDEX tag_id_index ON tag_relations(tag_id);
 CREATE INDEX parent_tag_id_index ON tag_relations(parent_tag_id);
 
-CREATE TABLE `task_relations`(
-    `task_id` BIGINT UNSIGNED NOT NULL,
-    `parent_task_id` BIGINT UNSIGNED NOT NULL,
-    PRIMARY KEY (task_id, parent_task_id)
-);
-
-CREATE INDEX task_id_index ON task_relations(task_id);
-CREATE INDEX parent_task_id_index ON task_relations(parent_task_id);
-
 ALTER TABLE hotornot ADD COLUMN (task_id BIGINT UNSIGNED);
 ALTER TABLE images ADD COLUMN (original_name TEXT);
 
@@ -90,3 +81,8 @@ FOREIGN KEY(`investigator`)
 REFERENCES `users`(`id`)
 ON DELETE SET NULL
 ON UPDATE CASCADE;
+
+-- Manual Command used
+UPDATE images
+SET images.original_name = images.path
+WHERE images.original_name IS NULL;
