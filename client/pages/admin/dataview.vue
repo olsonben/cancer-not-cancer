@@ -140,15 +140,6 @@ export default {
         this.lookupData()
     },
 
-    mounted() {
-        // Allowing scrolling because some table are really long
-        document.documentElement.style.setProperty('--overflow', 'initial')
-    },
-    destroyed() {
-        // Turn scrolling off when leaving dataview
-        document.documentElement.style.setProperty('--overflow', 'hidden')
-    },
-
     methods: {
         async lookupData() {
             // get general task data

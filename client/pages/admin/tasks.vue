@@ -103,15 +103,6 @@ export default {
         this.getTasksTable()
     },
 
-    mounted() {
-        // Allowing scrolling because some table are really long
-        document.documentElement.style.setProperty('--overflow', 'initial')
-    },
-    destroyed() {
-        // Turn scrolling off when leaving dataview
-        document.documentElement.style.setProperty('--overflow', 'hidden')
-    },
-
     methods: {
         async createTask() {
             try {

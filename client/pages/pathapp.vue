@@ -116,6 +116,8 @@ export default {
         // swipe starts to engage, other animations freeze and hang. The
         // following line deactivates swiping to reload page.
         document.documentElement.style.setProperty('--overscroll', 'none')
+        // Turn scrolling off
+        document.documentElement.style.setProperty('--overflow', 'hidden')
 
         this.nextImage()
         
@@ -128,6 +130,8 @@ export default {
     destroyed() {
         // Reactivates swipe to reload (deactivated in the mount method)
         document.documentElement.style.setProperty('--overscroll', 'auto')
+        // Allowing scrolling
+        document.documentElement.style.setProperty('--overflow', 'initial')
 
         // We need to cleanup our event listeners. So we don't have duplicates when we return.
         document.removeEventListener('touchstart', this.handleTouchStart, false)
