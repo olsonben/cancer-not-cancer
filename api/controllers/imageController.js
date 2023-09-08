@@ -146,6 +146,37 @@ const saveImages = async (req, res, next) => {
     }
 }
 
+const createTag = async (req, res, next) => {
+    const investigatorId = req.user.id
+    const tagName = req.body.tagName
+    console.log('CreateTag:: User:', investigatorId, 'tagName:', tagName)
+    res.status(200).send('Success')
+}
+
+const updateTag = async (req, res, next) => {
+    const investigatorId = req.user.id
+    const tagId = req.body.tagId
+    const tagName = req.body.tagName
+    console.log('UpdateTag:: User:', investigatorId, 'tagId:', tagId, 'tagName:', tagName)
+    res.status(200).send('Success')
+}
+
+const moveTag = async (req, res, next) => {
+    const investigatorId = req.user.id
+    const tagId = req.body.tagId
+    const parentTagId = req.body.newParentTagId
+    console.log('MoveTag:: User:', investigatorId, 'tagId:', tagId, 'parentTagId:', parentTagId)
+    res.status(200).send('Success')
+}
+
+const deleteTag = async (req, res, next) => {
+    const investigatorId = req.user.id
+    const tagId = req.query.tagId
+
+    console.log('DeleteTag:: User:', investigatorId, 'tagId:', tagId)
+    res.status(200).send('Success')
+}
+
 // Join all the middleware pieces need for uploading images.
 // This list is order specific.
 const uploadAndSaveImages = Router().use([
@@ -159,6 +190,10 @@ const imageController = {
     nextImage,
     uploadAndSaveImages,
     getNextImageIds,
+    createTag,
+    updateTag,
+    moveTag,
+    deleteTag
 }
 
 export default imageController

@@ -1,0 +1,182 @@
+<template>
+    <div class="image-manager container">
+        <h1 class="title">Image Manager</h1>
+
+        <div class="box">
+            Create a folder
+            <!-- <Adder :tags="tags" @update="updateTags"/> -->
+             <div class="field-body pl-4">
+                <div class="field is-grouped">
+                    <div class="control">
+                        <input class="input is-small" type="text" placeholder="Folder Name" v-model="createTagName">
+                    </div>
+                    <div class="control">
+                        <button class="button is-small is-success" type="button" @click="createTag">+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="menu">
+                <p class="menu-label">Images Folders</p>
+                <ul class="menu-list">
+                    <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
+                    <li v-for="(file, index) in files" :key="file.id">
+                        <folder v-if="isFolder(file)"
+                        v-model="files[index]"
+                        @change="masterChangeHandler"
+                        :editable="true"/>
+                        <File v-else v-model="files[index]" :editable="true" @change="masterChangeHandler"></File>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+const dummyTagsData = {
+    applied: [
+        { id: 1, name: "Tag A" },
+        { id: 2, name: "Tag B" },
+    ],
+    available: [
+        { id: 3, name: "Tag C" },
+        { id: 4, name: "Tag D" },
+    ]
+}
+
+export default {
+    data() {
+        return {
+            tags: dummyTagsData,
+            files: [],
+            createTagName: '',
+        }
+    },
+    async fetch() {
+        try {
+            const images = await this.$axios.$get('/tasks/images', {
+                params: {
+                    task_id: 14
+                }
+            })
+            this.files = images
+        } catch (error) {
+            console.error(error)
+        }
+    },
+    methods: {
+        isFolder(file) {
+            return !!(file.type == 'tag')
+            // return !!(file.contents && file.contents.length)
+        },
+        updateTags(tagData) {
+            this.tags.applied = tagData.applied
+            this.tags.available = tagData.available
+        },
+        async masterChangeHandler(changeData) {
+            const { eventType } = changeData
+            if (eventType === 'folderMove') {
+                this.moveTag(changeData.tagId, changeData.newParentTagId)
+            } else if (eventType === 'fileMove') {
+                this.moveFile(changeData.fileId, changeData.newParentTagId)
+            } else if (eventType === 'folderName') {
+                this.editTagName(changeData.folderId, changeData.newName)
+            } else if (eventType === 'fileName') {
+                this.editFileName(changeData.fileId, changeData.newName)
+            } else if (eventType === 'folderDelete') {
+                this.deleteTag(changeData.tagId)
+            } else if (eventType === 'fileDelete') {
+                this.deleteFile(changeData.fileId)
+            }
+         },
+        async editTagName(tagId, newName) {
+            console.log('editTagName')
+            console.log(tagId, newName)
+            try {
+                const response = await this.$axios.$put('/images/tag', {
+                    tagId: tagId,
+                    tagName: newName,
+                })
+                console.log(response)
+            } catch (error) {
+                console.error(error)
+            }   
+        },
+        async moveTag(tagId, newParentTagId) {
+            try {
+                const response = await this.$axios.put('images/moveTag', {
+                    tagId: tagId,
+                    newParentTagId: newParentTagId
+                })
+            } catch (error) {
+                console.log(error)
+            }
+        },
+        async createTag() {
+            try {
+                const response = await this.$axios.$post('/images/tag', {
+                    tagName: this.createTagName,
+                })
+                this.createTagName = ''
+                console.log(response)
+            } catch (error) {
+                console.error(error)
+            }
+        },
+        async deleteTag(tagId) {
+            try {
+                const response = await this.$axios.$delete('/images/tag', {
+                    params: {
+                        tagId: tagId,
+                    }
+                })
+                console.log(response)
+            } catch (error) {
+                console.error(error)
+            }
+        },
+        async editFileName(fileId, newName) {
+            try {
+                console.log('Edit file name:', fileId, newName)
+            } catch (error) {
+                console.error(error)
+            }
+        },
+        async deleteFile(fileId) {
+            try {
+                console.log('Delete file:', fileId)
+            } catch (error) {
+                console.error(error)
+            }
+        },
+        async moveFile(fileId, folderId) {
+            try {
+                console.log('Move file:', fileId, 'to folder:', folderId)
+            } catch (error) {
+                console.error(error)
+            }
+        }
+    }
+}
+</script>
+
+<style lang='scss'>
+// .image-manager {
+    
+//     & ul {
+//         position: relative;
+//     }
+
+//     & li a {
+
+//     }
+
+//     & li a::after {
+//         content: "--";
+//         position: absolute;
+//         right: -10px;
+//     }
+
+// }
+</style>

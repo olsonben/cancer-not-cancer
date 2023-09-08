@@ -1,14 +1,42 @@
 <template>
     <li>
         <div class="is-flex">
-            <input type="checkbox" :value="inputName" v-model="checked" :indeterminate.prop="selectedState === 'partial'" @click="onCheck">
-            <a class="file-link folder" @click="clickToExpand">{{ value.name }}<span class="expander" :class="{ 'is-expanded': expand }"></span></a>
+            <input v-if="!editable" type="checkbox" :value="inputName" v-model="checked" :indeterminate.prop="selectedState === 'partial'" @click="onCheck">
+            <a
+                class="file-link folder"
+                :class="{ 'dragHover': dragOverStyle }"
+                @click="clickToExpand"
+                v-draggable="draggableConfig"
+                @drop="onDrop" @dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave"
+            >
+                {{ value.name }}
+                <span v-if="value.contents.length > 0" class="expander" :class="{ 'is-expanded': expand }"></span>
+                <span class="icon add"><i class="cnc-xmark"></i></span>
+            </a>
+            
+            <button v-if="editable & !changeName" class="button is-small is-info" type="button" @click="changeName = !changeName">
+                <span class="icon"><i class="cnc-pen-to-square"></i></span>
+            </button>
+            <button v-if="deletable" class="button is-small is-danger ml-1" type="button" @click="removeTag">
+                <span class="icon"><i class="cnc-xmark"></i></span>
+            </button>
+            <div v-if="changeName" class="field-body pl-4">
+                <div class="field is-grouped">
+                    <div class="control">
+                        <input class="input is-small" type="text" placeholder="New Folder Name" v-model="newName">
+                    </div>
+                    <div class="control">
+                        <button class="button is-small is-warning" type="button" @click="setNewName">save</button>
+                        <button class="button is-small is-danger" type="button" @click="changeName = !changeName"><span class="icon"><i class="cnc-xmark"></i></span></button>
+                    </div>
+                </div>
+            </div>
         </div>
             <ul v-if="value.contents.length > 0" class="menu-list" :class="{ 'is-expanded': expand }">
                 <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
                 <li v-for="(file, index) in value.contents" :key="file.id">
-                    <folder v-if="isFolder(file)" v-model="value.contents[index]"/>
-                    <File v-else v-model="value.contents[index]"></File>
+                    <folder v-if="isFolder(file)" v-model="value.contents[index]" :editable="editable" @change="changeHandler"/>
+                    <File v-else v-model="value.contents[index]" :editable="editable" @change="changeHandler"></File>
                 </li>
             </ul>
     </li>
@@ -25,12 +53,19 @@
 export default {
     name: 'folder',
     props: {
-        value: Object
+        value: Object,
+        editable: {
+            default: false,
+            type: Boolean
+        },
     },
     data() {
         return {
             expand: false,
             checked: !(this.$common.getSelectedState(this.value) === 'none'),
+            changeName: false,
+            newName: '',
+            dragOverStyle: false
         }
     },
     watch: {
@@ -40,12 +75,25 @@ export default {
     },
     computed: {
         selectedState() {
+            if (this.editable) {
+                return 'none'
+            }
             const state = this.$common.getSelectedState(this.value)
             return state
         },
         inputName() {
             return `tag-${this.value.id}`
         },
+        deletable() {
+            // console.log('deletable:', this.value.name, (this.editable && this.value.contents.length === 0))
+            return this.editable && this.value.contents.length === 0
+        },
+        draggableConfig() {
+            return {
+                editable: this.editable,
+                data: this.value
+            }
+        }
 
     },
     methods: {
@@ -73,6 +121,65 @@ export default {
         isFolder(file) {
             return !!(file.contents && file.contents.length)
         },
+        setNewName() {
+            console.log('Setting New Name')
+            const changeData = {
+                eventType: 'folderName',
+                folderId: this.value.id,
+                newName: this.newName
+            }
+            this.$emit('change', changeData)
+            this.value.name = this.newName
+            this.changeName = false
+            this.newName = ''
+        },
+        removeTag() {
+            const changeData = {
+                eventType: 'folderDelete',
+                folderId: this.value.id
+            }
+            this.$emit('change', changeData)
+        },
+        onDrop(event) {
+            console.log('Drop Event on:', this.value.id, this.value.name)
+            const { data } = JSON.parse(event.dataTransfer.getData('application/json'))
+            if (data.type == 'tag') {
+                console.log(`Move folder: ${data.name} into ${this.value.name}`)
+
+                const changeData = {
+                    eventType: 'folderMove',
+                    tagId: data.id,
+                    newParentTagId: this.value.id
+                }
+                this.$emit('change', changeData)
+
+            } else {
+                console.log(`Move file: ${data.name} into ${this.value.name}`)
+
+                const changeData = {
+                    eventType: 'fileMove',
+                    fileId: data.id,
+                    newParentTagId: this.value.id
+                }
+                this.$emit('change', changeData)
+            }
+            this.dragOverStyle = false
+        },
+        dragEnter(event) {
+            event.preventDefault()
+            const { data } = JSON.parse(event.dataTransfer.getData('application/json'))
+            if (data.type === 'img' || data.id != this.value.id) {
+
+                this.dragOverStyle = true
+            }
+        },
+        dragLeave(event) {
+            event.preventDefault
+            this.dragOverStyle = false
+        },
+        changeHandler(changeData) {
+            this.$emit('change', changeData)
+        },
     }
 }
 </script>
@@ -88,6 +195,32 @@ export default {
     
     &.folder {
         padding-right: 2rem;
+    }
+
+    & .icon.add {
+        display: none;
+    }
+
+    &.dragHover {
+
+        & .icon.add {
+            display: flex;
+            position: absolute;
+            top: 0.125rem;
+            right: 1.325rem;
+            color: $link;
+            font-size: 0.75rem;
+            transform: rotate(45deg);
+            height: 1rem;
+            width: 1rem;
+            background-color: $success;
+            border-radius: 50%;
+            border-color: $link;
+            border-width: 1px;
+            border-style: solid;
+            box-shadow: 0px 2px 4px 0.5px rgba($cap-darknavbg,0.6); // add alpha val
+        }
+
     }
 }
 

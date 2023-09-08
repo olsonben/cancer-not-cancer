@@ -10,5 +10,9 @@ const isLoggedAndEnabled = [isLoggedIn, isEnabled]
 router.get('/', isLoggedAndEnabled, isPathologist, imageController.nextImage)
 router.get('/queue', isLoggedAndEnabled, isPathologist, imageController.getNextImageIds)
 router.post('/', isLoggedAndEnabled, isUploader, imageController.uploadAndSaveImages)
+router.post('/tag', isLoggedAndEnabled, isUploader, imageController.createTag)
+router.put('/tag', isLoggedAndEnabled, isUploader, imageController.updateTag)
+router.put('/moveTag', isLoggedAndEnabled, isUploader, imageController.moveTag)
+router.delete('/tag', isLoggedAndEnabled, isUploader, imageController.deleteTag)
 
 export default router

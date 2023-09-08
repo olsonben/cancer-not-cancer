@@ -125,6 +125,7 @@ const updateObservers = async (req, res) => {
     }
 }
 
+// TODO: Move to imageController 
 function createFolder(tag_id, tag_name, contents=[]) {
     return {
         id: tag_id,

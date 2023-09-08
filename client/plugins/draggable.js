@@ -7,6 +7,8 @@ const createDragstartHandler = (binding) => (event) => {
 
     //  styling
     event.target.style.opacity = "0.5"
+
+    console.log(event.dataTransfer)
 }
 
 const dragendHandler = (event) => {
@@ -17,19 +19,26 @@ const dragendHandler = (event) => {
 
 const draggable = {
     inserted(el, binding) {
-        el.draggable = true
-
-        const dragstartHandler = createDragstartHandler(binding)
-
-        el.addEventListener("dragstart", dragstartHandler, false)
-        el.addEventListener('dragend', dragendHandler, false)
-
-        // we create a weakmap to track dragstart handlers for event listener removal
-        if (!draggable.handlersMap) {
-            draggable.handlersMap = new WeakMap()
+        const { value } = binding
+        const { editable } = value
+        
+        // console.log(el)
+        // console.log(editable)
+        if (editable) {
+            el.draggable = true
         }
-
-        draggable.handlersMap.set(el, dragstartHandler)
+            
+            const dragstartHandler = createDragstartHandler(binding)
+    
+            el.addEventListener("dragstart", dragstartHandler, false)
+            el.addEventListener('dragend', dragendHandler, false)
+    
+            // we create a weakmap to track dragstart handlers for event listener removal
+            if (!draggable.handlersMap) {
+                draggable.handlersMap = new WeakMap()
+            }
+    
+            draggable.handlersMap.set(el, dragstartHandler)
     },
     unbind(el) {
 
