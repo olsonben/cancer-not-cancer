@@ -154,10 +154,11 @@ export default {
                 }
                 dest.contents.unshift(moving)
 
-                // const response = await this.$axios.put('images/moveTag', {
-                //     tagId: tagId,
-                //     newParentTagId: newParentTagId
-                // })
+                const response = await this.$axios.put('images/moveTag', {
+                    tagId: tagId,
+                    oldParentTagId: oldParentTagId,
+                    newParentTagId: newParentTagId
+                })
 
             } catch (error) {
                 console.log(error)
@@ -165,11 +166,12 @@ export default {
         },
         async createTag() {
             try {
-                const response = await this.$axios.$post('/images/tag', {
+                const newTagFolder = await this.$axios.$post('/images/tag', {
                     tagName: this.createTagName,
                 })
                 this.createTagName = ''
-                console.log(response)
+                console.log('tag created')
+                this.files.unshift(newTagFolder)
             } catch (error) {
                 console.error(error)
             }
@@ -181,7 +183,7 @@ export default {
                         tagId: tagId,
                     }
                 })
-                console.log(response)
+                // console.log(response)
             } catch (error) {
                 console.error(error)
             }

@@ -146,11 +146,27 @@ const saveImages = async (req, res, next) => {
     }
 }
 
+function createFolder(tag_id, tag_name, contents = []) {
+    return {
+        id: tag_id,
+        name: tag_name,
+        contents: contents,
+        type: 'tag'
+    }
+}
+
 const createTag = async (req, res, next) => {
     const investigatorId = req.user.id
     const tagName = req.body.tagName
     console.log('CreateTag:: User:', investigatorId, 'tagName:', tagName)
-    res.status(200).send('Success')
+    try {
+        const newTagId = await imageOps.createTag(tagName, investigatorId)
+        const newFolder = createFolder(newTagId, tagName)
+        res.send(newFolder)
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
 }
 
 const updateTag = async (req, res, next) => {
@@ -158,15 +174,34 @@ const updateTag = async (req, res, next) => {
     const tagId = req.body.tagId
     const tagName = req.body.tagName
     console.log('UpdateTag:: User:', investigatorId, 'tagId:', tagId, 'tagName:', tagName)
-    res.status(200).send('Success')
+
+    try {
+        const renameSuccess = await imageOps.renameTag(tagId, tagName, investigatorId)
+        if (renameSuccess) {
+            res.sendStatus(200)
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
 }
 
 const moveTag = async (req, res, next) => {
     const investigatorId = req.user.id
     const tagId = req.body.tagId
-    const parentTagId = req.body.newParentTagId
-    console.log('MoveTag:: User:', investigatorId, 'tagId:', tagId, 'parentTagId:', parentTagId)
-    res.status(200).send('Success')
+    const oldParentTagId = req.body.oldParentTagId
+    const newParentTagId = req.body.newParentTagId
+    console.log('MoveTag:: User:', investigatorId, 'tagId:', tagId, 'parentTagId:', newParentTagId)
+
+    try {
+        const moveSuccess = imageOps.moveTag(tagId, oldParentTagId, newParentTagId)
+        if (moveSuccess) {
+            res.sendStatus(200)
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
 }
 
 const deleteTag = async (req, res, next) => {
@@ -174,7 +209,15 @@ const deleteTag = async (req, res, next) => {
     const tagId = req.query.tagId
 
     console.log('DeleteTag:: User:', investigatorId, 'tagId:', tagId)
-    res.status(200).send('Success')
+    try {
+        const deleteSuccess = imageOps.deleteTag(tagId, investigatorId)
+        if (deleteSuccess) {
+            res.sendStatus(200)
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
 }
 
 // Join all the middleware pieces need for uploading images.
