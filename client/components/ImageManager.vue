@@ -105,7 +105,7 @@ export default {
                 this.files = this.files.filter((file) => {
                     return !(file.type == 'tag' && file.id == changeData.folderId)
                 })
-                this.deleteTag(changeData.tagId)
+                this.deleteTag(changeData.folderId)
             } else if (eventType === 'fileDelete') {
                 this.files = this.files.filter((file) => {
                     return !(file.type == 'img' && file.id == changeData.fileId)
