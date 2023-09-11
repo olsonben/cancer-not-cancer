@@ -34,9 +34,9 @@
         </div>
             <ul v-if="value.contents.length > 0" class="menu-list" :class="{ 'is-expanded': expand }">
                 <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
-                <li v-for="(file, index) in value.contents" :key="file.id">
-                    <folder v-if="isFolder(file)" v-model="value.contents[index]" :editable="editable" @change="changeHandler"/>
-                    <File v-else v-model="value.contents[index]" :editable="editable" @change="changeHandler"></File>
+                <li v-for="(file, index) in value.contents" :key="fileKey(file)">
+                    <folder v-if="isFolder(file)" v-model="value.contents[index]" :editable="editable" @change="changeHandler" :parentTagId="value.id"/>
+                    <File v-else v-model="value.contents[index]" :editable="editable" @change="changeHandler" :parentTagId="value.id"></File>
                 </li>
             </ul>
     </li>
@@ -58,6 +58,10 @@ export default {
             default: false,
             type: Boolean
         },
+        parentTagId: {
+            default: null,
+            type: Number
+        }
     },
     data() {
         return {
@@ -91,12 +95,16 @@ export default {
         draggableConfig() {
             return {
                 editable: this.editable,
-                data: this.value
+                data: this.value,
+                parentTagId: this.parentTagId
             }
         }
 
     },
     methods: {
+        fileKey(file) {
+            return `${file.type}-${file.id}`
+        },
         onCheck(event) {
             if (this.checked) {
                 // uncheck children
@@ -119,7 +127,7 @@ export default {
             this.expand = !this.expand
         },
         isFolder(file) {
-            return !!(file.contents && file.contents.length)
+            return (file.type === 'tag')
         },
         setNewName() {
             console.log('Setting New Name')
@@ -142,26 +150,33 @@ export default {
         },
         onDrop(event) {
             console.log('Drop Event on:', this.value.id, this.value.name)
-            const { data } = JSON.parse(event.dataTransfer.getData('application/json'))
+            const { data, parentTagId } = JSON.parse(event.dataTransfer.getData('application/json'))
             if (data.type == 'tag') {
-                console.log(`Move folder: ${data.name} into ${this.value.name}`)
-
-                const changeData = {
-                    eventType: 'folderMove',
-                    tagId: data.id,
-                    newParentTagId: this.value.id
+                if (data.id !== this.value.id) {
+                    // console.log(`Move folder: ${data.name} into ${this.value.name}`)
+                    const changeData = {
+                        eventType: 'folderMove',
+                        folderId: data.id,
+                        newParentTagId: this.value.id,
+                        oldParentTagId: parentTagId
+                    }
+                    this.$emit('change', changeData)
+                } else {
+                    // console.log('Can not add folder to self.')
                 }
-                this.$emit('change', changeData)
-
             } else {
-                console.log(`Move file: ${data.name} into ${this.value.name}`)
-
-                const changeData = {
-                    eventType: 'fileMove',
-                    fileId: data.id,
-                    newParentTagId: this.value.id
+                // console.log(`Move file: ${data.name} into ${this.value.name}`)
+                if (parentTagId !== this.value.id) {   
+                    const changeData = {
+                        eventType: 'fileMove',
+                        fileId: data.id,
+                        newParentTagId: this.value.id,
+                        oldParentTagId: parentTagId
+                    }
+                    this.$emit('change', changeData)
+                } else {
+                    // console.log('File already in this folder.')
                 }
-                this.$emit('change', changeData)
             }
             this.dragOverStyle = false
         },
@@ -178,6 +193,16 @@ export default {
             this.dragOverStyle = false
         },
         changeHandler(changeData) {
+            if (changeData.eventType === 'fileDelete') {
+                this.value.contents = this.value.contents.filter((file) => {
+                    return !(file.type == 'img' && file.id == changeData.fileId)
+                })
+            }
+            if (changeData.eventType === 'folderDelete') {
+                this.value.contents = this.value.contents.filter((file) => {
+                    return !(file.type == 'tag' && file.id == changeData.folderId)
+                })
+            }
             this.$emit('change', changeData)
         },
     }

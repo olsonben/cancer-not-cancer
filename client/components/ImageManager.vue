@@ -19,7 +19,7 @@
                 <p class="menu-label">Images Folders</p>
                 <ul class="menu-list">
                     <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
-                    <li v-for="(file, index) in files" :key="file.id">
+                    <li v-for="(file, index) in files" :key="fileKey(file)">
                         <folder v-if="isFolder(file)"
                         v-model="files[index]"
                         @change="masterChangeHandler"
@@ -66,6 +66,9 @@ export default {
         }
     },
     methods: {
+        fileKey(file) {
+            return `${file.type}-${file.id}`
+        },
         isFolder(file) {
             return !!(file.type == 'tag')
             // return !!(file.contents && file.contents.length)
@@ -74,19 +77,39 @@ export default {
             this.tags.applied = tagData.applied
             this.tags.available = tagData.available
         },
+        getFolderById(tagId, contents) {
+            let result = contents.find((file) => file.type === 'tag' && file.id === tagId)
+            if (result === undefined) {
+                for (const file of contents) {
+                    if (file.type === 'tag') {
+                        result = this.getFolderById(tagId, file.contents)
+                        if (result) {
+                            break
+                        }
+                    }
+                }
+            }
+            return result
+        },
         async masterChangeHandler(changeData) {
             const { eventType } = changeData
             if (eventType === 'folderMove') {
-                this.moveTag(changeData.tagId, changeData.newParentTagId)
+                this.moveTag(changeData.folderId, changeData.newParentTagId, changeData.oldParentTagId)
             } else if (eventType === 'fileMove') {
-                this.moveFile(changeData.fileId, changeData.newParentTagId)
+                this.moveFile(changeData.fileId, changeData.newParentTagId, changeData.oldParentTagId)
             } else if (eventType === 'folderName') {
                 this.editTagName(changeData.folderId, changeData.newName)
             } else if (eventType === 'fileName') {
                 this.editFileName(changeData.fileId, changeData.newName)
             } else if (eventType === 'folderDelete') {
+                this.files = this.files.filter((file) => {
+                    return !(file.type == 'tag' && file.id == changeData.folderId)
+                })
                 this.deleteTag(changeData.tagId)
             } else if (eventType === 'fileDelete') {
+                this.files = this.files.filter((file) => {
+                    return !(file.type == 'img' && file.id == changeData.fileId)
+                })
                 this.deleteFile(changeData.fileId)
             }
          },
@@ -103,12 +126,39 @@ export default {
                 console.error(error)
             }   
         },
-        async moveTag(tagId, newParentTagId) {
+        async moveTag(tagId, newParentTagId, oldParentTagId) {
             try {
-                const response = await this.$axios.put('images/moveTag', {
-                    tagId: tagId,
-                    newParentTagId: newParentTagId
-                })
+                // TODO: Currently there isn't a way to make a folder a base folder, as in no parent.
+                //  This is primarily because I haven't thought of a good way to do this with the UI.
+
+                // console.log('Move folder:', tagId, 'to folder:', newParentTagId, 'oldParent:', oldParentTagId)
+                let oldie
+                if (oldParentTagId === null) {
+                    oldie = { contents: this.files }
+                } else {
+                    oldie = this.getFolderById(oldParentTagId, this.files)
+                }
+
+                if (oldie === undefined) {
+                    // Something is broken if this happens
+                    console.log('old parent not found:', oldParentTagId)
+                }
+
+                const indx = oldie.contents.findIndex((file) => file.type === 'tag' && file.id === tagId)
+                const moving = oldie.contents[indx]
+                oldie.contents.splice(indx, 1)
+
+                const dest = this.getFolderById(newParentTagId, this.files)
+                if (dest === undefined) {
+                    console.log('parent not found:', newParentTagId)
+                }
+                dest.contents.unshift(moving)
+
+                // const response = await this.$axios.put('images/moveTag', {
+                //     tagId: tagId,
+                //     newParentTagId: newParentTagId
+                // })
+
             } catch (error) {
                 console.log(error)
             }
@@ -150,9 +200,31 @@ export default {
                 console.error(error)
             }
         },
-        async moveFile(fileId, folderId) {
+        async moveFile(fileId, folderId, oldParentTagId) {
             try {
-                console.log('Move file:', fileId, 'to folder:', folderId)
+                console.log('Move file:', fileId, 'to folder:', folderId, 'oldParent:', oldParentTagId)
+                let oldie
+                if (oldParentTagId === null) {
+                    oldie = { contents: this.files }
+                } else {
+                    oldie = this.getFolderById(oldParentTagId, this.files)
+                }
+
+                if (oldie === undefined) {
+                    // Something is broken if this happens
+                    console.log('old parent not found:', oldParentTagId)
+                }
+
+                const indx = oldie.contents.findIndex((file) => file.type !== 'tag' && file.id === fileId)
+                const moving = oldie.contents[indx]
+                oldie.contents.splice(indx, 1)
+
+                const dest = this.getFolderById(folderId, this.files)
+                if (dest === undefined) {
+                    console.log('parent not found:', folderId)
+                }
+
+                dest.contents.unshift(moving)
             } catch (error) {
                 console.error(error)
             }

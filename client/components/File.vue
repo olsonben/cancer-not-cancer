@@ -42,6 +42,10 @@ export default {
             default: false,
             type: Boolean
         },
+        parentTagId: {
+            default: null,
+            type: Number
+        }
     },
     data() {
         return {
@@ -56,13 +60,21 @@ export default {
         draggableConfig() {
             return {
                 editable: this.editable,
-                data: this.value
+                data: this.value,
+                parentTagId: this.parentTagId
             }
         }
     },
     methods: {
         setNewName() {
             console.log('Setting New File Name')
+            const extension = this.value.name.substring(this.value.name.lastIndexOf('.'))
+
+            if (!this.newName.endsWith(extension)) {
+                // Keep the original file extension
+                this.newName = this.newName + extension
+            }
+
             const changeData = {
                 eventType: 'fileName',
                 fileId: this.value.id,
