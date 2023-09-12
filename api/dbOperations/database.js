@@ -127,6 +127,44 @@ const imageOps = {
         }
     },
 
+    async renameImage(imageId, newName, user_id) {
+        const renameImage = `UPDATE images SET original_name = ? WHERE id = ? AND user_id = ?`
+
+        try {
+            await dbOps.execute(renameImage, [newName, imageId, user_id])
+            return true
+        } catch (error) {
+            console.error('Error renaming image!')
+            throw error
+        }
+    },
+    async moveImage(imageId, oldParentTagId, newParentTagId, user_id) {
+        const deleteImageTags = `DELETE FROM image_tags WHERE image_id = ? AND tag_id = ?`
+        const tagImage = `INSERT INTO image_tags (image_id, tag_id) VALUES (?, ?)`
+
+        try {
+
+            // TODO: user the transaction method
+            await dbOps.execute(deleteImageTags, [imageId, oldParentTagId])
+            await dbOps.execute(tagImage, [imageId, newParentTagId])
+            return true
+        } catch (error) {
+            console.error('Error moving image in database operations.')
+            throw error
+        }
+    },
+    async deleteImage(imageId, user_id) {
+        const deleteImage = `DELETE FROM images WHERE id = ? AND user_id = ?`
+
+        try {
+            await dbOps.execute(deleteImage, [imageId, user_id])
+            return true
+        } catch (error) {
+            console.error('Error deleting image.')
+            throw error
+        }
+    },
+
     async createTag(tagName, user_id) {
         const createFolderTags = `INSERT INTO tags (name, user_id) VALUES (?, ?)`
         
@@ -156,10 +194,8 @@ const imageOps = {
         try {
 
             // TODO: user the transaction method
-            await Promise.all([
-                dbOps.execute(deleteOldParentRelation, [tagId, oldParentTagId]),
-                dbOps.execute(createTagRelation, [tagId, newParentTagId])
-            ])
+            await dbOps.execute(deleteOldParentRelation, [tagId, oldParentTagId])
+            await dbOps.execute(createTagRelation, [tagId, newParentTagId])
             return true
         } catch (error) {
             console.error('Error moving tag in database operations.')

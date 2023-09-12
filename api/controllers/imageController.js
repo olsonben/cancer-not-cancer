@@ -146,6 +146,58 @@ const saveImages = async (req, res, next) => {
     }
 }
 
+const renameImage = async (req, res, next) => {
+    const investigatorId = req.user.id
+    const imageId = req.body.imageId
+    const newName = req.body.newName
+    console.log('renameImage:: User:', investigatorId, 'imageId:', imageId, 'newName:', newName)
+
+    try {
+        const renameSuccess = await imageOps.renameImage(imageId, newName, investigatorId)
+        if (renameSuccess) {
+            res.sendStatus(200)
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
+}
+
+
+const moveImage = async (req, res, next) => {
+    const investigatorId = req.user.id
+    const imageId = req.body.imageId
+    const oldParentTagId = req.body.oldParentTagId
+    const newParentTagId = req.body.newParentTagId
+    console.log('moveImage:: User:', investigatorId, 'imageId:', imageId, 'newParentTagId:', newParentTagId)
+
+    try {
+        const moveSuccess = await imageOps.moveImage(imageId, oldParentTagId, newParentTagId, investigatorId)
+        if (moveSuccess) {
+            res.sendStatus(200)
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
+}
+
+const deleteImage = async (req, res, next) => {
+    const investigatorId = req.user.id
+    const imageId = req.params.imageId
+    console.log('deleteImage:: User:', investigatorId, 'imageId:', imageId)
+
+    try {
+        const deleteSuccess = await imageOps.deleteImage(imageId, investigatorId)
+        if (deleteSuccess) {
+            res.sendStatus(200)
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({})
+    }
+}
+
 function createFolder(tag_id, tag_name, contents = []) {
     return {
         id: tag_id,
@@ -236,7 +288,10 @@ const imageController = {
     createTag,
     updateTag,
     moveTag,
-    deleteTag
+    deleteTag,
+    renameImage,
+    moveImage,
+    deleteImage
 }
 
 export default imageController

@@ -67,7 +67,7 @@
             </div>
         </template>
         <div class="section">
-            <ImageManager />
+            <ImageManager :key="imageManagerKey"/>
         </div>
     </div>
 </template>
@@ -90,7 +90,8 @@ export default {
 
             // Notification stuff
             submittedFiles: {},
-            notificationTime: "10000" // 10 sec in ms
+            notificationTime: "10000", // 10 sec in ms
+            imageManagerKey: 1 // we can force and update by incrementing this on upload complete
         }
     },
 
@@ -197,6 +198,7 @@ export default {
 
                         clearNotification(file.filename)
                     }
+                    this.imageManagerKey += 1
                 } else {
                     console.log('No Files to Upload')
                 }

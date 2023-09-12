@@ -14,5 +14,8 @@ router.post('/tag', isLoggedAndEnabled, isUploader, imageController.createTag)
 router.put('/tag', isLoggedAndEnabled, isUploader, imageController.updateTag)
 router.put('/moveTag', isLoggedAndEnabled, isUploader, imageController.moveTag)
 router.delete('/tag', isLoggedAndEnabled, isUploader, imageController.deleteTag)
+router.put('/rename', isLoggedAndEnabled, isUploader, imageController.renameImage)
+router.put('/move', isLoggedAndEnabled, isUploader, imageController.moveImage)
+router.delete('/:imageId', isLoggedAndEnabled, isUploader, imageController.deleteImage)
 
 export default router

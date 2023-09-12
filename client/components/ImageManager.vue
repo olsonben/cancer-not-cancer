@@ -55,6 +55,8 @@ export default {
     },
     async fetch() {
         try {
+            // TODO: change this over to an images/all request.
+            // The task_id is arbitrary.
             const images = await this.$axios.$get('/tasks/images', {
                 params: {
                     task_id: 14
@@ -166,12 +168,17 @@ export default {
         },
         async createTag() {
             try {
-                const newTagFolder = await this.$axios.$post('/images/tag', {
-                    tagName: this.createTagName,
-                })
-                this.createTagName = ''
-                console.log('tag created')
-                this.files.unshift(newTagFolder)
+                // TODO: Look into prevent no name tag creation in the DB.
+                if (this.createTagName !== '') {
+                    const newTagFolder = await this.$axios.$post('/images/tag', {
+                        tagName: this.createTagName,
+                    })
+                    this.createTagName = ''
+                    console.log('tag created')
+                    this.files.unshift(newTagFolder)
+                } else {
+                    console.log('You need a tag name.')
+                }
             } catch (error) {
                 console.error(error)
             }
@@ -191,6 +198,10 @@ export default {
         async editFileName(fileId, newName) {
             try {
                 console.log('Edit file name:', fileId, newName)
+                const response = await this.$axios.$put('/images/rename', {
+                    imageId: fileId,
+                    newName: newName,
+                })
             } catch (error) {
                 console.error(error)
             }
@@ -198,6 +209,7 @@ export default {
         async deleteFile(fileId) {
             try {
                 console.log('Delete file:', fileId)
+                const response = await this.$axios.$delete(`/images/${fileId}`)
             } catch (error) {
                 console.error(error)
             }
@@ -227,6 +239,12 @@ export default {
                 }
 
                 dest.contents.unshift(moving)
+
+                const response = await this.$axios.put('images/move', {
+                    imageId: fileId,
+                    oldParentTagId: oldParentTagId,
+                    newParentTagId: folderId
+                })
             } catch (error) {
                 console.error(error)
             }
