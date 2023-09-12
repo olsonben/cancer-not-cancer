@@ -1,6 +1,6 @@
 <template>
     <div>
-        <strong>View as user:</strong><div class="select is-medium" :class="{ 'is-loading': $fetchState.pending }">
+        <strong>{{ label }}</strong><div class="select is-medium" :class="{ 'is-loading': $fetchState.pending }">
             <select v-model="selectedUser">
                 <option v-for="user in users" :value="user.id">{{ user.fullname }}</option>
             </select>
@@ -18,6 +18,12 @@ const defaultUserArray = () => {
     }]
 }
 export default {
+    props: {
+        label: {
+            default: 'View as user:',
+            type: String
+        },
+    },
     data() {
         return {
             users: defaultUserArray(),

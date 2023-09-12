@@ -2,7 +2,7 @@
     <div>
         <!-- Main dataview -->
         <section class='section dataview'>
-            <h1 class='title'>Data View</h1>
+            <h1 class='title'>Stats View</h1>
             <div>
                 <div class='controls level'>
                     <div class='task-picker level-left'>
@@ -11,7 +11,7 @@
                                 <option v-for="task in tasks" :value="task.id">{{ task.prompt }}</option>
                             </select>
                     </div></div>
-                    <Userview class="level-right" v-if='this.$store.state.user.permissions.admin' :userId.sync="userId"/>
+                    <Userview class="level-right" v-if='this.$store.state.user.permissions.admin' :userId.sync="userId" :label="'Created by:'"/>
                 </div>
                 <div class="task-stats">
                     <ul>
