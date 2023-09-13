@@ -155,9 +155,13 @@ const imageOps = {
     },
     async deleteImage(imageId, user_id) {
         const deleteImage = `DELETE FROM images WHERE id = ? AND user_id = ?`
+        // TODO: WARNING: deleting a photo will delete the photo from the task,
+        // this is not obvious in the UI to the investigator and cause DAMAGE!
+        const deleteImageFromTasks = `DELETE FROM task_images WHERE image_id = ?`
 
         try {
             await dbOps.execute(deleteImage, [imageId, user_id])
+            await dbOps.execute(deleteImageFromTasks, [imageId])
             return true
         } catch (error) {
             console.error('Error deleting image.')

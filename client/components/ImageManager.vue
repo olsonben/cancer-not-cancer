@@ -119,7 +119,7 @@ export default {
             console.log('editTagName')
             console.log(tagId, newName)
             try {
-                const response = await this.$axios.$put('/images/tag', {
+                const response = await this.$axios.$post('/images/renameTag', {
                     tagId: tagId,
                     tagName: newName,
                 })
@@ -156,7 +156,7 @@ export default {
                 }
                 dest.contents.unshift(moving)
 
-                const response = await this.$axios.put('images/moveTag', {
+                const response = await this.$axios.post('images/moveTag', {
                     tagId: tagId,
                     oldParentTagId: oldParentTagId,
                     newParentTagId: newParentTagId
@@ -185,10 +185,8 @@ export default {
         },
         async deleteTag(tagId) {
             try {
-                const response = await this.$axios.$delete('/images/tag', {
-                    params: {
-                        tagId: tagId,
-                    }
+                const response = await this.$axios.$post('/images/deleteTag', {
+                    tagId: tagId,
                 })
                 // console.log(response)
             } catch (error) {
@@ -198,7 +196,7 @@ export default {
         async editFileName(fileId, newName) {
             try {
                 console.log('Edit file name:', fileId, newName)
-                const response = await this.$axios.$put('/images/rename', {
+                const response = await this.$axios.$post('/images/rename', {
                     imageId: fileId,
                     newName: newName,
                 })
@@ -209,7 +207,9 @@ export default {
         async deleteFile(fileId) {
             try {
                 console.log('Delete file:', fileId)
-                const response = await this.$axios.$delete(`/images/${fileId}`)
+                const response = await this.$axios.$post('/images/delete', {
+                    imageId: fileId
+                })
             } catch (error) {
                 console.error(error)
             }
@@ -240,7 +240,7 @@ export default {
 
                 dest.contents.unshift(moving)
 
-                const response = await this.$axios.put('images/move', {
+                const response = await this.$axios.$post('images/move', {
                     imageId: fileId,
                     oldParentTagId: oldParentTagId,
                     newParentTagId: folderId

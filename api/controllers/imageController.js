@@ -184,7 +184,7 @@ const moveImage = async (req, res, next) => {
 
 const deleteImage = async (req, res, next) => {
     const investigatorId = req.user.id
-    const imageId = req.params.imageId
+    const imageId = req.body.imageId
     console.log('deleteImage:: User:', investigatorId, 'imageId:', imageId)
 
     try {
@@ -258,7 +258,7 @@ const moveTag = async (req, res, next) => {
 
 const deleteTag = async (req, res, next) => {
     const investigatorId = req.user.id
-    const tagId = req.query.tagId
+    const tagId = req.body.tagId
 
     console.log('DeleteTag:: User:', investigatorId, 'tagId:', tagId)
     try {
