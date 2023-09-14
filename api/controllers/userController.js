@@ -1,4 +1,4 @@
-import { userOps} from '../dbOperations/database.js'
+import userOps from '../dbOperations/userOps.js'
 
 const getUsers = async (req, res) => {
     const adminUserId = req.user.id

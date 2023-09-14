@@ -1,5 +1,6 @@
 import { Router } from 'express'
-import { imageOps } from '../dbOperations/database.js'
+import imageOps from '../dbOperations/imageOps.js'
+import tagOps from '../dbOperations/tagOps.js'
 import { uploadImages, removeFile, removeEmptyImageFolders } from '../lib/upload.js' // middleware to handle uploads
 import { getIP } from '../lib/functions.js' // Helper functions
 
@@ -212,7 +213,7 @@ const createTag = async (req, res, next) => {
     const tagName = req.body.tagName
     console.log('CreateTag:: User:', investigatorId, 'tagName:', tagName)
     try {
-        const newTagId = await imageOps.createTag(tagName, investigatorId)
+        const newTagId = await tagOps.createTag(tagName, investigatorId)
         const newFolder = createFolder(newTagId, tagName)
         res.send(newFolder)
     } catch (err) {
@@ -228,7 +229,7 @@ const updateTag = async (req, res, next) => {
     console.log('UpdateTag:: User:', investigatorId, 'tagId:', tagId, 'tagName:', tagName)
 
     try {
-        const renameSuccess = await imageOps.renameTag(tagId, tagName, investigatorId)
+        const renameSuccess = await tagOps.renameTag(tagId, tagName, investigatorId)
         if (renameSuccess) {
             res.sendStatus(200)
         }
@@ -246,7 +247,7 @@ const moveTag = async (req, res, next) => {
     console.log('MoveTag:: User:', investigatorId, 'tagId:', tagId, 'parentTagId:', newParentTagId)
 
     try {
-        const moveSuccess = imageOps.moveTag(tagId, oldParentTagId, newParentTagId)
+        const moveSuccess = tagOps.moveTag(tagId, oldParentTagId, newParentTagId)
         if (moveSuccess) {
             res.sendStatus(200)
         }
@@ -262,7 +263,7 @@ const deleteTag = async (req, res, next) => {
 
     console.log('DeleteTag:: User:', investigatorId, 'tagId:', tagId)
     try {
-        const deleteSuccess = imageOps.deleteTag(tagId, investigatorId)
+        const deleteSuccess = tagOps.deleteTag(tagId, investigatorId)
         if (deleteSuccess) {
             res.sendStatus(200)
         }

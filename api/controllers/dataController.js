@@ -1,4 +1,4 @@
-import { dataOps } from '../dbOperations/database.js'
+import dataOps from '../dbOperations/dataOps.js'
 
 // For Data View
 // =====================

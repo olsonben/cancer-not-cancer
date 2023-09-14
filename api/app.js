@@ -29,7 +29,7 @@ const port = process.env.PORT || 5000;
 /******************
  * DATABASE Methods
  ******************/
-import { addRating } from './dbOperations/database.js'
+import dataOps from './dbOperations/dataOps.js'
 
 import taskRoutes from './routes/tasks.js'
 import userRoutes from './routes/users.js'
@@ -112,7 +112,7 @@ app.post('/hotornot', isLoggedIn, isEnabled, isPathologist, async (req, res, nex
     }
     
     try {
-        const insertSuccess = await addRating(
+        const insertSuccess = await dataOps.addRating(
             req.user.id,
             req.body.id,
             req.body.rating,

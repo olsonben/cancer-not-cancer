@@ -8,7 +8,7 @@
  * https://youtu.be/Q0a0594tOrc
  */
 
-import { getUserByUsername, getUserById } from '../dbOperations/database.js'
+import userOps from '../dbOperations/userOps.js'
 import * as path from 'path'
 
 // Manage Cross Origin Resource Sharing
@@ -48,7 +48,7 @@ passport.use(new GoogleStrategy({
     },
     async (request, accessToken, refreshToken, profile, done) => {
         try {
-            const user = await getUserByUsername(profile.email)
+            const user = await userOps.getUserByUsername(profile.email)
             if (!user) {
                 console.log(`Failed login: ${profile.email} not a user.`)
                 return done(null, false, { message: 'Not a user.' })
@@ -78,7 +78,7 @@ passport.serializeUser((user, done) => {
 
 // User object attaches to req as req.user (doesn't leave the server)
 passport.deserializeUser(async (id, done) => {
-    const user = await getUserById(id)
+    const user = await userOps.getUserById(id)
     done(null, {
         id: user.id,
         permissions: {
