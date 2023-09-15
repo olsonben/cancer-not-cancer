@@ -126,13 +126,26 @@ async function removeFailedImageSaves(req, res, next) {
     next()
 }
 
+async function deleteFile(filePath) {
+    // filePath should be relative with filename and extension.
+    const absoluteFilePath = path.join(process.env.IMAGES_DIR, filePath)
+
+    try {
+        await removeFile(absoluteFilePath)
+        removeEmptyImageFolders()
+    } catch (error) {
+        console.log('Error deleting file:', absoluteFilePath)
+        throw error
+    }
+}
+
 // TODO: update the image pipeline to use unified error handler via `next(err)`
 // Return to sender the status of the upload.
 const saveImages = async (req, res, next) => {
     if (req.files.length === 0) {
         res.status(200).send('No files uploaded.')
     } else {
-        const allowedKeys = ["filename", "mimeType", "id", "relPath", "success", "message"]
+        const allowedKeys = ["filename", "mimeType", "id", "relPath", "success", "message"]    
         const resultData = req.files.map((file) => {
             const filteredFile = Object.keys(file)
                 .filter(key => allowedKeys.includes(key))
@@ -189,6 +202,8 @@ const deleteImage = async (req, res, next) => {
     console.log('deleteImage:: User:', investigatorId, 'imageId:', imageId)
 
     try {
+        const img = await imageOps.getNextImage(imageId)
+        await deleteFile(img.path)
         const deleteSuccess = await imageOps.deleteImage(imageId, investigatorId)
         if (deleteSuccess) {
             res.sendStatus(200)
