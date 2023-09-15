@@ -90,14 +90,16 @@ const imageOps = {
     },
 
     async addImage(path, hash, from_ip, user_id, original_name, folderId) {
-        const addImageQuery = `INSERT INTO images (path, hash, from_ip, user_id, original_name) VALUES (?, ?, ?, ?, ?)` // insert image
+        // its critical that we associate the images with a tag/folder, otherwise the frontend won't see the image
+        const addImageQuery = `INSERT INTO images (path, hash, from_ip, user_id, original_name) VALUES (?, ?, ?, ?, ?)`
         const addImageToTag = `INSERT INTO image_tags (image_id, tag_id) VALUES (?, ?)`
 
         try {
-            const results = await dbOps.executeWithResults(addImageQuery, [path, hash, from_ip, user_id, original_name])
+            const transaction = await dbOps.startTransaction()
+            const results = await transaction.query(addImageQuery, [path, hash, from_ip, user_id, original_name])
+            await transaction.query(addImageToTag, [results.insertId, folderId])
+            await transaction.commit()
             console.log(`Successful image insert query: ${path}`);
-            // its critical that we associate the images with a tag/folder, otherwise the frontend won't see the image
-            await dbOps.execute(addImageToTag, [results.insertId, folderId])
             return true
         } catch (err) {
             if (err.code === 'ER_DUP_ENTRY') {
