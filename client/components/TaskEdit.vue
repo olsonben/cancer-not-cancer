@@ -55,10 +55,6 @@ export default {
                 applied: [],
                 available: [],
             },
-            tags: {
-                applied: [],
-                available: [],
-            },
             root: {
                 id: 0,
                 name: 'root',
@@ -82,18 +78,6 @@ export default {
                     this.observers.available.push(user)
                 }
             }
-            const tags = await this.$axios.$get('/tasks/tags', {
-                params: {
-                    task_id: this.task.id
-                }
-            })
-            for (const tag of tags) {
-                if (tag.applied) {
-                    this.tags.applied.push(tag)
-                } else {
-                    this.tags.available.push(tag)
-                }
-            }
             const images = await this.$axios.$get('/tasks/images', {
                 params: {
                     task_id: this.task.id
@@ -113,7 +97,7 @@ export default {
             try {
                 const selectedImages = this.$common.getSelectedFiles(this.root)
 
-                const [response, observerResponse, tagsResponse, imageResponse] = await Promise.all([
+                const [response, observerResponse, imageResponse] = await Promise.all([
                     this.$axios.$post('/tasks/update', {
                         id: this.localTask.id,
                         short_name: this.localTask.short_name,
@@ -122,10 +106,6 @@ export default {
                     this.$axios.$post('/tasks/observers', {
                         task_id: this.localTask.id,
                         observerIds: JSON.stringify(this.observers.applied.map(user => user.id)),
-                    }),
-                    this.$axios.$post('/tasks/tags', {
-                        task_id: this.localTask.id,
-                        tagIds: JSON.stringify(this.tags.applied.map(tag => tag.id)),
                     }),
                     this.$axios.$post('/tasks/images', {
                         task_id: this.localTask.id,
@@ -151,10 +131,6 @@ export default {
         updateObservers(observersData) {
             this.observers.applied = observersData.applied
             this.observers.available = observersData.available
-        },
-        updateTags(tagsData) {
-            this.tags.applied = tagsData.applied
-            this.tags.available = tagsData.available
         },
         report() {
             console.log('Files selected')

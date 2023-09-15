@@ -151,62 +151,21 @@ const taskOps = {
 
     // Update observers using transactions, if something fails nothing will be committed.
     async updateObservers(userId, taskId, observerIds) {
-        const allQueries = []
-        const allValues = []
+        const deleteObserversForTask = `DELETE FROM observers WHERE task_id = ?`
+        const addObserversToTask = `INSERT INTO observers (task_id, user_id) VALUES ?`
 
         const observerRowValues = observerIds.map((id) => [taskId, id])
 
-        allQueries.push(`DELETE FROM observers WHERE task_id = ?`)
-        allValues.push([taskId])
-        if (observerRowValues && observerRowValues.length) {
-            allQueries.push(`INSERT INTO observers (task_id, user_id) VALUES ?`)
-            allValues.push([observerRowValues,])
-        }
-
         try {
-            await dbOps.executeTransactions(allQueries, allValues)
+            const transaction = await dbOps.startTransaction()
+            await transaction.query(deleteObserversForTask, [taskId])
+            await transaction.query(addObserversToTask, [observerRowValues,])
+            await transaction.commit()
             return true
-        } catch (err) {
-            throw (err)
-        }
-    },
-
-    // get tags all tags owned, mark tags associated with task as applied
-    async getTags(userId, taskId) {
-        const query = `SELECT
-              tags.id,
-              tags.name as name,
-              CASE WHEN task_tags.task_id is NULL THEN 0 ELSE 1 END applied
-            FROM tags
-              LEFT JOIN task_tags ON task_tags.tag_id = tags.id AND task_id = ?
-            WHERE tags.user_id = ?
-            ORDER BY tags.id`
-
-        const rows = await dbOps.select(query, [taskId, userId])
-        return rows
-
-    },
-
-    // Update task_tags using transactions, if something fails nothing will be committed.
-    async updateTaskTags(userId, taskId, tagIds) {
-        const allQueries = []
-        const allValues = []
-
-        const taskTagRowValues = tagIds.map((id) => [taskId, id])
-
-        allQueries.push(`DELETE FROM task_tags WHERE task_id = ?`)
-        allValues.push([taskId])
-        if (taskTagRowValues && taskTagRowValues.length) {
-            allQueries.push(`INSERT INTO task_tags (task_id, tag_id) VALUES ?`)
-            allValues.push([taskTagRowValues,])
+        } catch (error) {
+            throw error
         }
 
-        try {
-            await dbOps.executeTransactions(allQueries, allValues)
-            return true
-        } catch (err) {
-            throw (err)
-        }
     },
 
     // get all images associated with a user and mark images that
@@ -243,23 +202,19 @@ const taskOps = {
 
     // Save a list of image ids for a specified task
     async setTaskImages(userId, taskId, imageIds) {
-        const allQueries = []
-        const allValues = []
+        const deleteImagesForTask = `DELETE FROM task_images WHERE task_id = ?`
+        const addImagesToTask = `INSERT INTO task_images (task_id, image_id) VALUES ?`
 
         const taskImageRowValues = imageIds.map((id) => [taskId, id])
 
-        allQueries.push(`DELETE FROM task_images WHERE task_id = ?`)
-        allValues.push([taskId])
-        if (taskImageRowValues && taskImageRowValues.length) {
-            allQueries.push(`INSERT INTO task_images (task_id, image_id) VALUES ?`)
-            allValues.push([taskImageRowValues,])
-        }
-
         try {
-            await dbOps.executeTransactions(allQueries, allValues)
+            const transaction = await dbOps.startTransaction()
+            await transaction.query(deleteImagesForTask, [taskId])
+            await transaction.query(addImagesToTask, [taskImageRowValues,])
+            await transaction.commit()
             return true
-        } catch (err) {
-            throw (err)
+        } catch (error) {
+            throw error
         }
 
     }

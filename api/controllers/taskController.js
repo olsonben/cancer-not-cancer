@@ -211,34 +211,6 @@ const setTaskImages = async(req, res) => {
     }
 }
 
-// Handle a get request for a task tags.
-const getTags = async (req, res) => {
-    let investigatorId = req.user.id
-    const taskId = req.query.task_id
-    try {
-        const tags = await taskOps.getTags(investigatorId, taskId)
-        res.send(tags)
-    } catch (err) {
-        console.log(err)
-        res.status(500).send({})
-    }
-}
-
-const updateTaskTags = async (req, res) => {
-    let investigatorId = req.user.id
-    const taskId = req.body.task_id
-    const tagIds = JSON.parse(req.body.tagIds)
-    try {
-        const updateSuccess = await taskOps.updateTaskTags(investigatorId, taskId, tagIds)
-        if (updateSuccess) {
-            res.sendStatus(200)
-        }
-    } catch (err) {
-        console.log(err)
-        res.status(500).send({})
-    }
-}
-
 const taskController = {
     getAllTasks,
     getOwnedTasks,
@@ -248,8 +220,6 @@ const taskController = {
     deleteTask,
     getObservers,
     updateObservers,
-    getTags,
-    updateTaskTags,
     getImages,
     setTaskImages,
     getTaskProgress

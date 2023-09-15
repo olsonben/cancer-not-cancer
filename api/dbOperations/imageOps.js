@@ -6,12 +6,17 @@ import * as path from 'path'
 // ---------------------------------
 const imageOps = {
     async getNextImage(imageId) {
-        // NOTE: this is not very efficient, but it works
         const query = `SELECT id, path FROM images WHERE images.id = ?`
         const rows = await dbOps.select(query, [imageId])
         return rows[0]
     },
 
+    /**
+     * Database call that returns a queue of next images to be graded.
+     * @param {Number} userId - User's id to check against existing ratings
+     * @param {Number} taskId - Task id for which to build the queue of image ids.
+     * @returns {Array.<Number>} - Returns an array of image id numbers.
+     */
     async getNextImageIds(userId, taskId) {
         const query = `
             (
@@ -29,11 +34,20 @@ const imageOps = {
         return rows.map(row => row.image_id)
     },
 
-    // folders are saved as tags in the data base, and a tag can have parent tags (a tag_relation)
-    // folderStructure should be an array of every folder's full path
-    // ex. folders: root -> subFolder === ['root/subFolder', 'root']
+    /**
+     * Translates an array or set of folder paths into tag and creates tag relations accordingly.
+     * 
+     * folders are saved as tags in the database, and a tag can have parent tags (a tag_relation)
+     * folderStructure should be an array of every folder's full path
+     * ex. folders: root -> subFolder === ['root/subFolder', 'root']
+     * @param {Set.<String>} folderStructure - Iterable of strings representing folder paths.
+     * @param {Number} user_id - The id of the owner of the folders (the investigator).
+     * @returns {Object} - Object of all folders created with the folders path as the key
+     * and { name, id, and parentFolderNamen}.
+     */
+    
     async saveFolderStructure(folderStructure, user_id) {
-        const createFolderTags = `INSERT INTO tags (name, user_id) VALUES (?, ?)`
+        const createFolderTag = `INSERT INTO tags (name, user_id) VALUES (?, ?)`
         const createTagRelation = `INSERT INTO tag_relations (tag_id, parent_tag_id) VALUES (?, ?)`
 
         let folders = {}
@@ -44,7 +58,8 @@ const imageOps = {
             const parentFolderName = folderArray.join(path.sep)
 
             try {
-                const results = await dbOps.executeWithResults(createFolderTags, [folderName, user_id])
+                const results = await dbOps.executeWithResults(createFolderTag, [folderName, user_id])
+                // save new folder/tag id for reference later
                 folders[folderPath] = {
                     'name': folderPath,
                     'id': results.insertId,

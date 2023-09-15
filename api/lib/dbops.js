@@ -144,6 +144,55 @@ class DatabaseOps {
         }
     }
 
+    async startTransaction() {
+        let connection = null
+        try {
+            const db = await this.db
+            connection = await db.getConnection()
+            await connection.beginTransaction()
+            const transaction = new TransactionContainer(connection)
+            return transaction
+        } catch (error) {
+            if (connection) connection.release()
+            throw error
+        }
+    }
+
+}
+
+/**
+ * Contains a mysql transaction that has already been started.
+ */
+class TransactionContainer {
+    constructor(dbConnection) {
+        this.dbConnection = dbConnection
+    }
+
+    async query(sqlQuery, queryValues) {
+        try {
+            const [results] = await this.dbConnection.query(sqlQuery, queryValues)
+            return results
+        } catch (error) {
+            if (this.dbConnection) {
+                await this.dbConnection.rollback()
+                await this.dbConnection.release()
+            }
+            throw error
+        }
+    }
+
+    async commit() {
+        try {
+            await this.dbConnection.commit()
+        } catch (error) {
+            if (this.dbConnection) await this.dbConnection.rollback()
+            throw error
+        } finally {
+            if (this.dbConnection) {
+                this.dbConnection.release()
+            }
+        }
+    }
 }
 
 export { DatabaseOps }
