@@ -117,7 +117,7 @@ class DatabaseOps {
         return results
     }
 
-    // NOTE: Not tested with sqlite
+    // NOTE: No longer used but keeping for reference
     // https://github.com/sidorares/node-mysql2/issues/384#issuecomment-673726520
     async executeTransactions(sqlQueries, queryValues) {
         let conn = null;
@@ -144,6 +144,7 @@ class DatabaseOps {
         }
     }
 
+    // NOTE: Not tested with sqlite
     async startTransaction() {
         let connection = null
         try {

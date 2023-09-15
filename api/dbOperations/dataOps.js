@@ -5,18 +5,18 @@ import * as path from 'path'
 // DATA BASED DATABASE METHODS
 // ---------------------------------
 const dataOps = {
+    // Note: for addRating, technically updateQuery is not necessary anymore
     async addRating(userId, imageId, rating, comment, fromIp, taskId) {
         const ratingQuery = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip, task_id) 
             VALUES (?, ?, ?, ?, ?, ?)`
         const updateQuery = `UPDATE images 
             SET times_graded = times_graded + 1 
             WHERE id = ?;`
-
-        // TODO: user the transaction method
-        await Promise.all([
-            dbOps.execute(ratingQuery, [userId, imageId, rating, comment, fromIp, taskId]),
-            dbOps.execute(updateQuery, [imageId])
-        ])
+        
+        const transaction = await dbOps.startTransaction()
+        await transaction.query(ratingQuery, [userId, imageId, rating, comment, fromIp, taskId])
+        await transaction.query(updateQuery, [imageId])
+        await transaction.commit()
 
         console.log("Successful hotornot insert query");
         console.log("dSuccessful hotornot insert query");

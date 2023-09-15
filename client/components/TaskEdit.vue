@@ -115,7 +115,7 @@ export default {
 
                 this.task.short_name = this.localTask.short_name
                 this.task.prompt = this.localTask.prompt
-                // TODO: recalc image count on save of tags
+
                 this.$emit('save', {
                     observers: this.observers.applied.length,
                     images: selectedImages.length

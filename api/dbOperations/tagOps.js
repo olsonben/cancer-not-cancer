@@ -32,10 +32,10 @@ const tagOps = {
         const createTagRelation = `INSERT INTO tag_relations (tag_id, parent_tag_id) VALUES (?, ?)`
 
         try {
-
-            // TODO: user the transaction method
-            await dbOps.execute(deleteOldParentRelation, [tagId, oldParentTagId])
-            await dbOps.execute(createTagRelation, [tagId, newParentTagId])
+            const transaction = await dbOps.startTransaction()
+            await transaction.query(deleteOldParentRelation, [tagId, oldParentTagId])
+            await transaction.query(createTagRelation, [tagId, newParentTagId])
+            await transaction.commit()
             return true
         } catch (error) {
             console.error('Error moving tag in database operations.')

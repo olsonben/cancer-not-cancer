@@ -125,10 +125,10 @@ const imageOps = {
         const tagImage = `INSERT INTO image_tags (image_id, tag_id) VALUES (?, ?)`
 
         try {
-
-            // TODO: user the transaction method
-            await dbOps.execute(deleteImageTags, [imageId, oldParentTagId])
-            await dbOps.execute(tagImage, [imageId, newParentTagId])
+            const transaction = await dbOps.startTransaction()
+            await transaction.query(deleteImageTags, [imageId, oldParentTagId])
+            await transaction.query(tagImage, [imageId, newParentTagId])
+            await transaction.commit()
             return true
         } catch (error) {
             console.error('Error moving image in database operations.')
