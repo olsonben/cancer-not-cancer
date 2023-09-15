@@ -16,7 +16,7 @@
                 </div>
             </div>
             <div class="menu">
-                <p class="menu-label">Images Folders</p>
+                <p class="menu-label">Images Folders: Drag files and folder where you want to move them.</p>
                 <ul class="menu-list">
                     <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
                     <li v-for="(file, index) in files" :key="fileKey(file)">

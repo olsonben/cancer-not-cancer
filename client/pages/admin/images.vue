@@ -1,7 +1,7 @@
 <template>
     <div>
         <!-- Main upload stuff -->
-        <section class='section'>
+        <section class='section pt-3 pb-3'>
             <h1 class='title'>Upload images</h1>
 
             <!-- Upload box -->
@@ -66,7 +66,7 @@
                 File {{ file.originalname }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
             </div>
         </template>
-        <div class="section">
+        <div class="section pt-3">
             <ImageManager :key="imageManagerKey"/>
         </div>
     </div>
