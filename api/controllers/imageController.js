@@ -14,20 +14,11 @@ const nextImage = async (req, res, next) => {
     console.log("GET: nextImage", imageId);
     try {
         const img = await imageOps.getNextImage(imageId)
-        // TODO: Use URLs and Path Join instead of this logic
-        let imagePath = img.path
-        if (imageBaseURL.slice(-1) == "/") {
-            if (img.path.charAt(0) == "/") {
-                imagePath = imagePath.slice(1)
-            }
-        } else if (img.path.charAt(0) != "/") {
-            imagePath = "/" + imagePath
-        }
+        const pathUrl = new URL(img.path, imageBaseURL)
 
-        let url = imageBaseURL + imagePath
         res.send({
             id: img.id, // imageID
-            url: imageBaseURL + img.path
+            url: pathUrl.href
         })
     } catch (err) {
         next(err)
@@ -54,7 +45,7 @@ function createFolderStructure(filesArray, containerFolder) {
             let folders = file.sanitizedName.split(path.sep)
             const fileName = folders.pop()
             for (let i = folders.length; i != 0; i--) {
-                folderStructure.add(`${containerFolder}${path.sep}${folders.join(path.sep)}`)
+                folderStructure.add(path.join(containerFolder, ...folders))
                 folders.pop()
             }
         }
@@ -80,7 +71,7 @@ async function saveUploadsToDb(req, res, next) {
 
                     let location = file.sanitizedName.split(path.sep)
                     const originalFileName = location.pop()
-                    const folderName = location.length > 0 ? `${masterFolderName}${path.sep}${location.join(path.sep)}` : masterFolderName
+                    const folderName = path.join(masterFolderName, ...location)
                     const folderId = folders[folderName]['id']
 
                     const insertImageSuccess = await imageOps.addImage(
@@ -108,6 +99,7 @@ async function saveUploadsToDb(req, res, next) {
 
     } catch (error) {
         // handle errors
+        throw error
     }
 
     // TODO: if a file upload fails and there are no files associated with the

@@ -4,7 +4,23 @@ import * as path from 'path'
 // ---------------------------------
 // IMAGE BASED DATABASE METHODS
 // ---------------------------------
+/**
+ * @typedef {Object} ImageObject
+ * @property {string} path - Local image path on server.
+ * @property {string} hash - File check some hash, nullable, sha256.
+ * @property {date} date_added - Date image was uploaded.
+ * @property {string} from_ip - IP address of uploaded.
+ * @property {string} user_id - Uploaders user id (owner).
+ * @property {string} times_graded - Number of times the image has been graded.
+ * @property {string} original_name - Original file name, used for display but
+ * not the actual file name which is in the path.
+ */
 const imageOps = {
+    /**
+     * Get image object by id.
+     * @param {number} imageId - Image's id to look up.
+     * @returns {ImageObject} - ImageObject which contains `path` and `original_name`.
+     */
     async getNextImage(imageId) {
         const query = `SELECT id, path FROM images WHERE images.id = ?`
         const rows = await dbOps.select(query, [imageId])
