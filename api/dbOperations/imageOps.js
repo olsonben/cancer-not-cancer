@@ -61,7 +61,6 @@ const imageOps = {
      * @returns {Object} - Object of all folders created with the folders path as the key
      * and { name, id, and parentFolderNamen}.
      */
-    
     async saveFolderStructure(folderStructure, user_id) {
         const createFolderTag = `INSERT INTO tags (name, user_id) VALUES (?, ?)`
         const createTagRelation = `INSERT INTO tag_relations (tag_id, parent_tag_id) VALUES (?, ?)`
@@ -105,6 +104,16 @@ const imageOps = {
         return folders
     },
 
+    /**
+     * Add image to database
+     * @param {String} path - Relative path to file on server includes filename.
+     * @param {String} hash - File check some hash, sha256.
+     * @param {String} from_ip - Uploaders ip address.
+     * @param {Number} user_id - Uploaders user id (owner of the image).
+     * @param {String} original_name - Original file name.
+     * @param {Number} folderId - Folder/tag id that the image should be associated with.
+     * @returns {Boolean} - Returns true if successfull.
+     */
     async addImage(path, hash, from_ip, user_id, original_name, folderId) {
         // its critical that we associate the images with a tag/folder, otherwise the frontend won't see the image
         const addImageQuery = `INSERT INTO images (path, hash, from_ip, user_id, original_name) VALUES (?, ?, ?, ?, ?)`
@@ -127,6 +136,13 @@ const imageOps = {
         }
     },
 
+    /**
+     * Rename a file.
+     * @param {Number} imageId - ID of image to rename
+     * @param {String} newName - New name of file.
+     * @param {Number} user_id - User/owner's id of image.
+     * @returns {Boolean} - Returns true if successfull.
+     */
     async renameImage(imageId, newName, user_id) {
         const renameImage = `UPDATE images SET original_name = ? WHERE id = ? AND user_id = ?`
 
@@ -138,6 +154,14 @@ const imageOps = {
             throw error
         }
     },
+    /**
+     * Move file to different folder/tag.
+     * @param {Number} imageId - ID of image to move
+     * @param {Number} oldParentTagId - ID of original folder/tag location.
+     * @param {Number} newParentTagId - ID of new folder/tag location.
+     * @param {Number} user_id - User/owner's id of image.
+     * @returns {Boolean} - Returns true if successfull.
+     */
     async moveImage(imageId, oldParentTagId, newParentTagId, user_id) {
         const deleteImageTags = `DELETE FROM image_tags WHERE image_id = ? AND tag_id = ?`
         const tagImage = `INSERT INTO image_tags (image_id, tag_id) VALUES (?, ?)`
@@ -153,6 +177,12 @@ const imageOps = {
             throw error
         }
     },
+    /**
+     * Delete file
+     * @param {Number} imageId - ID of image to delete.
+     * @param {Number} user_id - User/owner's id of image.
+     * @returns {Boolean} - Returns true if successfull.
+     */
     async deleteImage(imageId, user_id) {
         const deleteImage = `DELETE FROM images WHERE id = ? AND user_id = ?`
         // TODO: WARNING: deleting a photo will delete the photo from the task,

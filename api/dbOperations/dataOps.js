@@ -5,8 +5,18 @@ import * as path from 'path'
 // DATA BASED DATABASE METHODS
 // ---------------------------------
 const dataOps = {
-    // Note: for addRating, technically updateQuery is not necessary anymore
+    /**
+     * Add a grading/rating for an image in a task.
+     * @param {Number} userId - Id of user making the grading.
+     * @param {Number} imageId - Id of image being graded/rated.
+     * @param {Number} rating - Grading value {-1, 0, 1} No, Maybe, Yes.
+     * @param {String} comment - Any additional comment the user adds.
+     * @param {String} fromIp - Ip address of the user making the grading.
+     * @param {Number} taskId - The task id of the prompt associated with the grading.
+     * @returns True
+     */
     async addRating(userId, imageId, rating, comment, fromIp, taskId) {
+        // Note: for addRating, technically updateQuery is not necessary anymore
         const ratingQuery = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip, task_id) 
             VALUES (?, ?, ?, ?, ?, ?)`
         const updateQuery = `UPDATE images 
@@ -23,7 +33,13 @@ const dataOps = {
         return true
     },
     
-    // Overview data: totals for all tasks or a specified task
+
+    /**
+     * Overview data: totals for all tasks or a specified task
+     * @param {Number} userId - Id of investigator associated with task data.
+     * @param {Number} taskId - Task id to look up data for.
+     * @returns {Object} - Rating counts: {total, yes, no, maybe}
+     */
     async getData(userId, taskId) {
         const query = `SELECT
                         count(*) AS total,
@@ -39,7 +55,12 @@ const dataOps = {
         return rows[0]
     },
 
-    // Similar to getData, but totals are split by each user associated.
+    /**
+     * Similar to getData, but totals are split by each user associated.
+     * @param {Number} userId - Id of investigator
+     * @param {Number} taskId - Id of task associated with data
+     * @returns {Array.<Object>} - Counts per user [{user_id, fullname, total, yes, no, maybe}]
+     */
     async getDataPerUsers(userId, taskId) {
         const query = `
             SELECT
@@ -63,7 +84,12 @@ const dataOps = {
         return rows
     },
 
-    // Similar to getData, but totals are split by each image associated.
+    /**
+     * Similar to getData, but totals are split by each image associated.
+     * @param {Number} userId - Id of investigator
+     * @param {Number} taskId - Id of task associated with data
+     * @returns {Array.<Object>} - Counts per image [{image_id, path, total, yes, no, maybe}]
+     */
     async getDataPerImages(userId, taskId) {
         const query = `
             SELECT
