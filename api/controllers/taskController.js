@@ -1,5 +1,5 @@
 import taskOps from '../dbOperations/taskOps.js'
-
+import { virtualFileSystem as VFS } from '../lib/functions.js'
 
 // Returns all task assigned to the user/observer.
 const getAllTasks = async (req, res) => {
@@ -125,25 +125,6 @@ const updateObservers = async (req, res) => {
     }
 }
 
-// TODO: Move to imageController 
-function createFolder(tag_id, tag_name, contents=[]) {
-    return {
-        id: tag_id,
-        name: tag_name,
-        contents: contents,
-        type: 'tag'
-    }
-}
-
-function createFile(image_id, image_path, selected = false) {
-    return {
-        id: image_id,
-        name: image_path,
-        selected: selected,
-        type: 'img'
-    }
-}
-
 const getImages = async (req, res) => {
     let investigatorId = req.user.id
     const taskId = req.query.task_id
@@ -158,7 +139,7 @@ const getImages = async (req, res) => {
             const parentTagId = image['parent_tag_id']
 
             if (!folderMap.has(tagId)) {
-                folderMap.set(tagId, createFolder(tagId, image['tag_name']))
+                folderMap.set(tagId, VFS.createFolder(tagId, image['tag_name']))
                 folderContents.set(tagId, new Set())
             }
 
@@ -166,7 +147,7 @@ const getImages = async (req, res) => {
 
             if (parentTagId !== null) {
                 if (!folderMap.has(parentTagId)) {
-                    folderMap.set(parentTagId, createFolder(parentTagId, image['parent_tag_name']))
+                    folderMap.set(parentTagId, VFS.createFolder(parentTagId, image['parent_tag_name']))
                     folderContents.set(parentTagId, new Set())
                 }
 
@@ -182,7 +163,7 @@ const getImages = async (req, res) => {
             }
 
             if (image['image_id'] !== null) {
-                const file = createFile(image['image_id'], image['original_name'], !!image['selected'])
+                const file = VFS.createFile(image['image_id'], image['original_name'], !!image['selected'])
                 folder.contents.push(file)
             }
         }

@@ -49,5 +49,47 @@ export function isUploader(req, res, next) {
     }
 }
 
-// export default wraps all the functions in one object
-export default { isLoggedIn, getIP, isEnabled, isAdmin, isUploader, isPathologist }
+/** Function that help create folder and file objects and structure */
+export const virtualFileSystem = {
+    /**
+     * Creates a set of all possible folders paths.
+     * @param {Array.<Object>} filesArray - Array of file objects full path file name.
+     * @param {String} containerFolder - A base folder to contain all found folders/files.
+     * @returns {Set.<String>} - root/folder_a -> { root, root/folder_a }
+     */
+    createFolderStructure(filesArray, containerFolder) {
+        let folderStructure = new Set()
+        folderStructure.add(containerFolder)
+    
+        for (const file of filesArray) {
+            if (file.success) {
+                let folders = file.sanitizedName.split(path.sep)
+                const fileName = folders.pop()
+                for (let i = folders.length; i != 0; i--) {
+                    folderStructure.add(path.join(containerFolder, ...folders))
+                    folders.pop()
+                }
+            }
+        }
+    
+        return folderStructure
+    },
+    /** Returns a folder object. */
+    createFolder(tag_id, tag_name, contents = []) {
+        return {
+            id: tag_id,
+            name: tag_name,
+            contents: contents,
+            type: 'tag'
+        }
+    },
+    /** Returns a file object. */
+    createFile(image_id, image_path, selected = false) {
+        return {
+            id: image_id,
+            name: image_path,
+            selected: selected,
+            type: 'img'
+        }
+    }
+}
