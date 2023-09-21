@@ -100,8 +100,6 @@ class DatabaseOps {
     async execute(sql, values) {
         const db = await this.db
         await db._execute(sql, values)
-        
-        return true
     }
 
     /**

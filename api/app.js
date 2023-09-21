@@ -112,19 +112,18 @@ app.post('/hotornot', isLoggedIn, isEnabled, isPathologist, async (req, res, nex
     }
     
     try {
-        const insertSuccess = await dataOps.addRating(
+        await dataOps.addRating(
             req.user.id,
             req.body.id,
             req.body.rating,
             req.body.comment,
             getIP(req),
-            req.body.taskId)
+            req.body.taskId
+        )
 
-        if (insertSuccess) {
-            res.sendStatus(200)
-        }
+        res.sendStatus(200)
     } catch (err) {
-        next(err)
+        next(err) // Pass error onto unified error handler.
     }
 })
 

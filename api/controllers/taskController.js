@@ -46,21 +46,15 @@ const taskController = {
         const taskId = req.body.id
         const short_name = req.body.short_name
         const prompt = req.body.prompt
-        const updateSuccess = await taskOps.updateTask(investigatorId, taskId, short_name, prompt)
-        // TODO: will hang if not true
-        if (updateSuccess) {
-            res.sendStatus(200)
-        }
+        await taskOps.updateTask(investigatorId, taskId, short_name, prompt)
+        res.sendStatus(200)
     },
     /** Handle a post request to delete a task. */
     async deleteTask (req, res) {
         let investigatorId = req.user.id
         const taskId = req.body.id
-        const deleteSuccess = await taskOps.deleteTask(investigatorId, taskId)
-        // TODO: will hang if not true
-        if (deleteSuccess) {
-            res.sendStatus(200)
-        }
+        await taskOps.deleteTask(investigatorId, taskId)
+        res.sendStatus(200)
     },
     /** Handle a get request for a tasks observers(users). */
     async getObservers (req, res, next) {
@@ -74,11 +68,8 @@ const taskController = {
         let investigatorId = req.user.id
         const taskId = req.body.task_id
         const observerIds = JSON.parse(req.body.observerIds)
-        const updateSuccess = await taskOps.updateObservers(investigatorId, taskId, observerIds)
-        // TODO: will hang if not true
-        if (updateSuccess) {
-            res.sendStatus(200)
-        }
+        await taskOps.updateObservers(investigatorId, taskId, observerIds)
+        res.sendStatus(200)
     },
     /** Get images and tag/folder structure for task image assignment. */
     async getImages (req, res) {
@@ -133,11 +124,8 @@ const taskController = {
         let investigatorId = req.user.id
         const taskId = req.body.task_id
         const imageIds = JSON.parse(req.body.imageIds)
-        const updateSuccess = await taskOps.setTaskImages(investigatorId, taskId, imageIds)
-        // TODO: will hang if not true
-        if (updateSuccess) {
-            res.sendStatus(200)
-        }
+        await taskOps.setTaskImages(investigatorId, taskId, imageIds)
+        res.sendStatus(200)
     }
 }
 

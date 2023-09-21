@@ -14,7 +14,6 @@ const taskOps = {
                     FROM tasks
                     WHERE investigator = ?`
         const rows = await dbOps.select(query, [userId])
-
         return rows
     },
 
@@ -30,7 +29,6 @@ const taskOps = {
                     WHERE observers.user_id = ?
                     ORDER BY tasks.id`
         const rows = await dbOps.select(query, [userId])
-
         return rows
     },
     /**
@@ -42,12 +40,8 @@ const taskOps = {
      */
     async createTask(userId, short_name, prompt) {
         const query = `INSERT INTO tasks (short_name, prompt, investigator) VALUES (?, ?, ?);`
-        try {
-            const results = await dbOps.executeWithResults(query, [short_name, prompt, userId])
-            return results.insertId
-        } catch (err) {
-            throw (err)
-        }
+        const results = await dbOps.executeWithResults(query, [short_name, prompt, userId])
+        return results.insertId
 
     },
     /**
@@ -56,7 +50,6 @@ const taskOps = {
      * @param {Number} taskId - Id of task to update
      * @param {String} short_name - Task name
      * @param {String} prompt - Question to be displayed to observers
-     * @returns {Boolean}
      */
     async updateTask(userId, taskId, short_name, prompt) {
         const query = `UPDATE tasks
@@ -64,28 +57,16 @@ const taskOps = {
                         prompt = ?
                     WHERE investigator = ?
                         AND id = ?`
-        try {
-            await dbOps.execute(query, [short_name, prompt, userId, taskId])
-            return true
-        } catch (err) {
-            throw (err)
-        }
-
+        await dbOps.execute(query, [short_name, prompt, userId, taskId])
     },
     /**
      * Delete a task by id.
      * @param {Number} userId - Task owner id
      * @param {Number} taskId - Id of task to be deleted
-     * @returns {Boolean}
      */
     async deleteTask(userId, taskId) {
         const query = `DELETE FROM tasks WHERE tasks.investigator = ? AND tasks.id = ?;`
-        try {
-            await dbOps.execute(query, [userId, taskId])
-            return true
-        } catch (err) {
-            throw (err)
-        }
+        await dbOps.execute(query, [userId, taskId])
     },
 
     /**
@@ -145,7 +126,6 @@ const taskOps = {
 
         const rows = await dbOps.select(query, [userId, userId, userId])
         return rows
-
     },
 
     /**
@@ -203,7 +183,6 @@ const taskOps = {
      * @param {Number} userId - not used
      * @param {Number} taskId - id of task to update observers
      * @param {Array.<Number>} observerIds - Array of user ids to assign to task.
-     * @returns {Boolean}
      */
     async updateObservers(userId, taskId, observerIds) {
         const deleteObserversForTask = `DELETE FROM observers WHERE task_id = ?`
@@ -211,16 +190,10 @@ const taskOps = {
 
         const observerRowValues = observerIds.map((id) => [taskId, id])
 
-        try {
-            const transaction = await dbOps.startTransaction()
-            await transaction.query(deleteObserversForTask, [taskId])
-            await transaction.query(addObserversToTask, [observerRowValues,])
-            await transaction.commit()
-            return true
-        } catch (error) {
-            throw error
-        }
-
+        const transaction = await dbOps.startTransaction()
+        await transaction.query(deleteObserversForTask, [taskId])
+        await transaction.query(addObserversToTask, [observerRowValues,])
+        await transaction.commit()
     },
 
     /**
@@ -258,7 +231,6 @@ const taskOps = {
 
         const rows = await dbOps.select(query, [taskId, userId])
         return rows
-
     },
 
     /**
@@ -266,7 +238,6 @@ const taskOps = {
      * @param {Number} userId - not used
      * @param {Number} taskId - Id of task to associate images to
      * @param {Array.<Number>} imageIds - Array of image ids apply to task.
-     * @returns {Boolean}
      */
     async setTaskImages(userId, taskId, imageIds) {
         const deleteImagesForTask = `DELETE FROM task_images WHERE task_id = ?`
@@ -274,16 +245,10 @@ const taskOps = {
 
         const taskImageRowValues = imageIds.map((id) => [taskId, id])
 
-        try {
-            const transaction = await dbOps.startTransaction()
-            await transaction.query(deleteImagesForTask, [taskId])
-            await transaction.query(addImagesToTask, [taskImageRowValues,])
-            await transaction.commit()
-            return true
-        } catch (error) {
-            throw error
-        }
-
+        const transaction = await dbOps.startTransaction()
+        await transaction.query(deleteImagesForTask, [taskId])
+        await transaction.query(addImagesToTask, [taskImageRowValues,])
+        await transaction.commit()
     }
 }
 

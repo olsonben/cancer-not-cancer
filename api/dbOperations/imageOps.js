@@ -72,18 +72,12 @@ const imageOps = {
             const folderName = folderArray.pop()
             const parentFolderName = folderArray.join(path.sep)
 
-            try {
-                const results = await dbOps.executeWithResults(createFolderTag, [folderName, user_id])
-                // save new folder/tag id for reference later
-                folders[folderPath] = {
-                    'name': folderPath,
-                    'id': results.insertId,
-                    'parentFolderName': parentFolderName
-                }
-
-            } catch (error) {
-                console.error('Error creating folder tag!')
-                throw error
+            const results = await dbOps.executeWithResults(createFolderTag, [folderName, user_id])
+            // save new folder/tag id for reference later
+            folders[folderPath] = {
+                'name': folderPath,
+                'id': results.insertId,
+                'parentFolderName': parentFolderName
             }
         }
 
@@ -91,13 +85,8 @@ const imageOps = {
         for (const folder of Object.values(folders)) {
             if (folder.parentFolderName !== '') {
                 // add parent relationship
-                try {
-                    const parentFolder = folders[folder.parentFolderName]
-                    await dbOps.execute(createTagRelation, [folder.id, parentFolder.id])
-                } catch (error) {
-                    console.error('Error creating tag relation!')
-                    throw error
-                }
+                const parentFolder = folders[folder.parentFolderName]
+                await dbOps.execute(createTagRelation, [folder.id, parentFolder.id])
             }
         }
 
@@ -112,7 +101,7 @@ const imageOps = {
      * @param {Number} user_id - Uploaders user id (owner of the image).
      * @param {String} original_name - Original file name.
      * @param {Number} folderId - Folder/tag id that the image should be associated with.
-     * @returns {Boolean} - Returns true if successfull.
+     * @returns {Boolean} - Returns true if successfull, false if duplicate.
      */
     async addImage(path, hash, from_ip, user_id, original_name, folderId) {
         // its critical that we associate the images with a tag/folder, otherwise the frontend won't see the image
@@ -128,6 +117,7 @@ const imageOps = {
             return true
         } catch (err) {
             if (err.code === 'ER_DUP_ENTRY') {
+                // duplicate image insert
                 return false
             } else {
                 console.error('Error saving image to database.')
@@ -141,18 +131,10 @@ const imageOps = {
      * @param {Number} imageId - ID of image to rename
      * @param {String} newName - New name of file.
      * @param {Number} user_id - User/owner's id of image.
-     * @returns {Boolean} - Returns true if successfull.
      */
     async renameImage(imageId, newName, user_id) {
         const renameImage = `UPDATE images SET original_name = ? WHERE id = ? AND user_id = ?`
-
-        try {
-            await dbOps.execute(renameImage, [newName, imageId, user_id])
-            return true
-        } catch (error) {
-            console.error('Error renaming image!')
-            throw error
-        }
+        await dbOps.execute(renameImage, [newName, imageId, user_id])
     },
     /**
      * Move file to different folder/tag.
@@ -160,28 +142,20 @@ const imageOps = {
      * @param {Number} oldParentTagId - ID of original folder/tag location.
      * @param {Number} newParentTagId - ID of new folder/tag location.
      * @param {Number} user_id - User/owner's id of image.
-     * @returns {Boolean} - Returns true if successfull.
      */
     async moveImage(imageId, oldParentTagId, newParentTagId, user_id) {
         const deleteImageTags = `DELETE FROM image_tags WHERE image_id = ? AND tag_id = ?`
         const tagImage = `INSERT INTO image_tags (image_id, tag_id) VALUES (?, ?)`
 
-        try {
-            const transaction = await dbOps.startTransaction()
-            await transaction.query(deleteImageTags, [imageId, oldParentTagId])
-            await transaction.query(tagImage, [imageId, newParentTagId])
-            await transaction.commit()
-            return true
-        } catch (error) {
-            console.error('Error moving image in database operations.')
-            throw error
-        }
+        const transaction = await dbOps.startTransaction()
+        await transaction.query(deleteImageTags, [imageId, oldParentTagId])
+        await transaction.query(tagImage, [imageId, newParentTagId])
+        await transaction.commit()
     },
     /**
      * Delete file
      * @param {Number} imageId - ID of image to delete.
      * @param {Number} user_id - User/owner's id of image.
-     * @returns {Boolean} - Returns true if successfull.
      */
     async deleteImage(imageId, user_id) {
         const deleteImage = `DELETE FROM images WHERE id = ? AND user_id = ?`
@@ -189,14 +163,8 @@ const imageOps = {
         // this is not obvious in the UI to the investigator and cause DAMAGE!
         const deleteImageFromTasks = `DELETE FROM task_images WHERE image_id = ?`
 
-        try {
-            await dbOps.execute(deleteImage, [imageId, user_id])
-            await dbOps.execute(deleteImageFromTasks, [imageId])
-            return true
-        } catch (error) {
-            console.error('Error deleting image.')
-            throw error
-        }
+        await dbOps.execute(deleteImage, [imageId, user_id])
+        await dbOps.execute(deleteImageFromTasks, [imageId])
     }
 }
 

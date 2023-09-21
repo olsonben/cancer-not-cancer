@@ -13,7 +13,6 @@ const dataOps = {
      * @param {String} comment - Any additional comment the user adds.
      * @param {String} fromIp - Ip address of the user making the grading.
      * @param {Number} taskId - The task id of the prompt associated with the grading.
-     * @returns True
      */
     async addRating(userId, imageId, rating, comment, fromIp, taskId) {
         // Note: for addRating, technically updateQuery is not necessary anymore
@@ -27,10 +26,7 @@ const dataOps = {
         await transaction.query(ratingQuery, [userId, imageId, rating, comment, fromIp, taskId])
         await transaction.query(updateQuery, [imageId])
         await transaction.commit()
-
         console.log("Successful hotornot insert query");
-        console.log("dSuccessful hotornot insert query");
-        return true
     },
     
 

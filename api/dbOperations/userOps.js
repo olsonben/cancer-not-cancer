@@ -15,7 +15,6 @@ const userOps = {
                     FROM users
                     WHERE id != ?`
         const rows = await dbOps.select(query, [userId])
-
         return rows
     },
     /**
@@ -49,7 +48,7 @@ const userOps = {
      * @param {Boolean} is_pathologist - pathologist/observer state
      * @param {Boolean} is_uploader - uploader/investigator state
      * @param {Boolean} is_admin - admin state
-     * @returns {Boolean}
+     * @returns {Boolean} - False if duplicate.
      */
     async createUser(fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) {
         const addUserQuery = `INSERT INTO users (
@@ -82,6 +81,7 @@ const userOps = {
             return true
         } catch (err) {
             if (err.code === 'ER_DUP_ENTRY') {
+                // Duplicate user
                 return false
             } else {
                 throw (err)

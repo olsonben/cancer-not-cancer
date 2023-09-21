@@ -141,11 +141,8 @@ const imageController = {
         const newName = req.body.newName
         console.log('renameImage:: User:', investigatorId, 'imageId:', imageId, 'newName:', newName)
         
-        const renameSuccess = await imageOps.renameImage(imageId, newName, investigatorId)
-        // TODO: will hang if not true
-        if (renameSuccess) {
-            res.sendStatus(200)
-        }
+        await imageOps.renameImage(imageId, newName, investigatorId)
+        res.sendStatus(200)
     },
     /** Move image to a different folder/tag. This is virtual and doesn't
      * actually move the file on the file system.
@@ -157,11 +154,8 @@ const imageController = {
         const newParentTagId = req.body.newParentTagId
         console.log('moveImage:: User:', investigatorId, 'imageId:', imageId, 'newParentTagId:', newParentTagId)
         
-        // TODO: will hang if not true
-        const moveSuccess = await imageOps.moveImage(imageId, oldParentTagId, newParentTagId, investigatorId)
-        if (moveSuccess) {
-            res.sendStatus(200)
-        }
+        await imageOps.moveImage(imageId, oldParentTagId, newParentTagId, investigatorId)
+        res.sendStatus(200)
     },
     /** Delete image from file system, then removes image from database. */
     async deleteImage(req, res, next) {
@@ -171,11 +165,8 @@ const imageController = {
         
         const img = await imageOps.getNextImage(imageId)
         await imageController.deleteFile(img.path)
-        const deleteSuccess = await imageOps.deleteImage(imageId, investigatorId)
-        // TODO: will hang if not true
-        if (deleteSuccess) {
-            res.sendStatus(200)
-        }
+        await imageOps.deleteImage(imageId, investigatorId)
+        res.sendStatus(200)
     },
     /** Create a tag/folder. */
     async createTag(req, res, next) {
@@ -194,10 +185,8 @@ const imageController = {
         const tagName = req.body.tagName
         console.log('UpdateTag:: User:', investigatorId, 'tagId:', tagId, 'tagName:', tagName)
         
-        const renameSuccess = await tagOps.renameTag(tagId, tagName, investigatorId)
-        if (renameSuccess) {
-            res.sendStatus(200)
-        }
+        await tagOps.renameTag(tagId, tagName, investigatorId)
+        res.sendStatus(200)
     },
     /** Remove a tag's previous parent and assign a new parent. */
     async moveTag(req, res, next) {
@@ -207,25 +196,19 @@ const imageController = {
         const newParentTagId = req.body.newParentTagId
         console.log('MoveTag:: User:', investigatorId, 'tagId:', tagId, 'parentTagId:', newParentTagId)
         
-        const moveSuccess = tagOps.moveTag(tagId, oldParentTagId, newParentTagId)
-        if (moveSuccess) {
-            res.sendStatus(200)
-        }
+        await tagOps.moveTag(tagId, oldParentTagId, newParentTagId)
+        res.sendStatus(200)
     },
     // TODO: Make sure the tag has now images associated with it before deleteing.
     // This is done on the frontend, but should really be done here too.
     /** Delete a tag. */
     async deleteTag(req, res, next) {
         const investigatorId = req.user.id
-        const tagId = req.body.tagId
-        
+        const tagId = req.body.tagId        
         console.log('DeleteTag:: User:', investigatorId, 'tagId:', tagId)
 
-        const deleteSuccess = tagOps.deleteTag(tagId, investigatorId)
-        // TODO: will hang if not true
-        if (deleteSuccess) {
-            res.sendStatus(200)
-        }
+        await tagOps.deleteTag(tagId, investigatorId)
+        res.sendStatus(200)
     },
     /**
      * Middleware for uploading and saving images.
