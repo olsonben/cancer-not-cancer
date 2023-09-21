@@ -1,3 +1,5 @@
+import * as path from 'path'
+
 // `export function ...` lets us deconstruct the import to get specific functions
 export function isLoggedIn (req, res, next) {
     // Has user ? move on : unauthorized status
@@ -46,6 +48,17 @@ export function isUploader(req, res, next) {
         next()
     } else {
         res.sendStatus(401)
+    }
+}
+
+/** Use to wrap express middleware in generic try/catch. */
+export function asyncHandler(handler) {
+    return async (req, res, next) => {
+        try {
+            await handler(req, res, next)
+        } catch (error) {
+            next(error) // Pass to generic error handler
+        }
     }
 }
 

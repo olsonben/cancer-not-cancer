@@ -4,19 +4,13 @@ const userController = {
     /** Get a list of users. */
     async getUsers(req, res) {
         const adminUserId = req.user.id
-        try {
-            const data = await userOps.getUsers(adminUserId)
-            res.send(data)
-        } catch (err) {
-            res.status(500).send({})
-            // Allow unified error handling by passing the err along.
-            next(err)
-        }
+        const data = await userOps.getUsers(adminUserId)
+        res.send(data)
     },
 
     /** Insert new user via post  */
     async createUser(req, res, next) {
-        console.log("Post /users");
+        console.log("CreateUser::");
 
         // Check permissions
         if (typeof req.body.fullname !== 'string' ||
@@ -42,29 +36,24 @@ const userController = {
             res.status(413).send(message)
         }
 
-        try {
-            const addUserSuccess = await userOps.createUser(
-                req.body.fullname,
-                req.body.email,
-                req.body.password,
-                req.body.permissions.enabled,
-                req.body.permissions.pathologist,
-                req.body.permissions.uploader,
-                req.body.permissions.admin
-            )
+        const addUserSuccess = await userOps.createUser(
+            req.body.fullname,
+            req.body.email,
+            req.body.password,
+            req.body.permissions.enabled,
+            req.body.permissions.pathologist,
+            req.body.permissions.uploader,
+            req.body.permissions.admin
+        )
 
-            if (addUserSuccess) {
-                res.status(200).send(req.body)
-            } else {
-                // No duplicate users
-                res.status(409).send({
-                    message: "Email already exists in database.",
-                    user: req.body
-                })
-            }
-        } catch (err) {
-            // Allow unified error handling by passing the err along.
-            next(err)
+        if (addUserSuccess) {
+            res.status(200).send(req.body)
+        } else {
+            // No duplicate users
+            res.status(409).send({
+                message: "Email already exists in database.",
+                user: req.body
+            })
         }
     }
 }

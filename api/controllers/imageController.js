@@ -2,7 +2,7 @@ import { Router } from 'express'
 import imageOps from '../dbOperations/imageOps.js'
 import tagOps from '../dbOperations/tagOps.js'
 import { uploadImages, removeFile, removeEmptyImageFolders } from '../lib/upload.js' // middleware to handle uploads
-import { getIP, virtualFileSystem as VFS } from '../lib/functions.js' // Helper functions
+import { getIP, virtualFileSystem as VFS, asyncHandler } from '../lib/functions.js' // Helper functions
 
 import * as path from 'path'
 
@@ -22,29 +22,22 @@ const imageController = {
     async nextImage(req, res, next) {
         let imageId = req.query.imageId
         console.log("GET: nextImage", imageId);
-        try {
-            const img = await imageOps.getNextImage(imageId)
-            const pathUrl = new URL(img.path, imageBaseURL)
-            
-            res.send({
-                id: img.id, // imageID
-                url: pathUrl.href
-            })
-        } catch (err) {
-            next(err)
-        }
+
+        const img = await imageOps.getNextImage(imageId)
+        const pathUrl = new URL(img.path, imageBaseURL)
+        
+        res.send({
+            id: img.id, // imageID
+            url: pathUrl.href
+        })
     },
     
     /** Retrieve a queue of next image ids for grading based on taskId. */
     async getNextImageIds(req, res, next) {
         let userId = req.user.id
         let taskId = req.query.taskId
-        try {
-            const data = await imageOps.getNextImageIds(userId, taskId)
-            res.send(data)
-        } catch (err) {
-            res.status(500).send({})
-        }
+        const data = await imageOps.getNextImageIds(userId, taskId)
+        res.send(data)
     },
     
     /** Save successfull image uploads with the uploaders ip */
@@ -52,7 +45,7 @@ const imageController = {
         const ip = getIP(req)
         const date = new Date()
         const masterFolderName = `${date.toISOString().split('.')[0].replace('T', ' ')} Upload`
-        
+
         const folderStructure = VFS.createFolderStructure(req.files, masterFolderName)
         
         try {
@@ -91,8 +84,8 @@ const imageController = {
             }
             
         } catch (error) {
-                // handle errors
-                throw error
+            // TODO: delete files that have been uploaded
+            next(error) // Pass error on to unified error handler.
         }
             
         // TODO: if a file upload fails and there are no files associated with the
@@ -116,14 +109,8 @@ const imageController = {
      */
     async deleteFile(filePath) {
         const absoluteFilePath = path.join(process.env.IMAGES_DIR, filePath)
-        
-        try {
-            await removeFile(absoluteFilePath)
-            removeEmptyImageFolders()
-        } catch (error) {
-            console.log('Error deleting file:', absoluteFilePath)
-            throw error
-        }
+        await removeFile(absoluteFilePath)
+        removeEmptyImageFolders()
     },
         
     // TODO: update the image pipeline to use unified error handler via `next(err)`
@@ -154,14 +141,10 @@ const imageController = {
         const newName = req.body.newName
         console.log('renameImage:: User:', investigatorId, 'imageId:', imageId, 'newName:', newName)
         
-        try {
-            const renameSuccess = await imageOps.renameImage(imageId, newName, investigatorId)
-            if (renameSuccess) {
-                res.sendStatus(200)
-            }
-        } catch (err) {
-            console.log(err)
-            res.status(500).send({})
+        const renameSuccess = await imageOps.renameImage(imageId, newName, investigatorId)
+        // TODO: will hang if not true
+        if (renameSuccess) {
+            res.sendStatus(200)
         }
     },
     /** Move image to a different folder/tag. This is virtual and doesn't
@@ -174,14 +157,10 @@ const imageController = {
         const newParentTagId = req.body.newParentTagId
         console.log('moveImage:: User:', investigatorId, 'imageId:', imageId, 'newParentTagId:', newParentTagId)
         
-        try {
-            const moveSuccess = await imageOps.moveImage(imageId, oldParentTagId, newParentTagId, investigatorId)
-            if (moveSuccess) {
-                res.sendStatus(200)
-            }
-        } catch (err) {
-            console.log(err)
-            res.status(500).send({})
+        // TODO: will hang if not true
+        const moveSuccess = await imageOps.moveImage(imageId, oldParentTagId, newParentTagId, investigatorId)
+        if (moveSuccess) {
+            res.sendStatus(200)
         }
     },
     /** Delete image from file system, then removes image from database. */
@@ -190,16 +169,12 @@ const imageController = {
         const imageId = req.body.imageId
         console.log('deleteImage:: User:', investigatorId, 'imageId:', imageId)
         
-        try {
-            const img = await imageOps.getNextImage(imageId)
-            await deleteFile(img.path)
-            const deleteSuccess = await imageOps.deleteImage(imageId, investigatorId)
-            if (deleteSuccess) {
-                res.sendStatus(200)
-            }
-        } catch (err) {
-            console.log(err)
-            res.status(500).send({})
+        const img = await imageOps.getNextImage(imageId)
+        await imageController.deleteFile(img.path)
+        const deleteSuccess = await imageOps.deleteImage(imageId, investigatorId)
+        // TODO: will hang if not true
+        if (deleteSuccess) {
+            res.sendStatus(200)
         }
     },
     /** Create a tag/folder. */
@@ -207,14 +182,10 @@ const imageController = {
         const investigatorId = req.user.id
         const tagName = req.body.tagName
         console.log('CreateTag:: User:', investigatorId, 'tagName:', tagName)
-        try {
-            const newTagId = await tagOps.createTag(tagName, investigatorId)
-            const newFolder = VFS.createFolder(newTagId, tagName)
-            res.send(newFolder)
-        } catch (err) {
-            console.log(err)
-            res.status(500).send({})
-        }
+
+        const newTagId = await tagOps.createTag(tagName, investigatorId)
+        const newFolder = VFS.createFolder(newTagId, tagName)
+        res.send(newFolder)
     },
     /** Rename a tag/folder name. */
     async updateTag(req, res, next) {
@@ -223,14 +194,9 @@ const imageController = {
         const tagName = req.body.tagName
         console.log('UpdateTag:: User:', investigatorId, 'tagId:', tagId, 'tagName:', tagName)
         
-        try {
-            const renameSuccess = await tagOps.renameTag(tagId, tagName, investigatorId)
-            if (renameSuccess) {
-                res.sendStatus(200)
-            }
-        } catch (err) {
-            console.log(err)
-            res.status(500).send({})
+        const renameSuccess = await tagOps.renameTag(tagId, tagName, investigatorId)
+        if (renameSuccess) {
+            res.sendStatus(200)
         }
     },
     /** Remove a tag's previous parent and assign a new parent. */
@@ -241,14 +207,9 @@ const imageController = {
         const newParentTagId = req.body.newParentTagId
         console.log('MoveTag:: User:', investigatorId, 'tagId:', tagId, 'parentTagId:', newParentTagId)
         
-        try {
-            const moveSuccess = tagOps.moveTag(tagId, oldParentTagId, newParentTagId)
-            if (moveSuccess) {
-                res.sendStatus(200)
-            }
-        } catch (err) {
-            console.log(err)
-            res.status(500).send({})
+        const moveSuccess = tagOps.moveTag(tagId, oldParentTagId, newParentTagId)
+        if (moveSuccess) {
+            res.sendStatus(200)
         }
     },
     // TODO: Make sure the tag has now images associated with it before deleteing.
@@ -259,14 +220,11 @@ const imageController = {
         const tagId = req.body.tagId
         
         console.log('DeleteTag:: User:', investigatorId, 'tagId:', tagId)
-        try {
-            const deleteSuccess = tagOps.deleteTag(tagId, investigatorId)
-            if (deleteSuccess) {
-                res.sendStatus(200)
-            }
-        } catch (err) {
-            console.log(err)
-            res.status(500).send({})
+
+        const deleteSuccess = tagOps.deleteTag(tagId, investigatorId)
+        // TODO: will hang if not true
+        if (deleteSuccess) {
+            res.sendStatus(200)
         }
     },
     /**
@@ -280,10 +238,10 @@ const imageController = {
 // Join all the middleware pieces need for uploading images.
 // This list is order specific.
 imageController.uploadAndSaveImages = Router().use([
-    uploadImages,
-    imageController.saveUploadsToDb,
-    imageController.removeFailedImageSaves,
-    imageController.saveImages
+    asyncHandler(uploadImages),
+    asyncHandler(imageController.saveUploadsToDb),
+    asyncHandler(imageController.removeFailedImageSaves),
+    asyncHandler(imageController.saveImages)
 ])
 
 export default imageController

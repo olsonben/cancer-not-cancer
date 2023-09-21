@@ -16,12 +16,8 @@ const dataController = {
             investigatorId = req.query.user_id
         }
         
-        try {
-            const data = await dataOps.getData(investigatorId, taskId)
-            res.send(data)
-        } catch (err) {
-            res.status(500).send({})
-        }
+        const data = await dataOps.getData(investigatorId, taskId)
+        res.send(data)
     },
     
     /** Return per user overview data for a task, admins can change user id. */
@@ -31,13 +27,9 @@ const dataController = {
         if (req.query.user_id && req.user.permissions.admin) {
             investigatorId = req.query.user_id
         }
-        try {
-            const data = await dataOps.getDataPerUsers(investigatorId, taskId)
-            res.send(data)
-        } catch (err) {
-            console.error(err)
-            res.status(500).send({})
-        }
+
+        const data = await dataOps.getDataPerUsers(investigatorId, taskId)
+        res.send(data)
     },
     
     /** Return per image overview data for a task, admins can change user id. */
@@ -47,13 +39,9 @@ const dataController = {
         if (req.query.user_id && req.user.permissions.admin) {
             investigatorId = req.query.user_id
         }
-        try {
-            const data = await dataOps.getDataPerImages(investigatorId, taskId)
-            res.send(data)
-        } catch (err) {
-            console.error(err)
-            res.status(500).send({})
-        }
+
+        const data = await dataOps.getDataPerImages(investigatorId, taskId)
+        res.send(data)
     }
     
 }

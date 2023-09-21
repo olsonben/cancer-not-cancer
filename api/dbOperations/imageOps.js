@@ -59,7 +59,7 @@ const imageOps = {
      * @param {Set.<String>} folderStructure - Iterable of strings representing folder paths.
      * @param {Number} user_id - The id of the owner of the folders (the investigator).
      * @returns {Object} - Object of all folders created with the folders path as the key
-     * and { name, id, and parentFolderNamen}.
+     * and { name, id, and parentFolderName}.
      */
     async saveFolderStructure(folderStructure, user_id) {
         const createFolderTag = `INSERT INTO tags (name, user_id) VALUES (?, ?)`
