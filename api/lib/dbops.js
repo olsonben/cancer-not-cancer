@@ -78,7 +78,6 @@ class DatabaseOps {
         }
     }
 
-    // TODO: Consider adding error handling here.
     /**
      * Process select queries that return rows as results.
      * @param {string} sql Sql string template - 'Select * From tbl Where id=?'
@@ -145,6 +144,7 @@ class DatabaseOps {
     }
 
     // NOTE: Not tested with sqlite
+    /** Start a database transaction. Returns a TransactionContainer */
     async startTransaction() {
         let connection = null
         try {
@@ -169,6 +169,7 @@ class TransactionContainer {
         this.dbConnection = dbConnection
     }
 
+    /** Run a sql query with associated values. */
     async query(sqlQuery, queryValues) {
         try {
             const [results] = await this.dbConnection.query(sqlQuery, queryValues)
@@ -182,6 +183,7 @@ class TransactionContainer {
         }
     }
 
+    /** Save and commit all preceding queries. */
     async commit() {
         try {
             await this.dbConnection.commit()
