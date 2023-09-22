@@ -132,7 +132,7 @@ app.post('/hotornot', isLoggedIn, isEnabled, isPathologist, async (req, res, nex
 app.use((err, req, res, next) => {
     console.log("Sending status(500). Route error caught...")
     console.error('\x1b[31m', err.stack, '\x1b[0m')
-    res.status(500).send('Something broke!')
+    res.sendStatus(500)
 })
 
 /**********************************************

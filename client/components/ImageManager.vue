@@ -4,7 +4,6 @@
 
         <div class="box">
             Create a folder
-            <!-- <Adder :tags="tags" @update="updateTags"/> -->
              <div class="field-body pl-4">
                 <div class="field is-grouped">
                     <div class="control">
@@ -34,21 +33,9 @@
 </template>
 
 <script>
-const dummyTagsData = {
-    applied: [
-        { id: 1, name: "Tag A" },
-        { id: 2, name: "Tag B" },
-    ],
-    available: [
-        { id: 3, name: "Tag C" },
-        { id: 4, name: "Tag D" },
-    ]
-}
-
 export default {
     data() {
         return {
-            tags: dummyTagsData,
             files: [],
             createTagName: '',
         }
@@ -64,7 +51,7 @@ export default {
             })
             this.files = images
         } catch (error) {
-            console.error(error)
+            console.error('ImageManager fetch:', error.message)
         }
     },
     methods: {
@@ -73,11 +60,6 @@ export default {
         },
         isFolder(file) {
             return !!(file.type == 'tag')
-            // return !!(file.contents && file.contents.length)
-        },
-        updateTags(tagData) {
-            this.tags.applied = tagData.applied
-            this.tags.available = tagData.available
         },
         getFolderById(tagId, contents) {
             let result = contents.find((file) => file.type === 'tag' && file.id === tagId)
@@ -116,16 +98,14 @@ export default {
             }
          },
         async editTagName(tagId, newName) {
-            console.log('editTagName')
-            console.log(tagId, newName)
+            console.log('editTagName:', tagId, newName)
             try {
                 const response = await this.$axios.$post('/images/renameTag', {
                     tagId: tagId,
                     tagName: newName,
                 })
-                console.log(response)
             } catch (error) {
-                console.error(error)
+                console.error('ImageManager editTagName:', error.message)
             }   
         },
         async moveTag(tagId, newParentTagId, oldParentTagId) {
@@ -134,36 +114,37 @@ export default {
                 //  This is primarily because I haven't thought of a good way to do this with the UI.
 
                 // console.log('Move folder:', tagId, 'to folder:', newParentTagId, 'oldParent:', oldParentTagId)
-                let oldie
+                let oldParent
                 if (oldParentTagId === null) {
-                    oldie = { contents: this.files }
+                    oldParent = { contents: this.files }
                 } else {
-                    oldie = this.getFolderById(oldParentTagId, this.files)
+                    oldParent = this.getFolderById(oldParentTagId, this.files)
                 }
 
-                if (oldie === undefined) {
+                if (oldParent === undefined) {
                     // Something is broken if this happens
-                    console.log('old parent not found:', oldParentTagId)
+                    throw new Error('Old parent tag/folder not found.')
                 }
 
-                const indx = oldie.contents.findIndex((file) => file.type === 'tag' && file.id === tagId)
-                const moving = oldie.contents[indx]
-                oldie.contents.splice(indx, 1)
-
-                const dest = this.getFolderById(newParentTagId, this.files)
-                if (dest === undefined) {
-                    console.log('parent not found:', newParentTagId)
+                const newParent = this.getFolderById(newParentTagId, this.files)
+                if (newParent === undefined) {
+                    throw new Error('New parent tag/folder not found.')
                 }
-                dest.contents.unshift(moving)
 
+                // Move tag/folder locally
+                const tagIndex = oldParent.contents.findIndex((file) => file.type === 'tag' && file.id === tagId)
+                const movingTag = oldParent.contents[tagIndex]
+                oldParent.contents.splice(tagIndex, 1)
+                newParent.contents.unshift(movingTag)
+
+                // Save changes remotely
                 const response = await this.$axios.post('images/moveTag', {
                     tagId: tagId,
                     oldParentTagId: oldParentTagId,
                     newParentTagId: newParentTagId
                 })
-
             } catch (error) {
-                console.log(error)
+                console.error('ImageManager moveTag:', error.message)
             }
         },
         async createTag() {
@@ -174,13 +155,13 @@ export default {
                         tagName: this.createTagName,
                     })
                     this.createTagName = ''
-                    console.log('tag created')
                     this.files.unshift(newTagFolder)
                 } else {
+                    // TODO: Add input focus and highlighting to notify user.
                     console.log('You need a tag name.')
                 }
             } catch (error) {
-                console.error(error)
+                console.error('ImageManager createTag:', error.message)
             }
         },
         async deleteTag(tagId) {
@@ -188,9 +169,8 @@ export default {
                 const response = await this.$axios.$post('/images/deleteTag', {
                     tagId: tagId,
                 })
-                // console.log(response)
             } catch (error) {
-                console.error(error)
+                console.error('ImageManager deleteTag:', error.message)
             }
         },
         async editFileName(fileId, newName) {
@@ -201,7 +181,7 @@ export default {
                     newName: newName,
                 })
             } catch (error) {
-                console.error(error)
+                console.error('ImageManager editFileName:', error.message)
             }
         },
         async deleteFile(fileId) {
@@ -211,42 +191,43 @@ export default {
                     imageId: fileId
                 })
             } catch (error) {
-                console.error(error)
+                console.error('ImageManager deleteFile:', error.message)
             }
         },
-        async moveFile(fileId, folderId, oldParentTagId) {
+        async moveFile(fileId, newParentTagId, oldParentTagId) {
             try {
-                console.log('Move file:', fileId, 'to folder:', folderId, 'oldParent:', oldParentTagId)
-                let oldie
+                // console.log('Move file:', fileId, 'to folder:', newParentTagId, 'oldParent:', oldParentTagId)
+                let oldParent
                 if (oldParentTagId === null) {
-                    oldie = { contents: this.files }
+                    oldParent = { contents: this.files }
                 } else {
-                    oldie = this.getFolderById(oldParentTagId, this.files)
+                    oldParent = this.getFolderById(oldParentTagId, this.files)
                 }
 
-                if (oldie === undefined) {
+                if (oldParent === undefined) {
                     // Something is broken if this happens
-                    console.log('old parent not found:', oldParentTagId)
+                    throw new Error('Old parent tag/folder not found.')
                 }
 
-                const indx = oldie.contents.findIndex((file) => file.type !== 'tag' && file.id === fileId)
-                const moving = oldie.contents[indx]
-                oldie.contents.splice(indx, 1)
-
-                const dest = this.getFolderById(folderId, this.files)
-                if (dest === undefined) {
-                    console.log('parent not found:', folderId)
+                const newParent = this.getFolderById(newParentTagId, this.files)
+                if (newParent === undefined) {
+                    throw new Error('New parent tag/folder not found.')
                 }
 
-                dest.contents.unshift(moving)
+                // Move file locally
+                const fileIndex = oldParent.contents.findIndex((file) => file.type !== 'tag' && file.id === fileId)
+                const movingFile = oldParent.contents[fileIndex]
+                oldParent.contents.splice(fileIndex, 1)
+                newParent.contents.unshift(movingFile)
 
+                // Save move remotely
                 const response = await this.$axios.$post('images/move', {
                     imageId: fileId,
                     oldParentTagId: oldParentTagId,
-                    newParentTagId: folderId
+                    newParentTagId: newParentTagId
                 })
             } catch (error) {
-                console.error(error)
+                console.error('ImageManager moveFile:', error.message)
             }
         }
     }
@@ -254,21 +235,5 @@ export default {
 </script>
 
 <style lang='scss'>
-// .image-manager {
-    
-//     & ul {
-//         position: relative;
-//     }
 
-//     & li a {
-
-//     }
-
-//     & li a::after {
-//         content: "--";
-//         position: absolute;
-//         right: -10px;
-//     }
-
-// }
 </style>
