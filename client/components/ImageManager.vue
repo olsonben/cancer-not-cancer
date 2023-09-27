@@ -4,16 +4,17 @@
 
         <div class="box">
             Create a folder
-             <div class="field-body pl-4">
+             <div class="field-body pl-4 pb-2">
                 <div class="field is-grouped">
                     <div class="control">
-                        <input class="input is-small" type="text" placeholder="Folder Name" v-model="createTagName">
+                        <input ref="folderName" class="input is-small" :class="{ 'blink': attention }" type="text" placeholder="Folder Name" v-model="createTagName">
                     </div>
                     <div class="control">
-                        <button class="button is-small is-success" type="button" @click="createTag">+</button>
+                        <button class="button is-small is-success has-text-weight-bold" type="button" @click="createTag">+</button>
                     </div>
                 </div>
             </div>
+            <!-- TODO: This is essentially the ImagePicker can that component be used here? -->
             <div class="menu">
                 <p class="menu-label">Images Folders: Drag files and folder where you want to move them.</p>
                 <ul class="menu-list">
@@ -38,6 +39,7 @@ export default {
         return {
             files: [],
             createTagName: '',
+            attention: false
         }
     },
     async fetch() {
@@ -149,7 +151,6 @@ export default {
         },
         async createTag() {
             try {
-                // TODO: Look into prevent no name tag creation in the DB.
                 if (this.createTagName !== '') {
                     const newTagFolder = await this.$axios.$post('/images/tag', {
                         tagName: this.createTagName,
@@ -157,8 +158,14 @@ export default {
                     this.createTagName = ''
                     this.files.unshift(newTagFolder)
                 } else {
-                    // TODO: Add input focus and highlighting to notify user.
-                    console.log('You need a tag name.')
+                    // focus input
+                    this.$refs.folderName.focus()
+                    // add class that has animation to bring attention
+                    this.attention = true
+                    // remove animation class for future attention needs
+                    setTimeout(() => {
+                        this.attention = false
+                    }, 750);
                 }
             } catch (error) {
                 console.error('ImageManager createTag:', error.message)
@@ -175,7 +182,6 @@ export default {
         },
         async editFileName(fileId, newName) {
             try {
-                console.log('Edit file name:', fileId, newName)
                 const response = await this.$axios.$post('/images/rename', {
                     imageId: fileId,
                     newName: newName,
@@ -186,7 +192,7 @@ export default {
         },
         async deleteFile(fileId) {
             try {
-                console.log('Delete file:', fileId)
+                // TODO: Add Unlock button that warns users.
                 const response = await this.$axios.$post('/images/delete', {
                     imageId: fileId
                 })
@@ -235,5 +241,32 @@ export default {
 </script>
 
 <style lang='scss'>
+input:focus {
+    // color: hsl(199, 49%, 46%);
+    border-color: $primary;
+    box-shadow: 0 0 0 0.125em rgba(241, 241, 241, 0.25);
+}
 
+.blink {
+    animation: blink 0.5s 1;
+}
+
+@keyframes blink {
+    0% {
+        scale: 1.1;
+        border-color: $warning;
+    }
+    50% {
+        scale: 1.0;
+        border-color: $link;
+    }
+    51% {
+        scale: 1.1;
+        border-color: $warning;
+    }
+    100% {
+        scale: 1.0;
+        border-color: $link;
+    }
+}
 </style>

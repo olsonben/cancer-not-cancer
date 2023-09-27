@@ -43,7 +43,7 @@
 </template>
 
 <script>
-// value == folderObject: {
+// EXAMPLE 'value' DATA (folderObject): {
 //     id: 0,
 //     name: 'folder name',
 //     contents: [array of files and folders],
@@ -89,7 +89,6 @@ export default {
             return `tag-${this.value.id}`
         },
         deletable() {
-            // console.log('deletable:', this.value.name, (this.editable && this.value.contents.length === 0))
             return this.editable && this.value.contents.length === 0
         },
         draggableConfig() {
@@ -130,7 +129,6 @@ export default {
             return (file.type === 'tag')
         },
         setNewName() {
-            console.log('Setting New Name')
             const changeData = {
                 eventType: 'folderName',
                 folderId: this.value.id,
@@ -149,11 +147,10 @@ export default {
             this.$emit('change', changeData)
         },
         onDrop(event) {
-            console.log('Drop Event on:', this.value.id, this.value.name)
             const { data, parentTagId } = JSON.parse(event.dataTransfer.getData('application/json'))
             if (data.type == 'tag') {
-                if (data.id !== this.value.id) {
-                    // console.log(`Move folder: ${data.name} into ${this.value.name}`)
+                // A folder was dropped on this folder.
+                if (data.id !== this.value.id) { // if not self
                     const changeData = {
                         eventType: 'folderMove',
                         folderId: data.id,
@@ -161,12 +158,10 @@ export default {
                         oldParentTagId: parentTagId
                     }
                     this.$emit('change', changeData)
-                } else {
-                    // console.log('Can not add folder to self.')
-                }
+                } 
             } else {
-                // console.log(`Move file: ${data.name} into ${this.value.name}`)
-                if (parentTagId !== this.value.id) {   
+                // A file was dropped on this folder.
+                if (parentTagId !== this.value.id) {  // if file not already in this folder  
                     const changeData = {
                         eventType: 'fileMove',
                         fileId: data.id,
@@ -174,8 +169,6 @@ export default {
                         oldParentTagId: parentTagId
                     }
                     this.$emit('change', changeData)
-                } else {
-                    // console.log('File already in this folder.')
                 }
             }
             this.dragOverStyle = false
@@ -183,8 +176,8 @@ export default {
         dragEnter(event) {
             event.preventDefault()
             const { data } = JSON.parse(event.dataTransfer.getData('application/json'))
-            if (data.type === 'img' || data.id != this.value.id) {
-
+            // Add '+' icon to indicate droppable area.
+            if (data.type === 'img' || data.id != this.value.id) { // if dragged item is not self
                 this.dragOverStyle = true
             }
         },
@@ -193,6 +186,7 @@ export default {
             this.dragOverStyle = false
         },
         changeHandler(changeData) {
+            // We catch incoming change events. Make necessary changes before passing change event up
             if (changeData.eventType === 'fileDelete') {
                 this.value.contents = this.value.contents.filter((file) => {
                     return !(file.type == 'img' && file.id == changeData.fileId)

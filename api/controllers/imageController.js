@@ -172,11 +172,16 @@ const imageController = {
     async createTag(req, res, next) {
         const investigatorId = req.user.id
         const tagName = req.body.tagName
-        console.log('CreateTag:: User:', investigatorId, 'tagName:', tagName)
-
-        const newTagId = await tagOps.createTag(tagName, investigatorId)
-        const newFolder = VFS.createFolder(newTagId, tagName)
-        res.send(newFolder)
+        if (tagName === '') {
+            // A tag name must be provided.
+            res.sendStatus(400)
+        } else {
+            console.log('CreateTag:: User:', investigatorId, 'tagName:', tagName)
+            
+            const newTagId = await tagOps.createTag(tagName, investigatorId)
+            const newFolder = VFS.createFolder(newTagId, tagName)
+            res.send(newFolder)
+        }
     },
     /** Rename a tag/folder name. */
     async updateTag(req, res, next) {

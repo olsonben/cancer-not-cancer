@@ -66,11 +66,19 @@ export default {
     },
     async fetch() {
         try {
-            const observers = await this.$axios.$get('/tasks/observers', {
-                params: {
-                    task_id: this.task.id
-                }
-            })
+            const [observers, images] = await Promise.all([
+                this.$axios.$get('/tasks/observers', {
+                    params: {
+                        task_id: this.task.id
+                    }
+                }),
+                this.$axios.$get('/tasks/images', {
+                    params: {
+                        task_id: this.task.id
+                    }
+                })
+            ])
+            
             for (const user of observers) {
                 if (user.applied) {
                     this.observers.applied.push(user)
@@ -78,19 +86,11 @@ export default {
                     this.observers.available.push(user)
                 }
             }
-            const images = await this.$axios.$get('/tasks/images', {
-                params: {
-                    task_id: this.task.id
-                }
-            })
+            
             this.root.contents = images
         } catch (error) {
             console.error(error)
         }
-    },
-    computed: {
-    },
-    watch: {
     },
     methods: {
         async saveChanges() {
@@ -116,12 +116,13 @@ export default {
                 this.task.short_name = this.localTask.short_name
                 this.task.prompt = this.localTask.prompt
 
+                // Emit save event to update stats in task table.
                 this.$emit('save', {
                     observers: this.observers.applied.length,
                     images: selectedImages.length
                 })
             } catch (err) {
-                console.log(err)
+                console.error(err)
             }
         },
         cancelChanges() {

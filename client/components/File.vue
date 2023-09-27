@@ -67,7 +67,6 @@ export default {
     },
     methods: {
         setNewName() {
-            console.log('Setting New File Name')
             const extension = this.value.name.substring(this.value.name.lastIndexOf('.'))
 
             if (!this.newName.endsWith(extension)) {
