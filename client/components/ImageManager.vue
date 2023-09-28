@@ -43,18 +43,7 @@ export default {
         }
     },
     async fetch() {
-        try {
-            // TODO: change this over to an images/all request.
-            // The task_id is arbitrary.
-            const images = await this.$axios.$get('/tasks/images', {
-                params: {
-                    task_id: 14
-                }
-            })
-            this.files = images
-        } catch (error) {
-            console.error('ImageManager fetch:', error.message)
-        }
+        this.refreshData()
     },
     methods: {
         fileKey(file) {
@@ -178,6 +167,7 @@ export default {
                 })
             } catch (error) {
                 console.error('ImageManager deleteTag:', error.message)
+                this.refreshData()
             }
         },
         async editFileName(fileId, newName) {
@@ -234,6 +224,20 @@ export default {
                 })
             } catch (error) {
                 console.error('ImageManager moveFile:', error.message)
+            }
+        },
+        async refreshData() {
+            try {
+                // TODO: change this over to an images/all request.
+                // The task_id is arbitrary.
+                const images = await this.$axios.$get('/tasks/images', {
+                    params: {
+                        task_id: 14
+                    }
+                })
+                this.files = images
+            } catch (error) {
+                console.error('ImageManager fetch:', error.message)
             }
         }
     }

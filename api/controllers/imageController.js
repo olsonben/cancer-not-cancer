@@ -113,7 +113,6 @@ const imageController = {
         removeEmptyImageFolders()
     },
         
-    // TODO: update the image pipeline to use unified error handler via `next(err)`
     /** Filters file upload output to relavent data only (Return to sender the
      * status of the upload). */
     async saveImages(req, res, next) {
@@ -212,8 +211,14 @@ const imageController = {
         const tagId = req.body.tagId        
         console.log('DeleteTag:: User:', investigatorId, 'tagId:', tagId)
 
-        await tagOps.deleteTag(tagId, investigatorId)
-        res.sendStatus(200)
+        const success = await tagOps.deleteTag(tagId, investigatorId)
+        if (success) {
+            res.sendStatus(200)
+        } else {
+            // tag not deleted, probably because there was other images or tags dependent on the tag
+            console.log('DeleteTag - FAILED')
+            res.sendStatus(400)
+        }
     },
     /**
      * Middleware for uploading and saving images.

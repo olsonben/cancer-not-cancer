@@ -51,9 +51,20 @@ const tagOps = {
      * @param {Number} user_id - Id of tag owner
      */
     async deleteTag(tagId, user_id) {
+        const hasDependencies = `SELECT 1 AS result
+            WHERE
+            EXISTS (SELECT 1 FROM image_tags WHERE image_tags.tag_id = ?)
+            OR
+            EXISTS (SELECT 1 FROM tag_relations WHERE tag_relations.parent_tag_id = ?)`
         const deleteTag = `DELETE FROM tags WHERE id = ? AND user_id = ?`
 
-        await dbOps.execute(deleteTag, [tagId, user_id])
+        const result = await dbOps.select(hasDependencies, [tagId, tagId])
+        if (result.length === 0) { // No dependencies
+            await dbOps.execute(deleteTag, [tagId, user_id])
+            return true
+        } else {
+            return false
+        }
     }
 }
 
