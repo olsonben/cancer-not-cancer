@@ -29,7 +29,7 @@ const port = process.env.PORT || 5000;
 /******************
  * DATABASE Methods
  ******************/
-import { addRating } from './dbOperations/database.js'
+import dataOps from './dbOperations/dataOps.js'
 
 import taskRoutes from './routes/tasks.js'
 import userRoutes from './routes/users.js'
@@ -112,19 +112,18 @@ app.post('/hotornot', isLoggedIn, isEnabled, isPathologist, async (req, res, nex
     }
     
     try {
-        const insertSuccess = await addRating(
+        await dataOps.addRating(
             req.user.id,
             req.body.id,
             req.body.rating,
             req.body.comment,
             getIP(req),
-            req.body.taskId)
+            req.body.taskId
+        )
 
-        if (insertSuccess) {
-            res.sendStatus(200)
-        }
+        res.sendStatus(200)
     } catch (err) {
-        next(err)
+        next(err) // Pass error onto unified error handler.
     }
 })
 
@@ -133,7 +132,7 @@ app.post('/hotornot', isLoggedIn, isEnabled, isPathologist, async (req, res, nex
 app.use((err, req, res, next) => {
     console.log("Sending status(500). Route error caught...")
     console.error('\x1b[31m', err.stack, '\x1b[0m')
-    res.status(500).send('Something broke!')
+    res.sendStatus(500)
 })
 
 /**********************************************

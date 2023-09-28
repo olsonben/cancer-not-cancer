@@ -29,7 +29,11 @@
                             </div>
                         </div>
                     </div>
-                   
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <p class="help is-size-6">After creating a new task be sure to edit the task in the table below to add observers and images.</p>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="py-2">

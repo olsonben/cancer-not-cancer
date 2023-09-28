@@ -1,7 +1,7 @@
 <template>
     <div>
         <!-- Main upload stuff -->
-        <section class='section'>
+        <section class='section pt-3 pb-3'>
             <h1 class='title'>Upload images</h1>
 
             <!-- Upload box -->
@@ -66,6 +66,9 @@
                 File {{ file.originalname }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
             </div>
         </template>
+        <div class="section pt-3">
+            <ImageManager :key="imageManagerKey"/>
+        </div>
     </div>
 </template>
 
@@ -87,7 +90,8 @@ export default {
 
             // Notification stuff
             submittedFiles: {},
-            notificationTime: "10000" // 10 sec in ms
+            notificationTime: "10000", // 10 sec in ms
+            imageManagerKey: 1 // we can force and update by incrementing this on upload complete
         }
     },
 
@@ -160,6 +164,7 @@ export default {
             // Add the files array object
             this.files.forEach((file, index) => {
                 console.log(file)
+                console.log(this.$config.uploadSizeLimit)
                 if (file.size > this.$config.uploadSizeLimit) {
                     console.error(`${file.name} is too large. MAX_BYTES: ${this.$config.uploadSizeLimit}`)
                     this.appendSubmittedFile(file.name, {
@@ -193,6 +198,7 @@ export default {
 
                         clearNotification(file.filename)
                     }
+                    this.imageManagerKey += 1
                 } else {
                     console.log('No Files to Upload')
                 }

@@ -4,15 +4,24 @@ import dbOps from './dbConnection.js'
 // TASK BASED DATABASE METHODS
 // ---------------------------------
 const taskOps = {
+    /**
+     * Get all tasks owned by a user.
+     * @param {Number} userId - Task owner id
+     * @returns {Array.<Object>} - An array of task object {id, prompt, short_name}
+     */
     async getTasks(userId) {
         const query = `SELECT id, prompt, short_name
                     FROM tasks
                     WHERE investigator = ?`
         const rows = await dbOps.select(query, [userId])
-
         return rows
     },
 
+    /**
+     * Get all task assigned to a user/observer.
+     * @param {Number} userId - Observer's id
+     * @returns {Array.<Object>} - An array of assign task objects {id, short_name, prompt}
+     */
     async getTasked(userId) {
         const query = `SELECT tasks.id as id, tasks.short_name as short_name, tasks.prompt as prompt
                     FROM observers
@@ -20,49 +29,57 @@ const taskOps = {
                     WHERE observers.user_id = ?
                     ORDER BY tasks.id`
         const rows = await dbOps.select(query, [userId])
-
         return rows
     },
-    
+    /**
+     * Create a new task/prompt.
+     * @param {Number} userId - Id of user creating task.
+     * @param {String} short_name - Name of the task
+     * @param {String} prompt - Question to be displayed to observers
+     * @returns {Number} - Newly created task id
+     */
     async createTask(userId, short_name, prompt) {
         const query = `INSERT INTO tasks (short_name, prompt, investigator) VALUES (?, ?, ?);`
-        try {
-            const results = await dbOps.executeWithResults(query, [short_name, prompt, userId])
-            return results.insertId
-        } catch (err) {
-            throw (err)
-        }
+        const results = await dbOps.executeWithResults(query, [short_name, prompt, userId])
+        return results.insertId
 
     },
-
+    /**
+     * Change a task's name or prompt.
+     * @param {Number} userId - Id of task owner
+     * @param {Number} taskId - Id of task to update
+     * @param {String} short_name - Task name
+     * @param {String} prompt - Question to be displayed to observers
+     */
     async updateTask(userId, taskId, short_name, prompt) {
         const query = `UPDATE tasks
                     SET short_name = ?,
                         prompt = ?
                     WHERE investigator = ?
                         AND id = ?`
-        try {
-            await dbOps.execute(query, [short_name, prompt, userId, taskId])
-            return true
-        } catch (err) {
-            throw (err)
-        }
-
+        await dbOps.execute(query, [short_name, prompt, userId, taskId])
     },
-
+    /**
+     * Delete a task by id.
+     * @param {Number} userId - Task owner id
+     * @param {Number} taskId - Id of task to be deleted
+     */
     async deleteTask(userId, taskId) {
         const query = `DELETE FROM tasks WHERE tasks.investigator = ? AND tasks.id = ?;`
-        try {
-            await dbOps.execute(query, [userId, taskId])
-            return true
-        } catch (err) {
-            throw (err)
-        }
+        await dbOps.execute(query, [userId, taskId])
     },
 
-    // Gets existing tasks, then collects image counts per task, observer count,
-    // and sums the progress of all the observers for 'overall_progress' per task.
+    /**
+     * Get information to build task table. Task details which include progress,
+     * image count, and observer count.
+     * @param {Number} userId - task's owner id (investigator's id)
+     * @returns {Array.<Object>} - {id, short_name, prompt, image_count,
+     * observer_count, progress}
+     */
     async getTaskTable(userId) {
+        // Gets existing tasks, then collects image counts per task, observer count,
+        // and sums the progress of all the observers for 'overall_progress' per task.
+
         // TODO: I think this can probably be cleaned up a little
         // getting image counts should only require the image_tags table,
         // and there maybe other redundant joins. For now it works!
@@ -109,9 +126,14 @@ const taskOps = {
 
         const rows = await dbOps.select(query, [userId, userId, userId])
         return rows
-
     },
 
+    /**
+     * Get a task's current progress information.
+     * @param {Number} userId - task's owner id
+     * @param {Number} taskId - task's id
+     * @returns {Object} - {gradings, images, observers}
+     */
     async getQuickTaskProgress(userId, taskId) {
         const query = `SELECT gradings.total / (images.total* observers.total) AS progress
         FROM (
@@ -134,6 +156,13 @@ const taskOps = {
         return rows[0]
     },
 
+    /**
+     * Get assigned and unassigned observers for a task. A 1 for applied means
+     * that observer has been assigned to the task.
+     * @param {Number} userId - not used
+     * @param {Number} taskId - task's id
+     * @returns {Array.<Object>} - {id, name, applied}
+     */
     async getObservers(userId, taskId) {
         const query = `SELECT
               users.id,
@@ -149,68 +178,32 @@ const taskOps = {
 
     },
 
-    // Update observers using transactions, if something fails nothing will be committed.
+    /**
+     * Assign observers to task.
+     * @param {Number} userId - not used
+     * @param {Number} taskId - id of task to update observers
+     * @param {Array.<Number>} observerIds - Array of user ids to assign to task.
+     */
     async updateObservers(userId, taskId, observerIds) {
-        const allQueries = []
-        const allValues = []
+        const deleteObserversForTask = `DELETE FROM observers WHERE task_id = ?`
+        const addObserversToTask = `INSERT INTO observers (task_id, user_id) VALUES ?`
 
         const observerRowValues = observerIds.map((id) => [taskId, id])
 
-        allQueries.push(`DELETE FROM observers WHERE task_id = ?`)
-        allValues.push([taskId])
-        if (observerRowValues && observerRowValues.length) {
-            allQueries.push(`INSERT INTO observers (task_id, user_id) VALUES ?`)
-            allValues.push([observerRowValues,])
-        }
-
-        try {
-            await dbOps.executeTransactions(allQueries, allValues)
-            return true
-        } catch (err) {
-            throw (err)
-        }
+        const transaction = await dbOps.startTransaction()
+        await transaction.query(deleteObserversForTask, [taskId])
+        await transaction.query(addObserversToTask, [observerRowValues,])
+        await transaction.commit()
     },
 
-    // get tags all tags owned, mark tags associated with task as applied
-    async getTags(userId, taskId) {
-        const query = `SELECT
-              tags.id,
-              tags.name as name,
-              CASE WHEN task_tags.task_id is NULL THEN 0 ELSE 1 END applied
-            FROM tags
-              LEFT JOIN task_tags ON task_tags.tag_id = tags.id AND task_id = ?
-            WHERE tags.user_id = ?
-            ORDER BY tags.id`
-
-        const rows = await dbOps.select(query, [taskId, userId])
-        return rows
-
-    },
-
-    // Update task_tags using transactions, if something fails nothing will be committed.
-    async updateTaskTags(userId, taskId, tagIds) {
-        const allQueries = []
-        const allValues = []
-
-        const taskTagRowValues = tagIds.map((id) => [taskId, id])
-
-        allQueries.push(`DELETE FROM task_tags WHERE task_id = ?`)
-        allValues.push([taskId])
-        if (taskTagRowValues && taskTagRowValues.length) {
-            allQueries.push(`INSERT INTO task_tags (task_id, tag_id) VALUES ?`)
-            allValues.push([taskTagRowValues,])
-        }
-
-        try {
-            await dbOps.executeTransactions(allQueries, allValues)
-            return true
-        } catch (err) {
-            throw (err)
-        }
-    },
-
-    // get all images associated with a user and mark images that
-    // are selected for the taskId
+    /**
+     * Get all images associated with a user and mark images that are selected
+     * for the taskId
+     * @param {Number} userId - Image owner id
+     * @param {Number} taskId - Id of task to note for image selection
+     * @returns {Array.<Object>} - [{tag_id, tag_name, parent_tag_id, parent_tag_name,
+     * image_id, hash, owner_id, original_name, selected}]
+     */
     async getImages(userId, taskId) {
 
         const query = `SELECT 
@@ -238,30 +231,24 @@ const taskOps = {
 
         const rows = await dbOps.select(query, [taskId, userId])
         return rows
-
     },
 
-    // Save a list of image ids for a specified task
+    /**
+     * Save a list of image ids for a specified task.
+     * @param {Number} userId - not used
+     * @param {Number} taskId - Id of task to associate images to
+     * @param {Array.<Number>} imageIds - Array of image ids apply to task.
+     */
     async setTaskImages(userId, taskId, imageIds) {
-        const allQueries = []
-        const allValues = []
+        const deleteImagesForTask = `DELETE FROM task_images WHERE task_id = ?`
+        const addImagesToTask = `INSERT INTO task_images (task_id, image_id) VALUES ?`
 
         const taskImageRowValues = imageIds.map((id) => [taskId, id])
 
-        allQueries.push(`DELETE FROM task_images WHERE task_id = ?`)
-        allValues.push([taskId])
-        if (taskImageRowValues && taskImageRowValues.length) {
-            allQueries.push(`INSERT INTO task_images (task_id, image_id) VALUES ?`)
-            allValues.push([taskImageRowValues,])
-        }
-
-        try {
-            await dbOps.executeTransactions(allQueries, allValues)
-            return true
-        } catch (err) {
-            throw (err)
-        }
-
+        const transaction = await dbOps.startTransaction()
+        await transaction.query(deleteImagesForTask, [taskId])
+        await transaction.query(addImagesToTask, [taskImageRowValues,])
+        await transaction.commit()
     }
 }
 

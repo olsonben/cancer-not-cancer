@@ -34,16 +34,16 @@
 </template>
 
 <script>
-const dummyTagsData = {
-    applied: [
-        { id: 1, name: "Tag A" },
-        { id: 2, name: "Tag B" },
-    ],
-    available: [
-        { id: 3, name: "Tag C" },
-        { id: 4, name: "Tag D" },
-    ]
-}
+// const dummyTagsData = {
+//     applied: [
+//         { id: 1, name: "Tag A" },
+//         { id: 2, name: "Tag B" },
+//     ],
+//     available: [
+//         { id: 3, name: "Tag C" },
+//         { id: 4, name: "Tag D" },
+//     ]
+// }
 
 export default {
     props: ['tags'],

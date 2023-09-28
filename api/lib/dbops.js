@@ -78,7 +78,6 @@ class DatabaseOps {
         }
     }
 
-    // TODO: Consider adding error handling here.
     /**
      * Process select queries that return rows as results.
      * @param {string} sql Sql string template - 'Select * From tbl Where id=?'
@@ -101,8 +100,6 @@ class DatabaseOps {
     async execute(sql, values) {
         const db = await this.db
         await db._execute(sql, values)
-        
-        return true
     }
 
     /**
@@ -117,7 +114,7 @@ class DatabaseOps {
         return results
     }
 
-    // NOTE: Not tested with sqlite
+    // NOTE: No longer used but keeping for reference
     // https://github.com/sidorares/node-mysql2/issues/384#issuecomment-673726520
     async executeTransactions(sqlQueries, queryValues) {
         let conn = null;
@@ -144,6 +141,59 @@ class DatabaseOps {
         }
     }
 
+    // NOTE: Not tested with sqlite
+    /** Start a database transaction. Returns a TransactionContainer */
+    async startTransaction() {
+        let connection = null
+        try {
+            const db = await this.db
+            connection = await db.getConnection()
+            await connection.beginTransaction()
+            const transaction = new TransactionContainer(connection)
+            return transaction
+        } catch (error) {
+            if (connection) connection.release()
+            throw error
+        }
+    }
+
+}
+
+/**
+ * Contains a mysql transaction that has already been started.
+ */
+class TransactionContainer {
+    constructor(dbConnection) {
+        this.dbConnection = dbConnection
+    }
+
+    /** Run a sql query with associated values. */
+    async query(sqlQuery, queryValues) {
+        try {
+            const [results] = await this.dbConnection.query(sqlQuery, queryValues)
+            return results
+        } catch (error) {
+            if (this.dbConnection) {
+                await this.dbConnection.rollback()
+                await this.dbConnection.release()
+            }
+            throw error
+        }
+    }
+
+    /** Save and commit all preceding queries. */
+    async commit() {
+        try {
+            await this.dbConnection.commit()
+        } catch (error) {
+            if (this.dbConnection) await this.dbConnection.rollback()
+            throw error
+        } finally {
+            if (this.dbConnection) {
+                this.dbConnection.release()
+            }
+        }
+    }
 }
 
 export { DatabaseOps }

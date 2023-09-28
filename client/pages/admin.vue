@@ -6,7 +6,7 @@
                 <li><nuxt-link v-if='this.$store.state.user.permissions.uploader' to='/admin/images'>Images</nuxt-link></li>
                 <li><nuxt-link v-if='this.$store.state.user.permissions.admin' to='/admin/users'>Users</nuxt-link></li>
                 <li><nuxt-link v-if='this.$store.state.user.permissions.uploader' to='/admin/tasks'>Tasks</nuxt-link></li>
-                <li><nuxt-link v-if='this.$store.state.user.permissions.uploader' to='/admin/dataview'>Data</nuxt-link></li>
+                <li><nuxt-link v-if='this.$store.state.user.permissions.uploader' to='/admin/dataview'>Stats</nuxt-link></li>
             </ul>
         </div>
         <nuxt-child class='nuxt-child'/>

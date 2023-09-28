@@ -55,10 +55,6 @@ export default {
                 applied: [],
                 available: [],
             },
-            tags: {
-                applied: [],
-                available: [],
-            },
             root: {
                 id: 0,
                 name: 'root',
@@ -70,11 +66,19 @@ export default {
     },
     async fetch() {
         try {
-            const observers = await this.$axios.$get('/tasks/observers', {
-                params: {
-                    task_id: this.task.id
-                }
-            })
+            const [observers, images] = await Promise.all([
+                this.$axios.$get('/tasks/observers', {
+                    params: {
+                        task_id: this.task.id
+                    }
+                }),
+                this.$axios.$get('/tasks/images', {
+                    params: {
+                        task_id: this.task.id
+                    }
+                })
+            ])
+            
             for (const user of observers) {
                 if (user.applied) {
                     this.observers.applied.push(user)
@@ -82,38 +86,18 @@ export default {
                     this.observers.available.push(user)
                 }
             }
-            const tags = await this.$axios.$get('/tasks/tags', {
-                params: {
-                    task_id: this.task.id
-                }
-            })
-            for (const tag of tags) {
-                if (tag.applied) {
-                    this.tags.applied.push(tag)
-                } else {
-                    this.tags.available.push(tag)
-                }
-            }
-            const images = await this.$axios.$get('/tasks/images', {
-                params: {
-                    task_id: this.task.id
-                }
-            })
+            
             this.root.contents = images
         } catch (error) {
             console.error(error)
         }
-    },
-    computed: {
-    },
-    watch: {
     },
     methods: {
         async saveChanges() {
             try {
                 const selectedImages = this.$common.getSelectedFiles(this.root)
 
-                const [response, observerResponse, tagsResponse, imageResponse] = await Promise.all([
+                const [response, observerResponse, imageResponse] = await Promise.all([
                     this.$axios.$post('/tasks/update', {
                         id: this.localTask.id,
                         short_name: this.localTask.short_name,
@@ -123,10 +107,6 @@ export default {
                         task_id: this.localTask.id,
                         observerIds: JSON.stringify(this.observers.applied.map(user => user.id)),
                     }),
-                    this.$axios.$post('/tasks/tags', {
-                        task_id: this.localTask.id,
-                        tagIds: JSON.stringify(this.tags.applied.map(tag => tag.id)),
-                    }),
                     this.$axios.$post('/tasks/images', {
                         task_id: this.localTask.id,
                         imageIds: JSON.stringify(selectedImages),
@@ -135,13 +115,14 @@ export default {
 
                 this.task.short_name = this.localTask.short_name
                 this.task.prompt = this.localTask.prompt
-                // TODO: recalc image count on save of tags
+
+                // Emit save event to update stats in task table.
                 this.$emit('save', {
                     observers: this.observers.applied.length,
                     images: selectedImages.length
                 })
             } catch (err) {
-                console.log(err)
+                console.error(err)
             }
         },
         cancelChanges() {
@@ -151,10 +132,6 @@ export default {
         updateObservers(observersData) {
             this.observers.applied = observersData.applied
             this.observers.available = observersData.available
-        },
-        updateTags(tagsData) {
-            this.tags.applied = tagsData.applied
-            this.tags.available = tagsData.available
         },
         report() {
             console.log('Files selected')
