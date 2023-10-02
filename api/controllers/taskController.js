@@ -79,44 +79,63 @@ const taskController = {
         const images = await taskOps.getImages(investigatorId, taskId)
 
         // build file structure
-        const folderMap = new Map()
-        const topFolders = new Set()
-        const folderContents = new Map()
+        const folderMap = new Map() // keep track of all folders
+        const topAncestorFolders = new Set() // keep track of the top most folders
+        const folderContents = new Map() // used to keep track of all folder's content
         for (const image of images) {
-            const tagId = image['tag_id']
-            const parentTagId = image['parent_tag_id']
+            // Find or create an images containing folders
+            // -------------------------------------------
+            const tagId = image['tag_id'] // containing folder id
+            const parentTagId = image['parent_tag_id'] // containing folder's parent folder id
 
+            // has the containing folder been created before?
             if (!folderMap.has(tagId)) {
+                // NO --> lets create the folder and keep track of it and it's contents
                 folderMap.set(tagId, VFS.createFolder(tagId, image['tag_name']))
                 folderContents.set(tagId, new Set())
             }
 
+            // get the containing folder object
             const folder = folderMap.get(tagId)
 
+            // does the containing folder have a parent folder?
             if (parentTagId !== null) {
+                // YES -> has the containing folder's parent folder been created?
                 if (!folderMap.has(parentTagId)) {
+                    // NO -> lets create it and keep track of it and it's contents
                     folderMap.set(parentTagId, VFS.createFolder(parentTagId, image['parent_tag_name']))
                     folderContents.set(parentTagId, new Set())
                 }
 
+                // get the contianing folder's parent folder and contents
                 const parentFolder = folderMap.get(parentTagId)
                 const parentFolderContents = folderContents.get(parentTagId)
 
+                // does the containing folder's parent folder already contain the containing folder?
                 if (!parentFolderContents.has(folder)) {
+                    // NO -> lets add it to the parent folder and keep track of it
                     parentFolder.contents.push(folder)
                     parentFolderContents.add(folder)
                 }
             } else {
-                topFolders.add(folder)
+                // NO -> containing folder doesn't have a parent folder meaning it is a topAncestorFolder
+                topAncestorFolders.add(folder)
             }
 
+            // With all the folders managed, we can add the image to it's containing folder
+            // ----------------------------------------------------------------------------
+            
+            // is this image actually an image?
             if (image['image_id'] !== null) {
+                // Yes -> create a file object and add it to the containing folder
                 const file = VFS.createFile(image['image_id'], image['original_name'], !!image['selected'])
                 folder.contents.push(file)
             }
         }
 
-        const fileArray = Array.from(topFolders)
+        // Since the folders containing eachother heirachically we only need to
+        // return the topAncestorFolders(the folders with no parents)
+        const fileArray = Array.from(topAncestorFolders)
         res.send(fileArray)
     },
     /** Assign select images to a task. */
