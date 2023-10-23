@@ -18,7 +18,7 @@ const taskOps = {
     },
 
     /**
-     * Get all task assigned to a user/observer.
+     * Get all tasks assigned to a user/observer.
      * @param {Number} userId - Observer's id
      * @returns {Array.<Object>} - An array of assign task objects {id, short_name, prompt}
      */

@@ -558,16 +558,16 @@ $no-cancer-color: #ff6184;
     .image-container {
         position: relative;
         width: 100%;
-        height: calc(50vh - $block-margin - $block-margin);
+        // height: calc(50vh - $block-margin - $block-margin);
         line-height: 0;
         overflow: hidden;
 
 
         transform: translate(var(--x-diff), calc(var(--y-diff) / -6)) rotate(calc( var(--rot-diff) * -12deg));
 
-        @include for-size(mobile) {
-            height: calc(100vw - $block-margin - $block-margin);
-        }
+        // @include for-size(mobile) {
+        //     // height: calc(100vw - $block-margin - $block-margin);
+        // }
 
         .zoom-box {
             width: 100%;
