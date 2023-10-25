@@ -186,13 +186,11 @@ const taskOps = {
      */
     async updateObservers(userId, taskId, observerIds) {
         const deleteObserversForTask = `DELETE FROM observers WHERE task_id = ?`
-        const addObserversToTask = `INSERT INTO observers (task_id, user_id) VALUES ?`
-
-        const observerRowValues = observerIds.map((id) => [taskId, id])
+        const addObserverToTask = `INSERT INTO observers (task_id, user_id) VALUES (?, ?)`
 
         const transaction = await dbOps.startTransaction()
         await transaction.query(deleteObserversForTask, [taskId])
-        await transaction.query(addObserversToTask, [observerRowValues,])
+        await Promise.all(observerIds.map((observerId) => transaction.query(addObserverToTask, [taskId, observerId])))
         await transaction.commit()
     },
 
@@ -241,13 +239,11 @@ const taskOps = {
      */
     async setTaskImages(userId, taskId, imageIds) {
         const deleteImagesForTask = `DELETE FROM task_images WHERE task_id = ?`
-        const addImagesToTask = `INSERT INTO task_images (task_id, image_id) VALUES ?`
-
-        const taskImageRowValues = imageIds.map((id) => [taskId, id])
+        const addImageToTask = `INSERT INTO task_images (task_id, image_id) VALUES (?, ?)`
 
         const transaction = await dbOps.startTransaction()
         await transaction.query(deleteImagesForTask, [taskId])
-        await transaction.query(addImagesToTask, [taskImageRowValues,])
+        await Promise.all(imageIds.map((imageId) => transaction.query(addImageToTask, [taskId, imageId])))
         await transaction.commit()
     }
 }

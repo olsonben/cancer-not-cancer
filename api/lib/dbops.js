@@ -1,6 +1,15 @@
 // import Pool from 'mysql2/typings/mysql/lib/Pool'
 import path from 'path'
 
+// TODO: move to documentation
+// Prepared statements: mysql2 execute() vs query()
+// https://github.com/sidorares/node-mysql2/issues/553#issuecomment-437221838
+// Why are prepared statements better
+/** However, the most important advantage of prepared statements is that they help prevent SQL injection attacks. SQL injection is a technique to maliciously exploit applications that use client-supplied data in SQL statements. Attackers trick the SQL engine into executing unintended commands by supplying specially crafted string input, thereby gaining unauthorized access to a database to view or manipulate restricted data. SQL injection techniques all exploit a single vulnerability in the application: Incorrectly validated or nonvalidated string literals are concatenated into a dynamically built SQL statement and interpreted as code by the SQL engine. Prepared statements always treat client-supplied data as content of a parameter and never as a part of an SQL statement.
+from: https://docs.oracle.com/javase/tutorial/jdbc/basics/prepared.html
+*/
+
+
 async function buildMySqlConnection(dbConfig) {
     const { default: mysql } = await import('mysql2/promise')
     // Using createPool instead of createConnection fixes an issue with sql
@@ -39,7 +48,7 @@ async function buildSqliteConnection(dbConfig) {
  */
 function simplifyQuery(db) {
     return async (sql, values) => {
-        const [rows] = await db.query(sql, values)
+        const [rows] = await db.execute(sql, values)
         return rows
     }
 }
@@ -72,7 +81,7 @@ class DatabaseOps {
             this.db = buildMySqlConnection(dbConfig).then((db) => {
                 // Mysql specific modifications to unify methods
                 db._select = simplifyQuery(db)
-                db._execute = db.query
+                db._execute = db.execute
                 return db
             })
         }
@@ -170,7 +179,7 @@ class TransactionContainer {
     /** Run a sql query with associated values. */
     async query(sqlQuery, queryValues) {
         try {
-            const [results] = await this.dbConnection.query(sqlQuery, queryValues)
+            const [results] = await this.dbConnection.execute(sqlQuery, queryValues)
             return results
         } catch (error) {
             if (this.dbConnection) {

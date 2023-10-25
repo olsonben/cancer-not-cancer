@@ -164,7 +164,8 @@ export default {
             // Add the files array object
             this.files.forEach((file, index) => {
                 console.log(file)
-                console.log(this.$config.uploadSizeLimit)
+                // TODO: Make sure uploadSizeLimit is defined for error printout
+                // console.log(this.$config.uploadSizeLimit)
                 if (file.size > this.$config.uploadSizeLimit) {
                     console.error(`${file.name} is too large. MAX_BYTES: ${this.$config.uploadSizeLimit}`)
                     this.appendSubmittedFile(file.name, {
