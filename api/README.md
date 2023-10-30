@@ -19,7 +19,7 @@ mysql test -e 'INSERT INTO users (fullname, username, password, is_enabled, is_p
 npm install
 ```
 
-Next, duplicate **.env.bk** as .env for a development environment. The populate the fields to resemble your setup. For example when running the app in development mode **IMAGE_URL**, **BACKEND_URL**, and **FRONTEND_URL** might look like below.
+Next, duplicate **.env.bk** as .env for a development environment. Then populate the fields to resemble your setup. For example when running the app in development mode **IMAGE_URL**, **BACKEND_URL**, and **FRONTEND_URL** might look like below.
 ```bash
 IMAGE_URL="http://localhost:3333/images/"
 BACKEND_URL="http://localhost:3333"
