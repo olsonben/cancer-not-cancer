@@ -51,10 +51,6 @@ ALTER TABLE hotornot ADD COLUMN (task_id BIGINT UNSIGNED);
 ALTER TABLE images ADD COLUMN (original_name TEXT);
 
 ALTER TABLE
-    `task_relations` ADD CONSTRAINT `task_relations_task_id_foreign` FOREIGN KEY(`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE
-    `task_relations` ADD CONSTRAINT `task_relations_parent_task_id_foreign` FOREIGN KEY(`parent_task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE
     `task_images` ADD CONSTRAINT `task_images_task_id_foreign` FOREIGN KEY(`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE
     `tag_relations` ADD CONSTRAINT `tag_relations_tag_id_foreign` FOREIGN KEY(`tag_id`) REFERENCES `tags`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

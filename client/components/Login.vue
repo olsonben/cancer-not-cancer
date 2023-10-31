@@ -22,7 +22,7 @@
 <script>
 import { mapGetters } from "vuex";
 
-const authPaths = ['pathapp', 'admin', 'admin-images', 'admin-users', 'admin-dataview']
+const authPaths = ['pathapp', 'admin', 'admin-images', 'admin-users', 'admin-dataview', 'admin-tasks']
 
 export default {
     data() {

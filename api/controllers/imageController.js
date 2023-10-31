@@ -24,7 +24,7 @@ const imageController = {
         console.log("GET: nextImage", imageId);
 
         const img = await imageOps.getNextImage(imageId)
-        const pathUrl = new URL(img.path, imageBaseURL)
+                const pathUrl = new URL(img.path, imageBaseURL)
         
         res.send({
             id: img.id, // imageID
@@ -113,7 +113,7 @@ const imageController = {
         removeEmptyImageFolders()
     },
         
-    /** Filters file upload output to relavent data only (Return to sender the
+    /** Filters file upload output to relevant data only (Return to sender the
      * status of the upload). */
     async saveImages(req, res, next) {
         if (req.files.length === 0) {
