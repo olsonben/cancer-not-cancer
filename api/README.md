@@ -353,7 +353,7 @@ axios.post(env.url.api + '/images', data)
 │   ├── dataController.js   # for data
 │   ├── imageController.js  # for images
 │   ├── taskController.js   # for tasks
-│   └── userController.js   # for userts
+│   └── userController.js   # for users
 ├── database                # sql scripts used to create the need database structure
 │   ├── pathapp.sql
 │   └── updatetotask.sql
