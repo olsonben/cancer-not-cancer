@@ -5,7 +5,7 @@ A web application that allows investigating pathologists to assign fellow pathol
 # Set Up
 
 1. [API/Backend setup and operation](api/README.md#api---server)
-2. [Client/Frontend setup and operation](Client/README.md#client)
+2. [Client/Frontend setup and operation](client/README.md#client)
 
 # Usage
 
