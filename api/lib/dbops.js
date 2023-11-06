@@ -1,6 +1,15 @@
 // import Pool from 'mysql2/typings/mysql/lib/Pool'
 import path from 'path'
 
+// TODO: move to documentation
+// Prepared statements: mysql2 execute() vs query()
+// https://github.com/sidorares/node-mysql2/issues/553#issuecomment-437221838
+// Why are prepared statements better
+/** However, the most important advantage of prepared statements is that they help prevent SQL injection attacks. SQL injection is a technique to maliciously exploit applications that use client-supplied data in SQL statements. Attackers trick the SQL engine into executing unintended commands by supplying specially crafted string input, thereby gaining unauthorized access to a database to view or manipulate restricted data. SQL injection techniques all exploit a single vulnerability in the application: Incorrectly validated or nonvalidated string literals are concatenated into a dynamically built SQL statement and interpreted as code by the SQL engine. Prepared statements always treat client-supplied data as content of a parameter and never as a part of an SQL statement.
+from: https://docs.oracle.com/javase/tutorial/jdbc/basics/prepared.html
+*/
+
+
 async function buildMySqlConnection(dbConfig) {
     const { default: mysql } = await import('mysql2/promise')
     // Using createPool instead of createConnection fixes an issue with sql
@@ -39,7 +48,7 @@ async function buildSqliteConnection(dbConfig) {
  */
 function simplifyQuery(db) {
     return async (sql, values) => {
-        const [rows] = await db.query(sql, values)
+        const [rows] = await db.execute(sql, values)
         return rows
     }
 }
@@ -72,13 +81,12 @@ class DatabaseOps {
             this.db = buildMySqlConnection(dbConfig).then((db) => {
                 // Mysql specific modifications to unify methods
                 db._select = simplifyQuery(db)
-                db._execute = db.query
+                db._execute = db.execute
                 return db
             })
         }
     }
 
-    // TODO: Consider adding error handling here.
     /**
      * Process select queries that return rows as results.
      * @param {string} sql Sql string template - 'Select * From tbl Where id=?'
@@ -101,11 +109,100 @@ class DatabaseOps {
     async execute(sql, values) {
         const db = await this.db
         await db._execute(sql, values)
-        return true
     }
 
-    // NOTE: Consider adding transaction methods for more complex DB operaions.
+    /**
+     * Process queries other than select(UPDATE, INSERT, etc.) and get results obj
+     * @param {string} sql Sql string template - 'Select * From tbl Where id=?'
+     * @param {Array.<*>} values Values to populate sql template
+     * @returns {Object} Returns the results object which has insertId
+     */
+    async executeWithResults(sql, values) {
+        const db = await this.db
+        const [results, fields] = await db._execute(sql, values)
+        return results
+    }
 
+    // NOTE: No longer used but keeping for reference
+    // https://github.com/sidorares/node-mysql2/issues/384#issuecomment-673726520
+    async executeTransactions(sqlQueries, queryValues) {
+        let conn = null;
+        try {
+            const db = await this.db // the await is needed to enter the promise chain
+            conn = await db.getConnection()
+            await conn.beginTransaction()
+            for (let i in sqlQueries) {
+                // check if there are queryValues
+                if (queryValues[i] && queryValues[i].length) {
+                    await conn.query(sqlQueries[i], queryValues[i])
+                } else {
+                    // NOTE: It is up to the user not to submit an empty query
+                    await conn.query(sqlQueries[i])
+                }
+            }
+            // const [response, meta] = await conn.query('')
+            await conn.commit()
+        } catch (error) {
+            if (conn) await conn.rollback()
+            throw error
+        } finally {
+            if (conn) await conn.release()
+        }
+    }
+
+    // NOTE: Not tested with sqlite
+    /** Start a database transaction. Returns a TransactionContainer */
+    async startTransaction() {
+        let connection = null
+        try {
+            const db = await this.db
+            connection = await db.getConnection()
+            await connection.beginTransaction()
+            const transaction = new TransactionContainer(connection)
+            return transaction
+        } catch (error) {
+            if (connection) connection.release()
+            throw error
+        }
+    }
+
+}
+
+/**
+ * Contains a mysql transaction that has already been started.
+ */
+class TransactionContainer {
+    constructor(dbConnection) {
+        this.dbConnection = dbConnection
+    }
+
+    /** Run a sql query with associated values. */
+    async query(sqlQuery, queryValues) {
+        try {
+            const [results] = await this.dbConnection.execute(sqlQuery, queryValues)
+            return results
+        } catch (error) {
+            if (this.dbConnection) {
+                await this.dbConnection.rollback()
+                await this.dbConnection.release()
+            }
+            throw error
+        }
+    }
+
+    /** Save and commit all preceding queries. */
+    async commit() {
+        try {
+            await this.dbConnection.commit()
+        } catch (error) {
+            if (this.dbConnection) await this.dbConnection.rollback()
+            throw error
+        } finally {
+            if (this.dbConnection) {
+                this.dbConnection.release()
+            }
+        }
+    }
 }
 
 export { DatabaseOps }

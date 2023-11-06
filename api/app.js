@@ -12,8 +12,7 @@ import express from 'express' // We have an express server (https://expressjs.co
 /// Features
 import bodyParser from 'body-parser' // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
 
-import { uploadImages, removeFile, removeEmptyImageFolders } from './lib/upload.js' // middleware to handle uploads
-import { isLoggedIn, isValid, getIP } from './lib/functions.js'     // Helper functions
+import { isLoggedIn, isEnabled, isPathologist, getIP } from './lib/functions.js'     // Helper functions
 // These are all for authentication
 import auth from './lib/auth.js' // This needs to be loaded for passport.authenticate
 
@@ -25,13 +24,17 @@ const app = express()
 
 auth.setup(app) // Setup authentication routes for the app
 const port = process.env.PORT || 5000;
-const imageBaseURL = process.env.IMAGE_URL
 
 
 /******************
  * DATABASE Methods
  ******************/
-import { getNextImage, addRating, createUser, addImage } from './lib/database.js'
+import dataOps from './dbOperations/dataOps.js'
+
+import taskRoutes from './routes/tasks.js'
+import userRoutes from './routes/users.js'
+import imageRoutes from './routes/images.js'
+import dataRoutes from './routes/data.js'
 
 /******************
  * REQUEST PARSING
@@ -56,35 +59,14 @@ if (process.env.NODE_ENV != 'production') {
  * Express REQUESTS
  **********************************************/
 
+app.use('/tasks', taskRoutes)
+app.use('/users', userRoutes)
+app.use('/images', imageRoutes)
+app.use('/data', dataRoutes)
+
 /*****************
  * GET
  *****************/
-app.get('/nextImage', isLoggedIn, isValid, async (req, res, next) => {
-    console.log("Get /nextImage");
-    
-    try {
-        const img = await getNextImage()
-        // TODO: Use URLs and Path Join instead of this logic
-        let imagePath = img.path
-        if (imageBaseURL.slice(-1) == "/") {
-            if (img.path.charAt(0) == "/") {
-                imagePath = imagePath.slice(1)
-            }
-        } else if (img.path.charAt(0) != "/") {
-            imagePath = "/" + imagePath
-        }
-
-        let url = imageBaseURL + imagePath
-        res.send({
-            id: img.id, // imageID
-            url: imageBaseURL + img.path
-        })
-    } catch (err) {
-        next(err)
-    }
-    
-    
-})
 
 // Checker for if the user is authenticated (NOT middleware)
 app.get('/isLoggedIn', (req, res) => {
@@ -100,8 +82,9 @@ app.get('/isLoggedIn', (req, res) => {
  * POST
  *****************/
 
+
 // Insert the hotornots
-app.post('/hotornot', isLoggedIn, isValid, async (req, res, next) => {
+app.post('/hotornot', isLoggedIn, isEnabled, isPathologist, async (req, res, next) => {
     console.log("post /hotornot")
     // REMEMBER: the data in body is in JSON format
 
@@ -129,134 +112,18 @@ app.post('/hotornot', isLoggedIn, isValid, async (req, res, next) => {
     }
     
     try {
-        const insertSuccess = await addRating(
+        await dataOps.addRating(
             req.user.id,
             req.body.id,
             req.body.rating,
             req.body.comment,
-            getIP(req))
-
-        if (insertSuccess) {
-            res.sendStatus(200)
-        }
-    } catch (err) {
-        next(err)
-    }
-})
-
-// Insert new user
-app.post('/users', isLoggedIn, isValid, async (req, res, next) => {
-    console.log("Post /users");
-
-    // Check permissions
-    if (typeof req.body.fullname !== 'string' ||
-            typeof req.body.email !== 'string' ||
-            typeof req.body.password !== 'string') {
-        res.sendStatus(415)
-        return
-    }
-
-    // Check string lengths
-    let flag = false
-    let message = []
-    console.log(req.body)
-    if (req.body.fullname.length > 256) {
-        flag = true
-        message += "Name too long"
-    } if (req.body.email.length > 320) {
-        flag = true
-        message += "Email too long"
-    } if (req.body.password.length > 50) {
-        flag = true
-        message += "Password too long"
-    } if (flag) {
-        res.status(413).send(message)
-    }
-
-    try {
-        const addUserSuccess = await createUser(
-            req.body.fullname,
-            req.body.email,
-            req.body.password,
-            req.body.permissions.enabled,
-            req.body.permissions.pathologist,
-            req.body.permissions.uploader,
-            req.body.permissions.admin
+            getIP(req),
+            req.body.taskId
         )
 
-        if (addUserSuccess) {
-            res.status(200).send(req.body)
-        } else {
-            // No duplicate users
-            res.status(409).send({
-                message: "Email already exists in database.",
-                user: req.body
-            })
-        }
+        res.sendStatus(200)
     } catch (err) {
-        next(err)
-    }
-})
-
-
-async function saveUploadsToDb(req, res, next) {
-    const ip = getIP(req)
-    for (const file of req.files) {
-        if (file.success) {
-            try {
-                const insertImageSuccess = await addImage(
-                    // TODO: move this concatenation to upload.js
-                    file.relPath, // safe: created by the server
-                    file.hash || null,
-                    ip,
-                    req.user.id
-                )
-
-                if (!insertImageSuccess) {
-                    console.log('File already exists:', file.sanitizedName)
-                    file.success = false
-                    file.message = 'File already exists.'
-                }
-            } catch(err) {
-                // database error
-                console.error(err)
-                file.success = false
-                file.message = 'Upload Error. Please try again later.'
-            }
-        }
-    }
-    next()
-}
-
-async function removeFailedImageSaves(req, res, next) {
-    for (const file of req.files) {
-        if (!file.success) {
-            await removeFile(file.savePath)
-        }
-    }
-    removeEmptyImageFolders()
-    next()
-}
-
-const uploadImageChain = [uploadImages, saveUploadsToDb, removeFailedImageSaves]
-
-// TODO: update the image pipeline to use unified error handler via `next(err)`
-app.post('/images', isLoggedIn, isValid, uploadImageChain, (req, res, next) => {
-    if (req.files.length === 0) {
-        res.status(200).send('No files uploaded.')
-    } else {
-        const allowedKeys = ["filename", "mimeType", "id", "relPath", "success", "message"]
-        const resultData = req.files.map((file) => {
-            const filteredFile = Object.keys(file)
-            .filter(key => allowedKeys.includes(key))
-            .reduce((obj, key) => {
-                obj[key] = file[key]
-                return obj
-            }, {})
-            return filteredFile
-        })
-        
-        res.status(200).send(resultData)
+        next(err) // Pass error onto unified error handler.
     }
 })
 
@@ -265,7 +132,7 @@ app.post('/images', isLoggedIn, isValid, uploadImageChain, (req, res, next) => {
 app.use((err, req, res, next) => {
     console.log("Sending status(500). Route error caught...")
     console.error('\x1b[31m', err.stack, '\x1b[0m')
-    res.status(500).send('Something broke!')
+    res.sendStatus(500)
 })
 
 /**********************************************

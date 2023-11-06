@@ -8,8 +8,18 @@
 
         <!-- Image to grade -->
         <div class='prompt'>
-            <div class="task">Is the ROI cancer?</div>
-            <div class="image-container" @click="zoom=!zoom">
+            <div class='controls level'>
+                <div class='task-picker level-left'>
+                    <!-- <strong>Task:</strong> -->
+                    <div class="select is-normal">
+                        <select v-model="selectedTask">
+                            <option v-for="task in tasks" :value="task.id">{{ task.prompt }}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="has-text-danger" v-if="!this.image.id">No more images available in this task.</div>
+            <div v-if="this.image.id" class="image-container" @click="zoom=!zoom">
                 <transition
                     name="swap-img"
                     @after-leave="afterLeave"
@@ -25,7 +35,7 @@
         </div>
         
         <!-- Response section: grade + comment --> 
-        <div class='response-area'>
+        <div v-if="this.image.id" class='response-area'>
             <div class="has-text-centered swipe-pad" :class="{ 'shown': !commenting }">
                 <span class='icon swipe left'>
                     <img src="~assets/icons/arrow-set.svg" alt="swipe left">
@@ -67,6 +77,9 @@ export default {
             // Information to display and grade the current image
             image: {},
             onDeck: null,
+            queue: null,
+            selectedTask: null,
+            tasks: [],
 
             // State information
             rating: '',
@@ -92,13 +105,20 @@ export default {
             swipeDistance: 100
         }
     },
-
+    async fetch() {
+        const response = await this.$axios.$get('/tasks/')
+        this.tasks = response
+        this.selectedTask = this.tasks[0].id
+    },
+    fetchOnServer: false,
     mounted() {
         // Fixes a firefox swipe conflict. When swiping if the reload page
         // swipe starts to engage, other animations freeze and hang. The
         // following line deactivates swiping to reload page.
         document.documentElement.style.setProperty('--overscroll', 'none')
-        
+        // Turn scrolling off
+        document.documentElement.style.setProperty('--overflow', 'hidden')
+
         this.nextImage()
         
         // Required for touches
@@ -110,6 +130,8 @@ export default {
     destroyed() {
         // Reactivates swipe to reload (deactivated in the mount method)
         document.documentElement.style.setProperty('--overscroll', 'auto')
+        // Allowing scrolling
+        document.documentElement.style.setProperty('--overflow', 'initial')
 
         // We need to cleanup our event listeners. So we don't have duplicates when we return.
         document.removeEventListener('touchstart', this.handleTouchStart, false)
@@ -142,6 +164,12 @@ export default {
                 }
             }
         },
+        selectedTask: {
+            handler(newTaskId) {
+                this.queue = null
+                this.nextImage()
+            }
+        }
     },
     methods: {
         /**********************************************
@@ -165,7 +193,8 @@ export default {
             this.postData({
                 id: this.image.id,
                 rating: this.rating,
-                comment: this.comment
+                comment: this.comment,
+                taskId: this.selectedTask,
             }).then((res) => {
 
                 // move on to the next image
@@ -195,11 +224,54 @@ export default {
             }
         },
 
-        async nextImage() {
+        async getImageQueue() {
+            try {
+                const response = await this.$axios.get('/images/queue', {
+                    params: {
+                        taskId: this.selectedTask
+                    }
+                })
+                console.log(response.data)
+                this.queue = response.data
+            } catch (error) {
+                console.error(error)
+            }
+        },
+
+        getNextImageId() {
+            const nextImageIndex = Math.floor(Math.random() * this.queue.length)
+            const nextImageId = this.queue[nextImageIndex]
+            this.queue.splice(nextImageIndex, 1)
+
+            return nextImageId
+        },
+
+        async nextImage() { 
+            if (this.selectedTask == null) {
+                return
+            }
+
             if (this.isPathologist) {
                 // try-catch is needed for async/await
                 try {
-                    const response = await this.$axios.get('/nextImage')
+                    if (this.queue == null) {
+                        await this.getImageQueue()
+                    }
+                    
+                    // if the image queue is empty, do not proceed
+                    if (this.queue && !this.queue.length) {
+                        // TODO: handle the last image more gracefully with transitions.
+                        this.image = {} // reset main image
+                        return
+                    }
+
+                    const nextImageId = this.getNextImageId()
+                    console.log('next', nextImageId)
+                    const response = await this.$axios.get('/images/', {
+                        params: {
+                            imageId: nextImageId,
+                        }
+                    })
                     // We preload the image asynchronously allowing for smooth
                     // fade in and out between images. The image is loaded
                     // outside the DOM, but that data will be cached for the
@@ -382,7 +454,6 @@ export default {
 </script>
 
 <style lang='scss' scoped>
-
 .app {
     /* To prevent scrolling */
     height: 100%;
@@ -465,25 +536,38 @@ $no-cancer-color: #ff6184;
         max-width: 100%;
     }
 
-    .task {
-        font-size: 1.5rem;
-        font-weight: bold;
-        text-align: center;
+    .controls {
+        color: hsl(0deg, 0%, 29%);
+        width: 100%;
+        padding: 0 $block-margin;
+
+        .task-picker select {
+            font-weight: 600;
+        }
+
+        @include for-size(mobile) {
+            padding: 0 0;
+        }
+
+        strong {
+            padding-top: 0.8rem;
+            display: inline-block;
+        }
     }
 
     .image-container {
         position: relative;
         width: 100%;
-        height: calc(50vh - $block-margin - $block-margin);
+        // height: calc(50vh - $block-margin - $block-margin);
         line-height: 0;
         overflow: hidden;
 
 
         transform: translate(var(--x-diff), calc(var(--y-diff) / -6)) rotate(calc( var(--rot-diff) * -12deg));
 
-        @include for-size(mobile) {
-            height: calc(100vw - $block-margin - $block-margin);
-        }
+        // @include for-size(mobile) {
+        //     // height: calc(100vw - $block-margin - $block-margin);
+        // }
 
         .zoom-box {
             width: 100%;
