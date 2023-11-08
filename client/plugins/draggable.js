@@ -1,5 +1,4 @@
-import Vue from 'vue'
-
+// TODO: Untested
 const createDragstartHandler = (binding) => (event) => {
     // el == event.target
     event.dataTransfer.setData('application/json', JSON.stringify(binding.value))
@@ -51,4 +50,7 @@ const draggable = {
     }
 }
 
-Vue.directive('draggable', draggable)
+// Vue.directive('draggable', draggable)
+export default defineNuxtPlugin((nuxtApp) => {
+    nuxtApp.vueApp.directive('draggable', draggable)
+})

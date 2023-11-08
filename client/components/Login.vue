@@ -20,7 +20,8 @@
 </template>
 
 <script>
-import { mapGetters } from "vuex";
+import { mapState } from "pinia";
+import { useUserStore } from "~/store/user"
 
 const authPaths = ['pathapp', 'admin', 'admin-images', 'admin-users', 'admin-dataview', 'admin-tasks']
 
@@ -28,11 +29,11 @@ export default {
     data() {
         return {
             loginLink: this.$common.getLoginURL(),
-            loginPath: authPaths.includes(this.$route.name)
+            loginPath: authPaths.includes(this.$route.name),
         }
     },
     computed: {
-        ...mapGetters('user', ['isLoggedIn'])
+        ...mapState(useUserStore, ['isLoggedIn'])
     },
     watch:{
         $route: {

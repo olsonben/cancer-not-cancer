@@ -34,6 +34,8 @@
 </template>
 
 <script>
+const api = useApi()
+
 export default {
     data() {
         return {
@@ -42,7 +44,8 @@ export default {
             attention: false
         }
     },
-    async fetch() {
+    // TODO: check if there is a better place to implement the first data pull
+    mounted() {
         this.refreshData()
     },
     methods: {
@@ -91,7 +94,7 @@ export default {
         async editTagName(tagId, newName) {
             console.log('editTagName:', tagId, newName)
             try {
-                const response = await this.$axios.$post('/images/renameTag', {
+                const { response } = await api.POST('/images/renameTag', {
                     tagId: tagId,
                     tagName: newName,
                 })
@@ -129,7 +132,7 @@ export default {
                 newParent.contents.unshift(movingTag)
 
                 // Save changes remotely
-                const response = await this.$axios.post('images/moveTag', {
+                const { response } = await api.POST('images/moveTag', {
                     tagId: tagId,
                     oldParentTagId: oldParentTagId,
                     newParentTagId: newParentTagId
@@ -141,9 +144,10 @@ export default {
         async createTag() {
             try {
                 if (this.createTagName !== '') {
-                    const newTagFolder = await this.$axios.$post('/images/tag', {
+                    const { response } = await api.POST('/images/tag', {
                         tagName: this.createTagName,
                     })
+                    const newTagFolder = response.value
                     this.createTagName = ''
                     this.files.unshift(newTagFolder)
                 } else {
@@ -162,7 +166,7 @@ export default {
         },
         async deleteTag(tagId) {
             try {
-                const response = await this.$axios.$post('/images/deleteTag', {
+                const { response } = await api.POST('/images/deleteTag', {
                     tagId: tagId,
                 })
             } catch (error) {
@@ -172,7 +176,7 @@ export default {
         },
         async editFileName(fileId, newName) {
             try {
-                const response = await this.$axios.$post('/images/rename', {
+                const { response } = await api.POST('/images/rename', {
                     imageId: fileId,
                     newName: newName,
                 })
@@ -183,7 +187,7 @@ export default {
         async deleteFile(fileId) {
             try {
                 // TODO: Add Unlock button that warns users.
-                const response = await this.$axios.$post('/images/delete', {
+                const { response } = await api.POST('/images/delete', {
                     imageId: fileId
                 })
             } catch (error) {
@@ -217,7 +221,7 @@ export default {
                 newParent.contents.unshift(movingFile)
 
                 // Save move remotely
-                const response = await this.$axios.$post('images/move', {
+                const { response } = await api.POST('images/move', {
                     imageId: fileId,
                     oldParentTagId: oldParentTagId,
                     newParentTagId: newParentTagId
@@ -228,13 +232,14 @@ export default {
         },
         async refreshData() {
             try {
+                console.log('refreshDat')
                 // TODO: change this over to an images/all request.
                 // The task_id is arbitrary.
-                const images = await this.$axios.$get('/tasks/images', {
-                    params: {
-                        task_id: 14
-                    }
+                const { response } = await api.GET('/tasks/images', {
+                    task_id: 14
                 })
+                console.log(response.value)
+                const images = response.value
                 this.files = images
             } catch (error) {
                 console.error('ImageManager fetch:', error.message)

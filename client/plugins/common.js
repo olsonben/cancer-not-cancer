@@ -1,14 +1,17 @@
-export default ({ app }, inject) => {
-    const apiURL = app.$axios.defaults.baseURL.replace(/\/+$/, '')
+export default defineNuxtPlugin((app) => {
+    const route = useRoute()
+    const config = useRuntimeConfig()
+    const apiUrlNoSlash = config.public.apiUrl.replace(/\/+$/, '')
+
 
     const common = {
         /** Create a login URL that has current page as a parameter for redirecting after logged in. */
         getLoginURL() {
-            const isLogout = app.router.currentRoute.name == 'logout'
+            const isLogout = route.name == 'logout'
             const loginParams = new URLSearchParams({
-                'ref_path': !isLogout ? app.router.currentRoute.fullPath : '/'
+                'ref_path': !isLogout ? route.fullPath : '/'
             })
-            const loginURL = new URL(`${apiURL}/auth/google?${loginParams}`)
+            const loginURL = new URL(`${apiUrlNoSlash}/auth/google?${loginParams}`)
             return loginURL.href
         },
         /** Get all selected files from the a nested folder structure object. */
@@ -58,5 +61,9 @@ export default ({ app }, inject) => {
             }
         }
     }
-    inject('common', common)
-}
+    return {
+        provide: {
+            common: common
+        }
+    }
+})

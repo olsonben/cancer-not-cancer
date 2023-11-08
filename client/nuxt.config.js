@@ -1,19 +1,30 @@
+// import { defineNuxtConfig } from "nuxt3"
+import { defineNuxtConfig } from "nuxt/config"
+
 const base = new URL(process.env.PUBLIC_PATH).pathname
 // const api = process.env.API_URL.replace(/\/+$/, '')
 
-export default {
-  globalName: 'pathapp',
-  // Target: https://go.nuxtjs.dev/config-target
-  target: 'static',
-  telemetry: false,
-
-  publicRuntimeConfig: {
-    uploadSizeLimit: process.env.UPLOAD_SIZE_LIMIT,
-    // url: {
-    //   api: process.env.API_URL,
-    // }
+export default defineNuxtConfig({
+  // globalName: 'pathapp',
+  app: {
+    // TODO: reimplement the rootId and build asset folder
+    // rootId: 'pathapp',
+    // baseURL: 'http://localhost:3000/',
+    // buildAssetsDir: '/cncclient/',
   },
-  privateRuntimeConfig: {},
+  // Target: https://go.nuxtjs.dev/config-target
+  // target: 'static',
+  // telemetry: false,
+
+  runtimeConfig: {
+    // private config here
+    
+    // public config here (could live in 'app:')
+    public: {
+      uploadSizeLimit: process.env.UPLOAD_SIZE_LIMIT,
+      apiUrl: process.env.API_URL,
+    }
+  },
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
@@ -45,68 +56,69 @@ export default {
     __dangerouslyDisableSanitizers: ['noscript'] //stop sanitizing img above
     // { src: '/customscript.js' } // customscript.js located in "static/" directory
   },
-
-  watchers: {
-    webpack: {
-      // Don't watch node_modules (idk why this isn't default)
-      ignored: /node_modules/
+  css: ["@/assets/scss/main.scss"],
+  vite: {
+    css: {
+      preprocessorOptions: {
+        scss: {
+          additionalData: '@import "@/assets/scss/variables.scss"; @import "@/assets/scss/colors.scss";',
+        }
+      }
     }
   },
-
-  // Global CSS: https://go.nuxtjs.dev/config-css
-  css: [
-    '~assets/css/main.css'
-  ],
-
-  // Automatically restart the whole server when main.css changes
-  watch: [
-    '~assets/css/main.css'
-  ],
-
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
+  // TODO: Look into moving common out of plugins or lazy loading it.
+  // TODO: Update readme about uBlockOrigin breaking the site because of matomo (also test further).
   plugins: [
+    '~/plugins/error-handler.js',
+    { src: '~/plugins/matomo.js', ssr: false },
     '~/plugins/common.js',
     '~/plugins/draggable.js'
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   // Under `/components`
-  components: true,
+  // components: true,
+  components: [
+    {
+      path: '~/components',
+      pathPrefix: false,
+    }
+  ],
 
   // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules
   buildModules: [
-    '@nuxtjs/style-resources'
+    // '@nuxtjs/style-resources'
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
-    '@nuxtjs/axios',
-    ['nuxt-matomo', { matomoUrl: 'https://client.milmed.ai/b/', siteId: 1, trackerUrl: 'https://client.milmed.ai/b/js/', scriptUrl: 'https://client.milmed.ai/b/js/',cookies: false}],
+    '@pinia/nuxt',
   ],
-  axios: {
-    baseURL: process.env.API_URL,
-    credentials: true,
-    https: (process.env.PROTOCOL == 'https'),
-    debug: false,
-  },
+  // axios: {
+  //   baseURL: process.env.API_URL,
+  //   credentials: true,
+  //   https: (process.env.PROTOCOL == 'https'),
+  //   debug: false,
+  // },
 
   // Globally accessible style resources
   // e.g. variables declared in scss files here are globally available
-  styleResources: {
-    scss: [
-      './assets/scss/colors.scss',
-      './assets/scss/variables.scss'
-    ]
-  },
+  // styleResources: {
+  //   scss: [
+  //     './assets/scss/colors.scss',
+  //     './assets/scss/variables.scss'
+  //   ]
+  // },
 
   // // Customization for vue-router: https://nuxtjs.org/docs/configuration-glossary/configuration-router
   router: {
     base: base,
     // Middleware runs on every page
-    middleware: [
-      'auth',
-      'authError'
-    ]
+    // middleware: [
+    //   'auth',
+    //   'authError'
+    // ]
   },
   
   // Server side rendering :: removes the server
@@ -115,7 +127,18 @@ export default {
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
-    publicPath: '/cncclient/',
-    devtools: false,
-  }
-}
+    // publicPath: '/cncclient/',
+    // devtools: false,
+    // analyze: {
+    //   analyzerMode: 'static'
+    // },
+    html: {
+      minify: {
+        minifyJS: false
+      }
+    }
+  },
+  sourcemap: true,
+  devtools: { enabled: true }
+
+})

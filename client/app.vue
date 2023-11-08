@@ -2,7 +2,9 @@
     <div>
         <!-- Every page should have the navbar + body -->
         <NavBar class='main-nav' />
-        <nuxt class='nuxt-tag' />
+        <div class="nav-bumper">
+            <NuxtPage  />
+        </div>
         <Login class='login-modal' />
     </div>
 </template>
@@ -18,11 +20,7 @@
     width: 100%;
 }
 /* Body is under the NavBar */
-.nuxt-tag {
-    margin-top: calc($navbar-height + $block-margin);
-}
-/* Reduced margin for sections to avoid unwanted whitespace */
-.nuxt-tag.section {
+.nav-bumper {
     margin-top: $navbar-height;
 }
 </style>

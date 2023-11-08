@@ -11,7 +11,7 @@
                                 <option v-for="task in tasks" :value="task.id">{{ task.prompt }}</option>
                             </select>
                     </div></div>
-                    <Userview class="level-right" v-if='this.$store.state.user.permissions.admin' :userId.sync="userId" :label="'Created by:'"/>
+                    <Userview class="level-right" v-if='userStore.isAdmin' :userId.sync="userId" :label="'Created by:'"/>
                 </div>
                 <div class="task-stats">
                     <ul>
@@ -37,6 +37,9 @@
 </template>
 
 <script>
+import { useUserStore } from '~/store/user'
+const userStore = useUserStore()
+
 const percentage = (part, total) => {
     const percent = part/total*100
     return percent.toFixed(2)
