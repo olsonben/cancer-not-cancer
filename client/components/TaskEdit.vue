@@ -45,6 +45,8 @@
 </template>
 
 <script>
+const api = useApi()
+
 export default {
     props: ['task'],
     data() {
@@ -64,21 +66,18 @@ export default {
             },
         }
     },
-    async fetch() {
+    async mounted() {
         try {
-            const [observers, images] = await Promise.all([
-                this.$axios.$get('/tasks/observers', {
-                    params: {
-                        task_id: this.task.id
-                    }
+            const [observersData, imagesData] = await Promise.all([
+                api.GET('/tasks/observers', {
+                    task_id: this.task.id
                 }),
-                this.$axios.$get('/tasks/images', {
-                    params: {
-                        task_id: this.task.id
-                    }
+                api.GET('/tasks/images', {
+                    task_id: this.task.id
                 })
             ])
-            
+            const observers = observersData.response.value
+            const images = imagesData.response.value
             for (const user of observers) {
                 if (user.applied) {
                     this.observers.applied.push(user)
@@ -97,17 +96,17 @@ export default {
             try {
                 const selectedImages = this.$common.getSelectedFiles(this.root)
 
-                const [response, observerResponse, imageResponse] = await Promise.all([
-                    this.$axios.$post('/tasks/update', {
+                await Promise.all([
+                    api.POST('/tasks/update', {
                         id: this.localTask.id,
                         short_name: this.localTask.short_name,
                         prompt: this.localTask.prompt,
                     }),
-                    this.$axios.$post('/tasks/observers', {
+                    api.POST('/tasks/observers', {
                         task_id: this.localTask.id,
                         observerIds: JSON.stringify(this.observers.applied.map(user => user.id)),
                     }),
-                    this.$axios.$post('/tasks/images', {
+                    api.POST('/tasks/images', {
                         task_id: this.localTask.id,
                         imageIds: JSON.stringify(selectedImages),
                     })

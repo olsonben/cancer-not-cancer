@@ -9,11 +9,10 @@
 </template>
 
 <script>
-
 export default {
     data() {
         return {
-            loginLink: this.$axios.defaults.baseURL + "/auth/google"
+            loginLink: this.$common.getLoginURL()
         }
     }
 }

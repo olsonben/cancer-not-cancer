@@ -1,6 +1,6 @@
 <template>
     <div>
-        <strong>{{ label }}</strong><div class="select is-medium" :class="{ 'is-loading': $fetchState.pending }">
+        <strong>{{ label }}</strong><div class="select is-medium" :class="{ 'is-loading': loading }">
             <select v-model="selectedUser">
                 <option v-for="user in users" :value="user.id">{{ user.fullname }}</option>
             </select>
@@ -9,6 +9,7 @@
 </template>
 
 <script>
+const api = useApi()
 // this.$store.state.user.permissions.admin
 const defaultUserArray = () => {
     return [{
@@ -19,22 +20,25 @@ const defaultUserArray = () => {
 }
 export default {
     props: {
+        userId: Number,
         label: {
             default: 'View as user:',
             type: String
         },
     },
+    emits: ['update:userId'],
     data() {
         return {
             users: defaultUserArray(),
             selectedUser: null,
+            loading: true
         }
     },
-    async fetch() {
-        const response = await this.$axios.$get('/users/')
-        this.users = defaultUserArray().concat(response)
+    async mounted() {
+        const { response } = await api.GET('/users/')
+        this.loading = false
+        this.users = defaultUserArray().concat(response.value)
     },
-    fetchOnServer: false,
     watch: {
         selectedUser: {
             immediate: true,

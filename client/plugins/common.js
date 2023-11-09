@@ -7,9 +7,9 @@ export default defineNuxtPlugin((app) => {
     const common = {
         /** Create a login URL that has current page as a parameter for redirecting after logged in. */
         getLoginURL() {
-            const isLogout = route.name == 'logout'
+            const isLogoutOrLogin = route.name == 'logout' || route.name == 'login'
             const loginParams = new URLSearchParams({
-                'ref_path': !isLogout ? route.fullPath : '/'
+                'ref_path': !isLogoutOrLogin ? route.fullPath : '/'
             })
             const loginURL = new URL(`${apiUrlNoSlash}/auth/google?${loginParams}`)
             return loginURL.href

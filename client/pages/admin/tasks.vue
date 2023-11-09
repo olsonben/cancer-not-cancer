@@ -85,6 +85,8 @@ const dummyData = [
     }
 ]
 
+const api = useApi()
+
 export default {
     data() {
         return {
@@ -110,12 +112,12 @@ export default {
     methods: {
         async createTask() {
             try {
-                const response = await this.$axios.$post('/tasks/', {
+                const { response } = await api.POST('/tasks/', {
                     short_name: this.task.name,
                     prompt: this.task.prompt,
                 })
                 this.taskData.push({
-                    id: response.newTaskId,
+                    id: response.value.newTaskId,
                     short_name: this.task.name,
                     prompt: this.task.prompt,
                     image_count: 0,
@@ -141,7 +143,7 @@ export default {
         async deleteTask(task) {
             console.log('deleteTask')
             try {
-                await this.$axios.$post('/tasks/delete', {
+                await api.POST('/tasks/delete', {
                     id: task.id
                 })
                 const index = this.taskData.findIndex(curTask => curTask.id === task.id)
@@ -152,20 +154,19 @@ export default {
         },
         async getTasksTable() {
             try {
-                const response = await this.$axios.$get('/tasks/table')
-                this.taskData = response
+                const { response } = await api.GET('/tasks/table')
+                this.taskData = response.value
             } catch (err) {
                 console.error(err);
             }
         },
         async updateTaskProgress(taskIndex) {
             try {
-                const response = await this.$axios.$get('/tasks/progress', {
-                    params: {
-                        task_id: this.taskData[taskIndex].id
-                    }
+                const { response } = await api.GET('/tasks/progress', {
+                    task_id: this.taskData[taskIndex].id
                 })
-                this.taskData[taskIndex].progress = response.progress ? response.progress : 0
+                const progress = response.value.progress
+                this.taskData[taskIndex].progress = progress ? progress : 0
             } catch (err) {
                 console.log(err)
             }
