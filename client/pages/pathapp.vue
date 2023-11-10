@@ -216,7 +216,7 @@ export default {
                 // api
                 await api.POST('/hotornot', bodyData)
             } catch(error) {
-                if ([401, 403].includes(error.response.status)) {
+                if ([401, 403].includes(error.statusCode)) {
                     // unauthorized, update login status
                     await userStore.login()
                 } else {
@@ -282,7 +282,7 @@ export default {
                     
                 } catch (error) {
                     const router = useRouter()
-                    if ([401, 403].includes(error.response.status)) router.push('/')
+                    if ([401, 403].includes(error.statusCode)) router.push('/')
                     console.error(error);
                 }
             } else {

@@ -7,7 +7,7 @@ const createDragstartHandler = (binding) => (event) => {
     //  styling
     event.target.style.opacity = "0.5"
 
-    console.log(event.dataTransfer)
+    // console.log(event.dataTransfer)
 }
 
 const dragendHandler = (event) => {
@@ -17,10 +17,10 @@ const dragendHandler = (event) => {
 }
 
 const draggable = {
-    inserted(el, binding) {
+    mounted(el, binding) {
         const { value } = binding
         const { editable } = value
-        
+
         // console.log(el)
         // console.log(editable)
         if (editable) {
@@ -39,7 +39,7 @@ const draggable = {
     
             draggable.handlersMap.set(el, dragstartHandler)
     },
-    unbind(el) {
+    unmounted(el) {
 
         const dragstartHandler = draggable.handlersMap.get(el)
 

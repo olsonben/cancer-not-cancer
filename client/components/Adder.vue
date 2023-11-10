@@ -7,8 +7,7 @@
                     <li
                         v-for="tag in localTags.applied"
                         :key="tag.id"
-                        v-draggable="{ tag, type: 'applied' }"
-                        draggable
+                        v-draggable="{ tag, type: 'applied', editable: true }"
                         class="tag is-info"
                     >
                         {{ tag.name }}
@@ -21,8 +20,7 @@
                     <li
                         v-for="tag in localTags.available"
                         :key="tag.id"
-                        v-draggable="{ tag, type: 'available' }"
-                        draggable
+                        v-draggable="{ tag, type: 'available', editable: true }"
                         class="tag is-success"
                     >
                         {{ tag.name }}
