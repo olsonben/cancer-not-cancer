@@ -145,40 +145,40 @@ export default {
             try {
                 // unique identifier to keep multiple request submissions unique
                 const key = `submitUser_${this.user.fullname}_${this.user.email}`
-                const { error: responseError } = await api.POST('/users/', this.user, key)
+                await api.POST('/users/', this.user, key)
 
-                if (responseError.value === null) {
-                    // This is all for notifications of successful uploads
-                    this.submittedUsers[submissionId].submittionSuccess = true // Note success
-                    
-                    // Clear the form for more user entries
-                    this.user.fullname = ''
-                    this.user.email =''
-                    this.user.password =''
-                    this.user.permissions.enabled = 0
-                    this.user.permissions.uploader = 0
-                    this.user.permissions.pathologist = 0
-                    this.user.permissions.admin = 0
+                // This is all for notifications of successful uploads
+                this.submittedUsers[submissionId].submittionSuccess = true // Note success
+                
+                // Clear the form for more user entries
+                this.user.fullname = ''
+                this.user.email =''
+                this.user.password =''
+                this.user.permissions.enabled = 0
+                this.user.permissions.uploader = 0
+                this.user.permissions.pathologist = 0
+                this.user.permissions.admin = 0
+
+                // clear user from message queue
+                this.removeSubmittedUser(submissionId)
+
+            } catch (error) {
+                // Note failure
+                this.submittedUsers[submissionId].submittionSuccess = false
+
+                if ([401, 403].includes(error.statusCode)) {
+                    // Reroute if you aren't logged in
+                    router.push('/login')
+                } else if (error.statusCode == 409) {
+                    // email already exists
+                    this.submittedUsers[submissionId].message = error.data.message
                 } else {
-                    if ([401, 403].includes(responseError.value.statusCode)) {
-                        // Reroute if you aren't logged in
-                        router.push('/login')
-                    } else if (responseError.value.statusCode == 409) {
-                        // email already exists
-                        this.submittedUsers[submissionId].message = responseError.value.data.message
-                    } else {
-                        this.submittedUsers[submissionId].message = 'Something went wrong.'
-                        console.error(responseError.value)
-                    }
-                    // Note failure
-                    this.submittedUsers[submissionId].submittionSuccess = false
+                    this.submittedUsers[submissionId].message = 'Something went wrong.'
+                    console.error(error)
                 }
 
                 // clear user from message queue
                 this.removeSubmittedUser(submissionId)
-            } catch (error) {
-                // This would be more of an app error as the api error is already captured.
-                console.error(error)
             }
         }
     }

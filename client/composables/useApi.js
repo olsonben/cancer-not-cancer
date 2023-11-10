@@ -11,38 +11,34 @@ export const useApi = () => {
 
     return {
         async GET(route, query, key = null) {
-            try {
-                const { data: response, status, error } = await useFetch(route, {
-                    method: 'GET',
-                    baseURL: config.public.apiUrl,
-                    credentials: 'include',
-                    server: false, // Fire on client
-                    watch: false, // Don't re-fetch on query change
-                    query: query,
-                    ...(key ? { key: key} : {})
-                })
-                return { response, status, error }
-            } catch (error) {
-                console.log('GET request failed. Route:', route)
-                console.error(error)
+            const { data: response, status, error } = await useFetch(route, {
+                method: 'GET',
+                baseURL: config.public.apiUrl,
+                credentials: 'include',
+                server: false, // Fire on client
+                watch: false, // Don't re-fetch on query change
+                query: query,
+                ...(key ? { key: key} : {})
+            })
+            if (error.value) {
+                throw error.value
             }
+            return { response, status }
         },
         async POST(route, body, key) {
-            try {
-                const { data: response, status, error } = await useFetch(route, {
-                    method: 'POST',
-                    baseURL: config.public.apiUrl,
-                    credentials: 'include',
-                    server: false, // should fire on client
-                    watch: false, // Don't re-fetch when body data changes
-                    body: body,
-                    ...(key ? { key: key } : {})
-                })
-                return { response, status, error }
-            } catch (error) {
-                console.log('POST request failed. Route:', route)
-                console.error(error)
+            const { data: response, status, error } = await useFetch(route, {
+                method: 'POST',
+                baseURL: config.public.apiUrl,
+                credentials: 'include',
+                server: false, // should fire on client
+                watch: false, // Don't re-fetch when body data changes
+                body: body,
+                ...(key ? { key: key } : {})
+            })
+            if (error.value) {
+                throw error.value
             }
+            return { response, status }
         },
     }
 }
