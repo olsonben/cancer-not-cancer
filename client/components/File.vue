@@ -47,6 +47,7 @@ export default {
             type: Number
         }
     },
+    emits: ['update:modelValue', 'change'],
     data() {
         return {
             changeName: false,

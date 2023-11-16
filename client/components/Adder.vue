@@ -45,6 +45,7 @@
 
 export default {
     props: ['tags'],
+    emits: ['update'],
     computed: {
         localTags() {
             return {

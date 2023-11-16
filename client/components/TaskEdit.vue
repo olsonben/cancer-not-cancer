@@ -49,6 +49,7 @@ const api = useApi()
 
 export default {
     props: ['task'],
+    emits: ['save', 'cancel'],
     data() {
         return {
             activeTab: 'observers',

@@ -17,6 +17,8 @@
             <!-- TODO: This is essentially the ImagePicker can that component be used here? -->
             <div class="menu">
                 <p class="menu-label">Images Folders: Drag files and folder where you want to move them.</p>
+                <!-- TODO: Should probably be replaced with a app wide loading animation. -->
+                <button v-if="loading" class="button is-loading is-medium is-info">loading</button>
                 <ul class="menu-list">
                     <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
                     <li v-for="(file, index) in files" :key="fileKey(file)">
@@ -34,122 +36,47 @@
 </template>
 
 <script>
-const start = Date.now()
-// TODO: VUE3 declare all emits for the app.
-// TODO: Determine if most api calls should be cached or not, Vue3/nuxt does by
-// default now, and thus we will have to specifically key out api requests.
 const api = useApi()
 
-async function getData() {
+async function getFiles() {
     try {
         // TODO: change this over to an images/all request.
         // The task_id is arbitrary.
         const { response } = await api.GET('/tasks/images', {
             task_id: 14
         })
-        const fetchTime = Date.now() - start
-        console.log(`Fetch Time: ${fetchTime} ms`)
         return response.value
     } catch (error) {
         console.error('ImageManager fetch:', error.message)
     }
 }
 
-// Note: We start the initial api call here, then await the data in the setup.
-// This is the fastest way to load data(that I found) using the options api, and
-// it resembles the composition api.
-const firstData = getData()
+// Note: We start the initial api call here. We could wait for firstData in the
+// setup function but that blocks the the entire page from displaying.
+const firstData = getFiles()
 
 export default {
-    // Using setup because it fire just before data
+    // Using setup because it fire just before data()
     async setup() {
         return {
-            // files: await firstData, // awaiting promise resolve
-            // files: new Proxy([], {
-            //     _isReadonly: false,
-            //     _shallow: false
-            // }),
-            files: ref([]),
+            files: ref([]), // using ref to make our nest array reactive
             createTagName: '',
-            attention: false
+            attention: false,
+            loading: true, 
         }
     },
-    // Notes: we know that this.appendData is non-blocking, fetching data, the telling
-    // it to append in the created function. Using await instead blocks created.
-    // TODO: Test the time from start to data change in the watch method, making sure
-    // to calc at the second update. Then try the different methods
     async created() {
-        const cTime = Date.now()
-        this.appendData()
-
-        // const data = await firstData
-        // this.files.push(...data)
-        // const dataTime = Date.now() - start
-        // console.log(`Data Time: ${dataTime} ms`)
-        // console.log('beforeCreate')
-        // const dTime = Date.now() - cTime
-        // console.log(`cd Time: ${dTime} ms`)
-
-
-        // console.log(this)
-    }, 
-    async mounted() {
-        
-        // const data = await firstData
-        // this.files = [...toRaw(this.files), data]
-        // console.log(this.files)
-        
-        // const test = new Proxy([], {
-        //     _isReadonly: false,
-        //     _shallow: false
-        // })
-        // console.log(test)
-        // console.log(JSON.stringify(this.files))
-        const mountedTime = Date.now() - start
-        console.log(`Mount Time: ${mountedTime} ms`)
-        // console.log(`Data Time: ${dataTime} ms`)
-        // console.log('mounted()')
-        // // this.refreshData()
-        // setTimeout(() => {
-        //     this.testMethod()
-        // }, 3000);
-    },
-    watch: {
-        files: {
-            immediate: true,
-            deep: true,
-            handler(newFiles, oldFiles) {
-                if (oldFiles == undefined) {
-                    console.log('init files Change')
-                } else {
-                    const dataTime = Date.now() - start
-                    console.log(`Data Time: ${dataTime} ms`)
-                    console.log('files Change')
-                }
-                // console.log(JSON.stringify(oldFiles))
-                // console.log(JSON.stringify(newFiles))
-                // this.headers = newTableData.columns
-                // this.body = newTableData.bodyData
-                // this.indexProp = newTableData.indexProp
-                // this.order = newTableData.order
-            }
-        }
+        // We can asynchronously attach the data here
+        this.refreshData(firstData)
     },
     methods: {
-        async appendData() {
+        async refreshData(dataPromise) {
             try {
-                const data = await firstData
-                this.files.push(...data)
-                // const dataTime = Date.now() - start
-                // console.log(`Data Time: ${dataTime} ms`)
+                this.files = await dataPromise
+                this.loading = false
             } catch (error) {
-                console.log(error)
+                console.error('ImageManager refreshData:', error.message)
             }
-        },
-        testMethod() {
-            console.log('testMethod')
-            this.files.splice(0)
-            console.log(JSON.stringify(this.files))
         },
         fileKey(file) {
             return `${file.type}-${file.id}`
@@ -273,7 +200,10 @@ export default {
                 })
             } catch (error) {
                 console.error('ImageManager deleteTag:', error.message)
-                this.refreshData()
+                // because folder delete can be nested, if we experience an error,
+                // we should refresh the data for accuracy
+                const newDataPromise = getFiles()
+                this.refreshData(newDataPromise)
             }
         },
         async editFileName(fileId, newName) {
@@ -330,21 +260,6 @@ export default {
                 })
             } catch (error) {
                 console.error('ImageManager moveFile:', error.message)
-            }
-        },
-        async refreshData() {
-            try {
-                console.log('refreshDat')
-                // TODO: change this over to an images/all request.
-                // The task_id is arbitrary.
-                const { response } = await api.GET('/tasks/images', {
-                    task_id: 14
-                })
-                console.log(response.value)
-                const images = response.value
-                this.files = images
-            } catch (error) {
-                console.error('ImageManager fetch:', error.message)
             }
         }
     }
