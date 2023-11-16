@@ -1,37 +1,40 @@
+// Tag our process to easily identify later
+import process from 'node:process'
+process.title = process.title + ' app.js [CancerNotCancer API]'
+console.log("PID: " + process.pid + " process title is " + process.title)
+
 /**********************************************
  * IMPORTS
  **********************************************/
 // Basic stuff for the server
-import express from 'express'               // We have an express server (https://expressjs.com/)
-import env from './.env.js'
-import envLocal from './.env.local.js'      // Hidden information not to be tracked by github (passwords and such)
+import express from 'express' // We have an express server (https://expressjs.com/)
 
 /// Features
-import bodyParser from 'body-parser'        // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
-import mysql from 'mysql'                   // We are using a database (https://expressjs.com/en/guide/database-integration.html#mysql)
-import fs from 'fs'
+import bodyParser from 'body-parser' // JSON parsing is NOT default with http; we have to make that possible (https://www.npmjs.com/package/body-parser)
 
-import upload from './lib/upload.js'                                // multer
-import { isLoggedIn, isValid, getIP } from './lib/functions.js'     // Helper functions
+import { isLoggedIn, isEnabled, isPathologist, getIP } from './lib/functions.js'     // Helper functions
 // These are all for authentication
-import auth from './lib/auth.js'                                    // This needs to be loaded for passport.authenticate
+import auth from './lib/auth.js' // This needs to be loaded for passport.authenticate
 
 /**********************************************
  * SERVER SETUP
  **********************************************/
 // Make the server
-const app = express() 
-auth.setup(app)                         // Setup authentication routes for the app
-const port = env.port || 5000;
-const imageBaseURL = env.url.image
-const baseURL = env.url.base
+const app = express()
+
+auth.setup(app) // Setup authentication routes for the app
+const port = process.env.PORT || 5000;
 
 
-/*****************
- * MariaDB DATABASE
- *****************/
-import dbConnect from './lib/database.js'
-const pool = dbConnect(true)
+/******************
+ * DATABASE Methods
+ ******************/
+import dataOps from './dbOperations/dataOps.js'
+
+import taskRoutes from './routes/tasks.js'
+import userRoutes from './routes/users.js'
+import imageRoutes from './routes/images.js'
+import dataRoutes from './routes/data.js'
 
 /******************
  * REQUEST PARSING
@@ -44,39 +47,34 @@ app.use(bodyParser.json({
     type: 'application/json'
 }));
 
-// Images
-app.use('/images', express.static('images'))
+// Server images if using local development
+if (process.env.NODE_ENV != 'production') {
+    console.log('Serving images locally from:')
+    console.log(`  ${process.env.IMAGES_DIR}`)
+    app.use('/images', express.static(process.env.IMAGES_DIR))
+}
+
 
 /**********************************************
  * Express REQUESTS
  **********************************************/
 
+app.use('/tasks', taskRoutes)
+app.use('/users', userRoutes)
+app.use('/images', imageRoutes)
+app.use('/data', dataRoutes)
+
 /*****************
  * GET
  *****************/
-app.get('/nextImage', isLoggedIn, isValid, (req, res) => {
-    console.log("Get /nextImage");
-    
-    // Get random row
-    // NOTE: this is not very efficient, but it works
-    const query = "SELECT id, path FROM images ORDER BY times_graded, date_added LIMIT 1;"
-    
-    pool.query(query, (err, rows, fields) => {
-        if (err) throw err
-        res.send({
-            id: rows[0].id, // imageID
-            url: imageBaseURL + rows[0].path
-        })
-        console.log("Successful image get query")
-    })
-})
 
-// Checker for if the user is authenticated
+// Checker for if the user is authenticated (NOT middleware)
 app.get('/isLoggedIn', (req, res) => {
     if (req.isAuthenticated()) {
         res.send(req.user)
     } else {
-        res.status(401).send(baseURL + '/auth')
+        // Send false/no user data
+        res.status(200).send(false)
     }
 })
 
@@ -84,91 +82,57 @@ app.get('/isLoggedIn', (req, res) => {
  * POST
  *****************/
 
+
 // Insert the hotornots
-app.post('/hotornot', isLoggedIn, isValid, (req, res) => {
+app.post('/hotornot', isLoggedIn, isEnabled, isPathologist, async (req, res, next) => {
     console.log("post /hotornot")
     // REMEMBER: the data in body is in JSON format
+
+    // Check types
+    let flag = false
+    let message = []
+    if (typeof req.body.id !== 'number') {
+        flag = true
+        message += "Image ID is not a number"
+    } if (typeof req.body.rating !== 'number') {
+        flag = true
+        message += "Rating is not a number"
+    } if (typeof req.body.comment !== 'string') {
+        flag = true
+        message += "Message is not a string"
+    } if (flag) {
+        res.status(415).send(message)
+        return
+    }
+
+    // Check comment length: MariaDB has a max text length of 65,535 characters
+    if (req.body.comment.length > 65535) {
+        res.status(413).send(["Comment too long"])
+        return
+    }
     
-    const query = `INSERT INTO hotornot (user_id, image_id, rating, comment, from_ip) 
-        VALUES (${req.user.id}, ${req.body.id}, ${req.body.rating}, "${req.body.comment}", ${getIP(req)});
-        UPDATE images 
-        SET times_graded = times_graded + 1 
-        WHERE id = ${req.body.id};`
-    
-    pool.query(query, (err, results, fields) => {
-        if (err) throw err
-        console.log("Successful hotornot insert query");
+    try {
+        await dataOps.addRating(
+            req.user.id,
+            req.body.id,
+            req.body.rating,
+            req.body.comment,
+            getIP(req),
+            req.body.taskId
+        )
+
         res.sendStatus(200)
-    })
+    } catch (err) {
+        next(err) // Pass error onto unified error handler.
+    }
 })
 
-// Insert new user
-app.post('/users', isLoggedIn, isValid, (req, res) => {
-    console.log("Post /users");
-    let query = `INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES 
-        ("${req.body.fullname}", "${req.body.email}", "${req.body.password}", 
-        ${req.body.permissions.enabled ? 1 : 0}, 
-        ${req.body.permissions.pathologist ? 1 : 0}, 
-        ${req.body.permissions.uploader ? 1 : 0}, 
-        ${req.body.permissions.admin ? 1 : 0});`
 
-    pool.query(query, (err, rows, fields) => {
-        if (err) {
-            // No duplicate users
-            if (err.code === 'ER_DUP_ENTRY') {
-                res.status(409).send({
-                    message: "Email already exists in database.",
-                    user: req.body
-                })
-                return // Quit the function early to avoid compounding send
-            } else {
-                console.log(err)
-            }
-        }
-        console.log("Successful user insert query");
-        res.status(200).send(req.body)
-    })
-})
-
-// Insert new images
-app.post('/images', isLoggedIn, isValid, upload.any(), (req, res) => {
-    console.log("Post /images");
-    // Check for proper content-type: multer only checks requests with multipart/form-data
-    if (!req.headers['content-type'].includes('multipart/form-data')) {
-        res.status(415).send('Content-Type must be multipart/form-data.')
-        return
-    }
-    if (req.files.length === 0) {
-        res.status(200).send('No files uploaded.')
-        return
-    }
-    
-    let count = 0
-    let failFlag = false
-    for (let file in req.files) {
-        const query = `INSERT INTO images (path, hash, from_ip, user_id) VALUES ("/${req.files[file].path}", ${req.body.hash || 'NULL'}, ${getIP(req)}, ${req.user.id});` // insert image
-
-        pool.query(query, (err, rows, fields) => {
-            count++
-            if (err) {
-                // No duplicate images
-                failFlag = true
-                if (err.code === 'ER_DUP_ENTRY') {
-                    req.files[file].message = "Path already exists in database."
-                } else {
-                    throw err
-                }
-            } else {
-                console.log(`Successful image insert query: ${req.files[file].path}`)
-            }
-
-            if (count === req.files.length) {
-                // Respond as an error if any of the files failed
-                res.status(failFlag ? 409 : 200).send(req.files)
-                return
-            }
-        })
-    }
+// Unified error handler
+app.use((err, req, res, next) => {
+    console.log("Sending status(500). Route error caught...")
+    console.error('\x1b[31m', err.stack, '\x1b[0m')
+    res.sendStatus(500)
 })
 
 /**********************************************

@@ -1,13 +1,10 @@
 <template>
-    <div>
+    <div class="content section">
         You have been logged out.
     </div>
 </template>
 
 <script>
-import axios from 'axios'
-import * as env from '../.env.js'
-
 export default {
     // Automatically logout when coming to this page
     created() {

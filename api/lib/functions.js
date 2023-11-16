@@ -1,49 +1,108 @@
-// `export function ...` lets us deconstruct the import to get specific functions
-export function bounce(req, res, route='/') {
-    // Bounce back to origin
-    const origin = req.session.origin
-    delete req.session.origin
-    res.redirect(origin || route)
-}
+import * as path from 'path'
 
+// `export function ...` lets us deconstruct the import to get specific functions
 export function isLoggedIn (req, res, next) {
     // Has user ? move on : unauthorized status
     if (req.isAuthenticated()) {
         next()
     } else {
-        req.session.origin = req.headers.referer // Remember the original url to bounce back to
-        console.log("Origin: " + req.session.origin)
+        // redirects are handled else where
+        // TODO: should this behavior be revised?
         res.status(401).send('/auth')
     } 
 }
 
 export function getIP (req) {
     let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
-    console.log(ip)
-    ip = '"' + ip.substring(ip.lastIndexOf(':')+1) + '"'
+    ip = ip.substring(ip.lastIndexOf(':')+1)
     return ip
 }
 
-// Checking if a user is allowed to make a specific request
-export function isValid (req, res, next) {
-    // Each method and source has specific requirements to be valid
-    const perms = req.user.permissions
-    if (req.route.methods.get) {
-        if (req.route.path === '/nextImage') {
-            perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
-        }
-    } else if (req.route.methods.post) {
-        // Checking enabled is redundant but safe
-        if (req.route.path === '/hotornot') {
-            perms.pathologist && perms.enabled ? next() : res.sendStatus(401)
-        } else if (req.route.path === '/images') {
-            perms.uploader && perms.enabled ? next() : res.sendStatus(401)
-        } else if (req.route.path === '/users') {
-            perms.admin && perms.enabled ? next() : res.sendStatus(401)
-        }
+export function isEnabled (req, res, next) {
+    if (req.user.permissions.enabled) {
+        next()
+    } else {
+        // User is not enabled
+        res.sendStatus(401)
     }
-    return false
 }
 
-// export default wraps all the functions in one object
-export default { bounce, isLoggedIn, getIP, isValid }
+export function isAdmin(req, res, next) {
+    if (req.user.permissions.admin) {
+        next()
+    } else {
+        res.sendStatus(401)
+    }
+}
+
+export function isPathologist(req, res, next) {
+    if (req.user.permissions.pathologist) {
+        next()
+    } else {
+        res.sendStatus(401)
+    }
+}
+
+export function isUploader(req, res, next) {
+    if (req.user.permissions.uploader) {
+        next()
+    } else {
+        res.sendStatus(401)
+    }
+}
+
+/** Use to wrap express middleware in generic try/catch. */
+export function asyncHandler(handler) {
+    return async (req, res, next) => {
+        try {
+            await handler(req, res, next)
+        } catch (error) {
+            next(error) // Pass to generic error handler
+        }
+    }
+}
+
+/** Function that help create folder and file objects and structure */
+export const virtualFileSystem = {
+    /**
+     * Creates a set of all possible folders paths.
+     * @param {Array.<Object>} filesArray - Array of file objects full path file name.
+     * @param {String} containerFolder - A base folder to contain all found folders/files.
+     * @returns {Set.<String>} - root/folder_a -> { root, root/folder_a }
+     */
+    createFolderStructure(filesArray, containerFolder) {
+        let folderStructure = new Set()
+        folderStructure.add(containerFolder)
+    
+        for (const file of filesArray) {
+            if (file.success) {
+                let folders = file.sanitizedName.split(path.sep)
+                const fileName = folders.pop()
+                for (let i = folders.length; i != 0; i--) {
+                    folderStructure.add(path.join(containerFolder, ...folders))
+                    folders.pop()
+                }
+            }
+        }
+    
+        return folderStructure
+    },
+    /** Returns a folder object. */
+    createFolder(tag_id, tag_name, contents = []) {
+        return {
+            id: tag_id,
+            name: tag_name,
+            contents: contents,
+            type: 'tag'
+        }
+    },
+    /** Returns a file object. */
+    createFile(image_id, image_path, selected = false) {
+        return {
+            id: image_id,
+            name: image_path,
+            selected: selected,
+            type: 'img'
+        }
+    }
+}

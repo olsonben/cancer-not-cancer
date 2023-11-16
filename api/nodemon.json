@@ -1,0 +1,6 @@
+{
+    "ignore": [
+        "images/*"
+    ],
+    "verbose": true
+}

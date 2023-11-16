@@ -8,38 +8,62 @@
  * https://youtu.be/Q0a0594tOrc
  */
 
-import env from '../.env.js'                    // Public environment variables
-import envLocal from '../.env.local.js'         // Private "
-import dbConnect from './database.js'           // Database to set permissions on user
-import { bounce } from './functions.js'         // Functions
-const pool = dbConnect(false)
+import userOps from '../dbOperations/userOps.js'
+import * as path from 'path'
 
-import passport from 'passport'                 // Authentication procedure (https://www.passportjs.org/)
-import session from 'express-session'           // Session gives us cookies (https://www.npmjs.com/package/express-session)
-import cookieParser from 'cookie-parser'        // We need to track things about the session (https://www.npmjs.com/package/cookie-parser)
+// Manage Cross Origin Resource Sharing
+import cors from 'cors'
+// Authentication procedure (https://www.passportjs.org/)
+import passport from 'passport'
+// Session gives us cookies (https://www.npmjs.com/package/express-session)
+import session from 'express-session'
+// Server-side session store. Without this sessions are stored in ram, which is leaky and not production.
+// ref: https://github.com/expressjs/session
+import expressMySQLSession from 'express-mysql-session'
+const MySQLStore = expressMySQLSession(session)
+
+const sessionStoreOption = {
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DATABASE
+}
+
+const sessionStore = new MySQLStore(sessionStoreOption)
+// to cleanly close `sessionStore.close();`
+
 import { Strategy as GoogleStrategy } from 'passport-google-oauth2'
 
+// Using the URL class to manage urls. If the api is living at a certain path,
+// then using path.join inside a new URL should resolve the location desired.
+// ex. staging may leave at milmed.ai/staging/, /staging/ needs to be retained.
+const backendURL = new URL(process.env.BACKEND_URL)
+const authCallbackURL = new URL(path.join(backendURL.pathname, "/auth/google/callback"), backendURL)
+
 passport.use(new GoogleStrategy({
-        clientID: envLocal.google.clientID,                     // Authentication requirements by Google
-        clientSecret: envLocal.google.clientSecret,
-        callbackURL: env.url.base + "/auth/google/callback",    // Handler for coming back after authentication
+        clientID: process.env.GOOGLE_CLIENT_ID,                     // Authentication requirements by Google
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: authCallbackURL.href,    // Handler for coming back after authentication
         passReqToCallback: true
     },
-    (request, accessToken, refreshToken, profile, done) => {
-        const query = `SELECT id, is_enabled FROM users WHERE username = "${profile.email}";`
-        
-        pool.query(query, (err, rows, fields) => {
-            if (err) console.log(err)
-            // User must be registered and enabled to be allowed in
-            if (rows.length != 1) {
-                return done(null, false, { message: 'User not in database.' })
-            } else if (!rows[0].is_enabled) {
-                return done(null, false, { message: 'User not enabled.' })
+    async (request, accessToken, refreshToken, profile, done) => {
+        try {
+            const user = await userOps.getUserByUsername(profile.email)
+            if (!user) {
+                console.log(`Failed login: ${profile.email} not a user.`)
+                return done(null, false, { message: 'Not a user.' })
+            } else if (!user.is_enabled) {
+                console.log(`Failed login: ${profile.email} not enabled.`)
+                return done(null, false, { message: 'Account disabled.' })
+            } else {
+                // Only store id number in session
+                profile.id = user.id
+                return done(null, profile)
             }
-            
-            profile.id = rows[0].id     // Only store id number in session
-            return done(null, profile)
-        })
+
+        } catch (err) {
+            return done(err)
+        }
     }
 ));
 
@@ -53,86 +77,123 @@ passport.serializeUser((user, done) => {
 })
 
 // User object attaches to req as req.user (doesn't leave the server)
-passport.deserializeUser((id, done) => {
-    const query = `SELECT * FROM users WHERE id = "${id}";`
-    pool.query(query, (err, rows, fields) => {
-        // Store permissions to req.user
-        done(null, {
-            id: rows[0].id,
-            permissions: {
-                enabled: rows[0].is_enabled,
-                uploader: rows[0].is_uploader,
-                pathologist: rows[0].is_pathologist,
-                admin: rows[0].is_admin,
-            }
-        })
+passport.deserializeUser(async (id, done) => {
+    const user = await userOps.getUserById(id)
+    done(null, {
+        id: user.id,
+        permissions: {
+            enabled: !!Number(user.is_enabled), // !!Number() returns boolean for 1 & 0
+            uploader: !!Number(user.is_uploader),
+            pathologist: !!Number(user.is_pathologist),
+            admin: !!Number(user.is_admin),
+        }
     })
 })
 
 function setup(app) {
+    const frontendURL = new URL(process.env.FRONTEND_URL)
+
+    // We need to clear the frontend for cors
+    if (process.env.NODE_ENV !== 'production') {
+        console.log('Dev Mode: CORS running in node.js')
+        app.use(cors({
+            // Regex can be used to work as a wild card for subdomains.
+            // For now using matching string(s).
+            // docs: https://expressjs.com/en/resources/middleware/cors.html
+            origin: [frontendURL.origin],
+            // need for authenticating
+            credentials: true
+        }))
+    }
+    
+    
     /*****************
      * USER AUTHENTICATION
      *****************/
     
     // This was done with this video: https://youtu.be/Q0a0594tOrc
+    // Use cookies securely: https://expressjs.com/en/advanced/best-practice-security.html#use-cookies-securely
+    // sameSite and cookie secure flag info: https://www.npmjs.com/package/express-session#cookiesamesite
+
+    const sessionConfig = {
+        secret: process.env.SESSION_SECRET, // Encrypted session
+        store: sessionStore,
+        name: 'sessionId',
+        resave: false,
+        saveUninitialized: false,    // https://github.com/expressjs/session#saveuninitialized
+        cookie: {
+            httpOnly: true, // helps prevent cross-site scripting
+            secure: false,
+            maxAge: 60 * 60 * 1000, // 1 hour in milliseconds
+            sameSite: 'strict'
+        }
+    }
+
+    if (process.env.NODE_ENV == 'production') {
+        app.set('trust proxy', 1) // trust first proxy (NGINX) ie. http -> https
+        sessionConfig.cookie.secure = true // https needed
+    }
+
     app.use(
-        cookieParser(),                                     // Use cookies to track the session         :: req.session
-        session({
-            secret: envLocal.session.secret,                // Encrypted session
-            resave: true,                                   // Using default is deprecated :: This is the default value
-            saveUninitialized: true   
-        }),
-        passport.initialize(),                              // Google OAuth2 is a passport protocol
-        passport.session()                                  // Need to track the user as a session      :: req.user
+        session(sessionConfig),
+        passport.initialize(),  // Google OAuth2 is a passport protocol
+        passport.session()  // Need to track the user as a session :: req.user
     )
     
     /**
      * GENERAL AUTHENTICATION ROUTES
      */
     
-    // Authorization options page
-    app.get('/auth', (req, res) => {
-        res.send('<a href="/auth/google">Authenticate with Google</a>')
-    })
-    
     // Handle successful authentications
     app.get('/auth/success', (req, res) => {
-        // Check to make sure they were allowed
-        if (!req.user.allowed) {
-            res.status(403)
-        }
-        // Bounce back to origin
-        bounce(req, res)
+        // redirect successful logins
+        const redirectLink = new URL(frontendURL.href)
+        // add the authentication referral path if it existss
+        redirectLink.pathname = path.join(redirectLink.pathname, req.query.ref_path || '/')
+
+        res.redirect(redirectLink.href)
     })
     
     // Failed authorization
     app.get('/auth/failure', (req, res) => {
-        if (['User not in database.', 'User not enabled.'].some(item => req.session.messages.includes(item))) {
-            bounce(req, res)
-        } else {
-            res.send("Something went wrong...")
-        }
+        // TODO: Inform the user that login failed. Currently req.session.messages doesn't seem to work with google oauth.
+        // Failures LOOP back to login page to try again.
+        res.redirect(path.join(backendURL.pathname, '/auth/google'))
     })
     
     // Log out the user
-    app.get('/auth/logout', (req, res) => {
-        req.logout()            // Log out the user
-        req.session.destroy()   // kill their session
-        res.send('Goodbye!')
+    app.post('/auth/logout', (req, res) => {
+        // Logout the user: passport(req.logout) handles session.destory so no need to call it.
+        req.logout((err) => {
+            if (err) {
+                console.log(err)
+            } else {
+                // we need to resolve the request so the client can continue
+                res.sendStatus(204) // No-Content Success
+            }
+        })
     })
     
     /**
      * GOOGLE AUTHENTICATION
      */
     //                                                  Interested in: email
-    app.get('/auth/google', passport.authenticate('google', { scope: ['email'] }))
+    app.get('/auth/google', (req, res, next) => {
+        passport.authenticate('google', {
+            scope: ['email'],
+            prompt: "select_account",
+            state:  req.query.ref_path || '/' // pass referral to auth callback
+        })(req, res, next)
+    })
     
     // You need to tell google where to go for successful and failed authorizations
-    app.get('/auth/google/callback',
-        passport.authenticate('google', {
-            failureRedirect: '/auth/failure', failureMessage: true,
-            successRedirect: '/auth/success'
-        })
+    app.get('/auth/google/callback', (req, res, next) => {
+            const query = `?ref_path=${req.query.state}`
+            passport.authenticate('google', {
+                failureRedirect: path.join(backendURL.pathname, '/auth/failure'), failureMessage: true,
+                successRedirect: `${path.join(backendURL.pathname, '/auth/success')}${query}`
+            })(req,res,next)
+        }
     )
 }
 

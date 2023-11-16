@@ -26,7 +26,7 @@
                     <div class="field">
                         <label class="label">Password</label>
                         <div class="control">
-                            <input class="input" type="text" placeholder="Password" v-model="user.password" />
+                            <input class="input" type="password" placeholder="Password" v-model="user.password" />
                         </div>
                     </div>
                 </div>
@@ -85,8 +85,6 @@
 </template>
 
 <script>
-import env from '../../.env'
-import axios from 'axios'
 
 export default {
     data() {
@@ -129,25 +127,38 @@ export default {
             
             // POST to /users
             try {
-                const response = await axios.post(env.url.api + '/users', axiosData, axiosConfig)
-                
+                const response = await this.$axios.post('/users/', axiosData, axiosConfig)
+
                 // This is all for notifications of successful uploads
                 this.submittedUsers[response.data.id].submittionSuccess = true // Note success
+
+                // Clear the form for more user entries
+                this.user.fullname = ''
+                this.user.email =''
+                this.user.password =''
+                this.user.permissions.enabled = 0
+                this.user.permissions.uploader = 0
+                this.user.permissions.pathologist = 0
+                this.user.permissions.admin = 0
+
                 setTimeout(() => {
                     this.submittedUsers[response.data.id].submittionSuccess = -1
                 }, this.notificationTime) // "kill" notification after some time
 
             } catch (error) {
                 // Reroute if you aren't logged in
-                if ([401, 403].includes(error.response.status)) { window.location.replace(`${env.url.client}/login`) }
-                else { console.error(error) }
+                if ([401, 403].includes(error.response.status)) {
+                    this.$router.push('/login')
+                } else {
+                    console.error(error)
 
-                this.submittedUsers[error.response.data.user.id].submittionSuccess = false // Note failure
-                this.submittedUsers[error.response.data.user.id].message = error.response.data.message
+                    this.submittedUsers[error.response.data.user.id].submittionSuccess = false // Note failure
+                    this.submittedUsers[error.response.data.user.id].message = error.response.data.message
 
-                setTimeout(() => {
-                    this.submittedUsers[error.response.data.user.id].submittionSuccess = -1
-                }, this.notificationTime) // "kill" notification
+                    setTimeout(() => {
+                        this.submittedUsers[error.response.data.user.id].submittionSuccess = -1
+                    }, this.notificationTime) // "kill" notification
+                }
             }
         }
     }

@@ -1,17 +1,17 @@
 <template>
     <div>
         <!-- Main upload stuff -->
-        <section class='section'>
+        <section class='section pt-3 pb-3'>
             <h1 class='title'>Upload images</h1>
 
             <!-- Upload box -->
             <div class='tabs'>
                 <ul>
-                    <li :class="{ 'is-active': folderUpload }"><a @click='uploadingFolders = true'>Upload Folders</a></li>
-                    <li :class="{ 'is-active': fileUpload }"><a @click='uploadingFolders = false'>Upload Files</a></li>
+                    <li :class="{ 'upload-active': folderUpload }"><a @click='uploadingFolders = true'>Upload Folders</a></li>
+                    <li :class="{ 'upload-active': fileUpload }"><a @click='uploadingFolders = false'>Upload Files</a></li>
                 </ul>
             </div>
-            <form enctype="multipart/form-data" @submit.prevent="saveImages()" novalidate>
+            <div>
                 <div class="dropbox">
                     <!-- File input -->
                     <input type="file"
@@ -45,33 +45,34 @@
                 <!-- Submit or clear files -->
                 <div class='level'>
                     <div class='level-left'>
-                        <input class='level-item button is-primary'type="submit" value="Submit" />
+                        <button class='level-item button is-primary' @click='saveImages'>Submit</button>
                     </div>
                     <div class='level-right'>
                         <button class='level-item button is-light' @click='reset'>Clear Choices</button>
                     </div>
                 </div>
-            </form>
+            </div>
         </section>
         <!-- Notifications of submission process -->
         <template v-for='file in submittedFiles'>
             <div v-if="file.submissionSuccess === null" class='notification is-warning is-light'>
-                File {{ file.name }} is submitted, awaiting response.
+                File {{ file.originalname }} is submitted, awaiting response.
             </div>
             <div v-else-if="file.submissionSuccess === true" class='notification is-success is-light'>
-                File {{ file.name }} is successfully submitted.
+                File {{ file.originalname }} is successfully submitted.
             </div>
             <div v-else-if="file.submissionSuccess === false" class='notification is-danger is-light'>
                 <!--                                             Don't add a period to messages ending w/ a period -->
-                File {{ file.name }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
+                File {{ file.originalname }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
             </div>
         </template>
+        <div class="section pt-3">
+            <ImageManager :key="imageManagerKey"/>
+        </div>
     </div>
 </template>
 
 <script>
-import * as env from '../../.env'
-import axios from 'axios'
 import FormData from 'form-data'
 
 const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_FAILED = 3, STATUS_LOADED = 4
@@ -88,8 +89,9 @@ export default {
             uploadingFolders: true,
 
             // Notification stuff
-            submittedFiles: [],
-            notificationTime: "5000"
+            submittedFiles: {},
+            notificationTime: "10000", // 10 sec in ms
+            imageManagerKey: 1 // we can force and update by incrementing this on upload complete
         }
     },
 
@@ -124,6 +126,14 @@ export default {
             this.fileCount = 0
         },
 
+        appendSubmittedFile(filename, propObj) {
+            this.$set(this.submittedFiles, filename, propObj)
+        },
+
+        removeSubmittedFile(filename) {
+            this.$delete(this.submittedFiles, filename)
+        },
+
         // Fill this.files with the files added at ref=fileInput
         newImage(event) {
             for (let i = 0; i < event.target.files.length; i++) {
@@ -141,53 +151,80 @@ export default {
         async saveImages() {
             this.currentStatus = STATUS_SAVING
 
-            const offset = this.submittedFiles.length
+            // image upload requires submittion via form data 
+            const data = new FormData()
 
-            const data = new FormData()                 // multer requires submittion via form data; like this
-            data.append('files', this.files)            // Add the files array object
+            const clearNotification = (filename) => {
+                // set a timer to kill the notification
+                setTimeout(() => {
+                    this.removeSubmittedFile(filename)
+                }, this.notificationTime)
+            }
+
+            // Add the files array object
             this.files.forEach((file, index) => {
-                data.append('files', file, file.webkitRelativePath === '' ? file.name : file.webkitRelativePath)   // put each file into the files array in the form
+                console.log(file)
+                // TODO: Make sure uploadSizeLimit is defined for error printout
+                // console.log(this.$config.uploadSizeLimit)
+                if (file.size > this.$config.uploadSizeLimit) {
+                    console.error(`${file.name} is too large. MAX_BYTES: ${this.$config.uploadSizeLimit}`)
+                    this.appendSubmittedFile(file.name, {
+                        submissionSuccess: false,
+                        message: 'Too large',
+                        originalname: file.name
+                    }) 
+                    clearNotification(file.name)
+                    return
+                }
+                const fileName = file.webkitRelativePath === '' ? file.name : file.webkitRelativePath
+                data.append(`files[${index}]`, file, fileName)
 
                 // Keep track of important information for notifications
-                const i = {
+                this.appendSubmittedFile(fileName, {
                     submissionSuccess: null,
                     message: null,
-                    name: file.name
-                }
-                this.submittedFiles.push(i)
+                    originalname: fileName
+                })
             })
-            console.log(data.getAll('files'))
-            
-            try {
-                const response = await axios.post(env.url.api + '/images', data)
 
-                if (response.data !== 'No files uploaded.') { // Handling 0 file upload edge case
-                    for (const id in response.data) {
-                        this.submittedFiles[Number(id) + offset].submissionSuccess = true // Track success
-                        setTimeout(() => {
-                            this.submittedFiles[Number(id) + offset].submissionSuccess = -1 // Kill notification
-                        }, this.notificationTime)
+            try {
+                const response = await this.$axios.post('/images/', data)
+
+                // Handling 0 file upload edge case
+                if (response.data !== 'No files uploaded.') {
+                    for (let file of response.data) {
+                        // update file's success value
+                        this.submittedFiles[file.filename].submissionSuccess = file.success
+                        this.submittedFiles[file.filename].message = (file.message) ? file.message : null
+
+                        clearNotification(file.filename)
                     }
+                    this.imageManagerKey += 1
+                } else {
+                    console.log('No Files to Upload')
                 }
 
             } catch (error) {
                 if ([401, 403].includes(error.response.status)) {
-                    window.location.replace(`${env.url.client}/login`)
-
+                    console.log('Please login.')
+                    this.$router.push('/login')
                 } else {
-                    console.log(offset)
-                    for (const id in error.response.data) {
-                        if (error.response.data[id].message !== undefined) {
-                            this.submittedFiles[Number(id) + offset].submissionSuccess = false // track failure
-                            this.submittedFiles[Number(id) + offset].message = error.response.data[id].message
-                        } else {
-                            // Since we are uploading multiple files, some fail to upload, others succeed
-                            this.submittedFiles[Number(id) + offset].submissionSuccess = true
+                    console.log("error")
+                    console.log(error)
+                    if (error.response.data) {
+                        for (const file of error.response.data) {
+                            console.log(file)
+                            // update failed status
+                            this.submittedFiles[file.filename].submissionSuccess = file.success || false
+                            clearNotification(file.filename)
                         }
-
-                        setTimeout(() => {
-                            this.submittedFiles[Number(id) + offset].submissionSuccess = -1
-                        }, this.notificationTime)
+                    } else {
+                        // Handle lost connection/server failure
+                        for (const filename in this.submittedFiles) {
+                            this.submittedFiles[filename].submissionSuccess = false
+                            this.submittedFiles[filename].message = 'Not Uploaded'
+                            clearNotification(filename)
+                        }
                     }
                 }
             } finally {
@@ -201,6 +238,14 @@ export default {
 
 <!-- Cannot scope this for some reason -->
 <style lang='scss'>
+li.upload-active a,
+li.upload-active a:hover{
+    color: $info;
+    // font-weight: bold;
+    border-bottom-color: $info;
+}
+
+
 /* This is all to style the drop box */
 .dropbox {
     outline: 2px dashed grey; /* the dash box */

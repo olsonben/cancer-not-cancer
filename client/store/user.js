@@ -4,8 +4,6 @@
  * https://vuex.vuejs.org/
  * https://nuxtjs.org/docs/directory-structure/store/
  */
-import axios from 'axios'
-import * as env from '../.env.js'
 
 // State should be a function that returns an object of everything you want to keep track of in the state
 /**
@@ -13,18 +11,27 @@ import * as env from '../.env.js'
  * Getter: this.$store.state.user.value 
  *      (e.g. isLoggedIn is at this.$store.state.user.isLoggedIn)
  */
-export const state = () => ({
-    isLoggedIn: false,
-    permissions: {
-        admin: false,
-        uploader: false,
-        pathologist: false,
-        enabled: false
+const getDefaultState = () => {
+    return {
+       isLoggedIn: false,
+       permissions: {
+           admin: false,
+           uploader: false,
+           pathologist: false,
+           enabled: false
+       } 
     }
-})
+}
+
+export const state = getDefaultState
 
 // For special types of getters (eg. a list without a certain item)
-export const getters = {}
+export const getters = {
+    isLoggedIn: (state) => state.isLoggedIn,
+    isAdmin: (state) => state.permissions.admin && state.permissions.enabled,
+    isUploader: (state) => state.permissions.uploader && state.permissions.enabled,
+    isPathologist: (state) => state.permissions.pathologist && state.permissions.enabled
+}
 
 /**
  * Used to set the state
@@ -33,7 +40,7 @@ export const getters = {}
  *              this.$store.commit('user/isLoggedIn', true)
  */
 export const mutations = {
-    isLoggedIn(state, value) {
+    setLoggedIn(state, value) {
         state.isLoggedIn = value
     },
     // Permissions mutable either by key or as a whole
@@ -42,6 +49,10 @@ export const mutations = {
     },
     permissions(state, value) {
         state.permissions = value
+    },
+    resetState(state) {
+        // merge default state so we don't wipeout any observers: https://stackoverflow.com/questions/42295340/how-to-clear-state-in-vuex-store
+        Object.assign(state, getDefaultState())
     }
 }
 
@@ -57,39 +68,29 @@ export const mutations = {
  */
 export const actions = {
     // Get permissions and isLoggedIn on loading the site (called in ~middleware/onload.js)
-    async onload({ commit, dispatch }) {
+    async login({commit}) {
         try {
-            let response = await axios.get(env.url.api + '/isLoggedIn')
-            
-            // Since `context` only references this module and submodules, the 'user/' identifier should not be used
-            commit('isLoggedIn', true)
-            commit('permissions', response.data.permissions)
-        } catch(error) {
-            if (error.response.status === 401) {
-                dispatch('logout')
-
-            } else if (error.response.status === 403) {
+            const response = await this.$axios.get('/isLoggedIn')
+            if (response.data) {
+                commit('setLoggedIn', true)
+                commit('permissions', response.data.permissions)
             } else {
-                console.error(error)
+                // Not logged in
+                commit('resetState')
             }
+        } catch (error) {
+            console.log('login:', 'FAILURE')
+            console.error(error)
         }
     },
 
     // Register a logout
     async logout({ commit }) {
         try {
-            const response = await axios.get(env.url.api + '/auth/logout')
-
-            commit('isLoggedIn', false)
-            commit('permissions', {
-                admin: false,
-                uploader: false,
-                pathologist: false,
-                enabled: false  
-            })
-
+            const response = await this.$axios.post('/auth/logout')
+            commit('resetState')
         } catch (error) {
-            console.error(err)
+            console.error(error)
 
         }
     }

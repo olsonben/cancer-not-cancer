@@ -1,17 +1,19 @@
 <template>
-    <div>
-        <!-- I intended this to be a routing page for various forms of sign in -->
-        <!-- It may be better ot just route straight to the google login -->
-        <a :href='api + "/auth/google"'>Login with Google</a>
+    <div class="section">
+        <div class="box has-text-centered">
+            <div class="block">
+                <a class="button" :href='loginLink'>Login with Google</a>
+            </div>
+        </div>
     </div>
 </template>
 
 <script>
-import * as env from '../.env.js'
+
 export default {
     data() {
         return {
-            api: env.url.api
+            loginLink: this.$axios.defaults.baseURL + "/auth/google"
         }
     }
 }

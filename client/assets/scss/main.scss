@@ -6,4 +6,70 @@
 // DEV: Make sure new scss files are added to nuxt.config.js under styleResources.scss to make them globally available
 @import 'colors.scss';
 @import 'variables.scss';
-@import '../../node_modules/bulma/bulma.sass';
+@import 'font-icon.scss';
+
+// Make bulma a layer so it is easier to overwrite 
+// https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity#precedence_over_third-party_css
+@layer bulma {
+    @import '../../node_modules/bulma/bulma.sass';
+}
+
+:root {
+    --overscroll: auto;
+    --overflow: auto;
+}
+
+html {
+    // When 'none': Overscroll stopped to prevent "Pull to Refresh". Fixes bug
+    // in firefox mobile that caused swipe functionality to hang when any down
+    // swiping motion was involved.
+    overscroll-behavior: var(--overscroll);
+    overflow: var(--overflow);
+}
+
+body {
+    font-family: sans-serif;
+}
+
+.navbar {
+
+    .navbar-item.logo {
+        // Don't want the logo highlighting like the rest of the navigation.
+        &, &:hover, &:focus {
+            background-color: inherit;
+            color: inherit;
+        }
+    }
+
+    .navbar-item:hover{
+        background-color: $info;
+        color: white;
+    }
+
+    a.navbar-item:focus{
+        background-color: $info;
+    }
+
+    .navbar-dropdown a.navbar-item:focus,
+    .navbar-dropdown a.navbar-item:hover {
+        background-color: $info;
+        color: white;
+    }
+
+    a.nuxt-link-exact-active {
+        background-color: $info;
+        color: white;
+    }
+
+    /* adjustments for mobile */
+    @media screen and (max-width: 1024px) {
+        a.nuxt-link-exact-active {
+            border-radius: 1rem 0 0 1rem;
+        }
+    }
+
+}
+
+.section a, .nuxt-tag a {
+    color: $info;
+}

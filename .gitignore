@@ -1,10 +1,18 @@
+.DS_Store
 **/node_modules/*
 **/.env.local.js
+.env*
+**/.env.local
 
 log/*
+
+**/workspace.code-workspace
+.vscode
 
 client/.nuxt/*
 client/dist/*
 client/assets/css/main.css
 
 api/images/*
+
+html/*
