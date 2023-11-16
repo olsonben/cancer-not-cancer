@@ -63,7 +63,7 @@ export default {
             type: Number
         }
     },
-    emits: ['update:modelValue'],
+    emits: ['update:modelValue', 'change'],
     data() {
         return {
             expand: false,

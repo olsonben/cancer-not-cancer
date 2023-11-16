@@ -34,21 +34,123 @@
 </template>
 
 <script>
+const start = Date.now()
+// TODO: VUE3 declare all emits for the app.
+// TODO: Determine if most api calls should be cached or not, Vue3/nuxt does by
+// default now, and thus we will have to specifically key out api requests.
 const api = useApi()
 
+async function getData() {
+    try {
+        // TODO: change this over to an images/all request.
+        // The task_id is arbitrary.
+        const { response } = await api.GET('/tasks/images', {
+            task_id: 14
+        })
+        const fetchTime = Date.now() - start
+        console.log(`Fetch Time: ${fetchTime} ms`)
+        return response.value
+    } catch (error) {
+        console.error('ImageManager fetch:', error.message)
+    }
+}
+
+// Note: We start the initial api call here, then await the data in the setup.
+// This is the fastest way to load data(that I found) using the options api, and
+// it resembles the composition api.
+const firstData = getData()
+
 export default {
-    data() {
+    // Using setup because it fire just before data
+    async setup() {
         return {
-            files: [],
+            // files: await firstData, // awaiting promise resolve
+            // files: new Proxy([], {
+            //     _isReadonly: false,
+            //     _shallow: false
+            // }),
+            files: ref([]),
             createTagName: '',
             attention: false
         }
     },
-    // TODO: check if there is a better place to implement the first data pull
-    mounted() {
-        this.refreshData()
+    // Notes: we know that this.appendData is non-blocking, fetching data, the telling
+    // it to append in the created function. Using await instead blocks created.
+    // TODO: Test the time from start to data change in the watch method, making sure
+    // to calc at the second update. Then try the different methods
+    async created() {
+        const cTime = Date.now()
+        this.appendData()
+
+        // const data = await firstData
+        // this.files.push(...data)
+        // const dataTime = Date.now() - start
+        // console.log(`Data Time: ${dataTime} ms`)
+        // console.log('beforeCreate')
+        // const dTime = Date.now() - cTime
+        // console.log(`cd Time: ${dTime} ms`)
+
+
+        // console.log(this)
+    }, 
+    async mounted() {
+        
+        // const data = await firstData
+        // this.files = [...toRaw(this.files), data]
+        // console.log(this.files)
+        
+        // const test = new Proxy([], {
+        //     _isReadonly: false,
+        //     _shallow: false
+        // })
+        // console.log(test)
+        // console.log(JSON.stringify(this.files))
+        const mountedTime = Date.now() - start
+        console.log(`Mount Time: ${mountedTime} ms`)
+        // console.log(`Data Time: ${dataTime} ms`)
+        // console.log('mounted()')
+        // // this.refreshData()
+        // setTimeout(() => {
+        //     this.testMethod()
+        // }, 3000);
+    },
+    watch: {
+        files: {
+            immediate: true,
+            deep: true,
+            handler(newFiles, oldFiles) {
+                if (oldFiles == undefined) {
+                    console.log('init files Change')
+                } else {
+                    const dataTime = Date.now() - start
+                    console.log(`Data Time: ${dataTime} ms`)
+                    console.log('files Change')
+                }
+                // console.log(JSON.stringify(oldFiles))
+                // console.log(JSON.stringify(newFiles))
+                // this.headers = newTableData.columns
+                // this.body = newTableData.bodyData
+                // this.indexProp = newTableData.indexProp
+                // this.order = newTableData.order
+            }
+        }
     },
     methods: {
+        async appendData() {
+            try {
+                const data = await firstData
+                this.files.push(...data)
+                // const dataTime = Date.now() - start
+                // console.log(`Data Time: ${dataTime} ms`)
+            } catch (error) {
+                console.log(error)
+            }
+        },
+        testMethod() {
+            console.log('testMethod')
+            this.files.splice(0)
+            console.log(JSON.stringify(this.files))
+        },
         fileKey(file) {
             return `${file.type}-${file.id}`
         },
