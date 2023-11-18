@@ -109,9 +109,11 @@ export default {
     },
     async mounted() {
         // move fetch() here
-        const { response } = await api.GET('/tasks/')
-        this.tasks = response.value // because response is a ref object
-        this.selectedTask = this.tasks[0].id
+        if (this.isLoggedIn) {
+            const { response } = await api.GET('/tasks/')
+            this.tasks = response.value // because response is a ref object
+            this.selectedTask = this.tasks[0].id
+        }
 
         // Fixes a firefox swipe conflict. When swiping if the reload page
         // swipe starts to engage, other animations freeze and hang. The
@@ -158,10 +160,14 @@ export default {
     },
     watch: {
         isLoggedIn: {
-            handler(loggedIn) {
+            async handler(loggedIn) {
                 if (loggedIn) {
                     // Previously not logged in, and now logged in.
+                    const { response } = await api.GET('/tasks/')
+                    this.tasks = response.value // because response is a ref object
+                    this.selectedTask = this.tasks[0].id
                     this.nextImage()
+
                 }
             }
         },
@@ -557,16 +563,17 @@ $no-cancer-color: #ff6184;
     .image-container {
         position: relative;
         width: 100%;
-        // height: calc(50vh - $block-margin - $block-margin);
+        // TODO: Figure out how to handle rectangular images and their ROIs
+        height: calc(50vh - $block-margin - $block-margin);
         line-height: 0;
         overflow: hidden;
 
 
         transform: translate(var(--x-diff), calc(var(--y-diff) / -6)) rotate(calc( var(--rot-diff) * -12deg));
 
-        // @include for-size(mobile) {
-        //     // height: calc(100vw - $block-margin - $block-margin);
-        // }
+        @include for-size(mobile) {
+            height: calc(100vw - $block-margin - $block-margin);
+        }
 
         .zoom-box {
             width: 100%;

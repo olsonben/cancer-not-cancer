@@ -163,6 +163,7 @@ const imageOps = {
         // this is not obvious in the UI to the investigator and cause DAMAGE!
         const deleteImageFromTasks = `DELETE FROM task_images WHERE image_id = ?`
 
+        // TODO: Delete reference in image_tags too.
         await dbOps.execute(deleteImage, [imageId, user_id])
         await dbOps.execute(deleteImageFromTasks, [imageId])
     }

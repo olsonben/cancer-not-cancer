@@ -8,13 +8,10 @@ export default defineNuxtConfig({
   // globalName: 'pathapp',
   app: {
     // TODO: reimplement the rootId and build asset folder
-    // rootId: 'pathapp',
+    rootId: 'pathapp',
     // baseURL: 'http://localhost:3000/',
-    // buildAssetsDir: '/cncclient/',
+    buildAssetsDir: '/cncclient/',
   },
-  // Target: https://go.nuxtjs.dev/config-target
-  // target: 'static',
-  // telemetry: false,
 
   runtimeConfig: {
     // private config here
@@ -66,17 +63,15 @@ export default defineNuxtConfig({
       }
     }
   },
-  // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  // TODO: Look into moving common out of plugins or lazy loading it.
+  // Plugins to run before rendering page: https://nuxt.com/docs/guide/directory-structure/plugins
   // TODO: Update readme about uBlockOrigin breaking the site because of matomo (also test further).
   plugins: [
     '~/plugins/error-handler.js',
     { src: '~/plugins/matomo.js', ssr: false },
-    '~/plugins/common.js',
     '~/plugins/draggable.js'
   ],
 
-  // Auto import components: https://go.nuxtjs.dev/config-components
+  // Auto import components: https://nuxt.com/docs/guide/directory-structure/components#component-names
   // Under `/components`
   // components: true,
   components: [
@@ -86,40 +81,19 @@ export default defineNuxtConfig({
     }
   ],
 
-  // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules
-  buildModules: [
-    // '@nuxtjs/style-resources'
-  ],
-
-  // Modules: https://go.nuxtjs.dev/config-modules
+  // Modules: https://nuxt.com/docs/guide/concepts/modules
   modules: [
     '@pinia/nuxt',
   ],
-  // axios: {
-  //   baseURL: process.env.API_URL,
-  //   credentials: true,
-  //   https: (process.env.PROTOCOL == 'https'),
-  //   debug: false,
-  // },
-
-  // Globally accessible style resources
-  // e.g. variables declared in scss files here are globally available
-  // styleResources: {
-  //   scss: [
-  //     './assets/scss/colors.scss',
-  //     './assets/scss/variables.scss'
-  //   ]
-  // },
 
   // // Customization for vue-router: https://nuxtjs.org/docs/configuration-glossary/configuration-router
-  router: {
-    base: base,
+  // router: {
     // Middleware runs on every page
     // middleware: [
     //   'auth',
     //   'authError'
     // ]
-  },
+  // },
   
   // Server side rendering :: removes the server
   // Must be false for axios requests in middleware

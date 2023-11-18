@@ -49,6 +49,7 @@
 //     contents: [array of files and folders],
 //     type: 'tag', // tag == folder
 // }
+const fileTools = useFileTools()
 
 export default {
     name: 'folder',
@@ -67,7 +68,7 @@ export default {
     data() {
         return {
             expand: false,
-            checked: !(this.$common.getSelectedState(this.modelValue) === 'none'),
+            checked: !(fileTools.getSelectedState(this.modelValue) === 'none'),
             changeName: false,
             newName: '',
             dragOverStyle: false
@@ -83,7 +84,7 @@ export default {
             if (this.editable) {
                 return 'none'
             }
-            const state = this.$common.getSelectedState(this.modelValue)
+            const state = fileTools.getSelectedState(this.modelValue)
             return state
         },
         inputName() {

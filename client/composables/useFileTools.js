@@ -1,19 +1,5 @@
-export default defineNuxtPlugin((app) => {
-    const route = useRoute()
-    const config = useRuntimeConfig()
-    const apiUrlNoSlash = config.public.apiUrl.replace(/\/+$/, '')
-
-
-    const common = {
-        /** Create a login URL that has current page as a parameter for redirecting after logged in. */
-        getLoginURL() {
-            const isLogoutOrLogin = route.name == 'logout' || route.name == 'login'
-            const loginParams = new URLSearchParams({
-                'ref_path': !isLogoutOrLogin ? route.fullPath : '/'
-            })
-            const loginURL = new URL(`${apiUrlNoSlash}/auth/google?${loginParams}`)
-            return loginURL.href
-        },
+export const useFileTools = () => {
+    return {
         /** Get all selected files from the a nested folder structure object. */
         getSelectedFiles(folderObject) {
             let allSelectedFiles = folderObject.contents.reduce(function recur(selected, child) {
@@ -24,10 +10,10 @@ export default defineNuxtPlugin((app) => {
                     childSelect.push(child.id)
                 }
                 selected.push(...childSelect)
-
+        
                 return selected
             }, [])
-
+        
             return allSelectedFiles
         },
         /** Get all nested files within a nested folder structure object. */
@@ -40,10 +26,10 @@ export default defineNuxtPlugin((app) => {
                     childSelect.push(child.id)
                 }
                 selected.push(...childSelect)
-
+        
                 return selected
             }, [])
-
+        
             return allFiles
         },
         /** Get a folder's selected state. 'all', 'partial', or 'none' decendant files selected. */
@@ -61,9 +47,5 @@ export default defineNuxtPlugin((app) => {
             }
         }
     }
-    return {
-        provide: {
-            common: common
-        }
-    }
-})
+}
+

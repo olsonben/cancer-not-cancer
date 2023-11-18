@@ -28,7 +28,7 @@ const authPaths = ['pathapp', 'admin', 'admin-images', 'admin-users', 'admin-dat
 export default {
     data() {
         return {
-            loginLink: this.$common.getLoginURL(),
+            loginLink: getLoginUrl(),
             loginPath: authPaths.includes(this.$route.name),
         }
     },
@@ -38,7 +38,7 @@ export default {
     watch:{
         $route: {
             handler(to, from) {
-                this.loginLink = this.$common.getLoginURL()
+                this.loginLink = getLoginUrl()
                 this.loginPath = authPaths.includes(this.$route.name)
             },
         }

@@ -46,6 +46,7 @@
 
 <script>
 const api = useApi()
+const fileTools = useFileTools()
 
 export default {
     props: ['task'],
@@ -95,7 +96,7 @@ export default {
     methods: {
         async saveChanges() {
             try {
-                const selectedImages = this.$common.getSelectedFiles(this.root)
+                const selectedImages = fileTools.getSelectedFiles(this.root)
 
                 await Promise.all([
                     api.POST('/tasks/update', {
@@ -135,7 +136,7 @@ export default {
         },
         report() {
             console.log('Files selected')
-            console.log(this.$common.getSelectedFiles(this.root))
+            console.log(fileTools.getSelectedFiles(this.root))
         }
     }
 }

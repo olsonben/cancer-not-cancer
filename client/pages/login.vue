@@ -12,7 +12,7 @@
 export default {
     data() {
         return {
-            loginLink: this.$common.getLoginURL()
+            loginLink: getLoginURL()
         }
     }
 }

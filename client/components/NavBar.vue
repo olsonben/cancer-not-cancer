@@ -81,7 +81,7 @@ export default {
             // State for the burger menu
             showNav: false,
             showAnimation: false,
-            loginLink: this.$common.getLoginURL(),
+            loginLink: getLoginUrl(),
         }
     },
 
@@ -97,7 +97,7 @@ export default {
     watch:{
         $route: {
             handler(to, from) {
-                this.loginLink = this.$common.getLoginURL()
+                this.loginLink = getLoginUrl(to.fullPath)
                 this.showAnimation = false
                 setTimeout(() => {
                     this.showNav = false
