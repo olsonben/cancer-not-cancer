@@ -1,25 +1,37 @@
 /**
  * You could potentially call this authentication only on the paths that need
- * credentials, but then you would need to make a second call in the navigation
- * bar to check permissions.
+ * credentials, but currently this restores any existing session on a page
+ * reload. If you didn't call this on every page then userStore.login() should
+ * be called else where to establish the user.
  */
 
 import { useUserStore } from "~/store/user"
 
+const pathologistPages = ['pathapp']
+const investigatorPages = ['admin-images', 'admin-tasks', 'admin-dataview']
+const adminPages = ['admin-users']
+
+// TODO: this breaks relogging in on the logout page.
 export default defineNuxtRouteMiddleware(async (to, from) => { 
     const userStore = useUserStore()
 
-    // if (route.name == 'pathapp') {
-    //     if (store.getters['user/isLoggedIn'] && !store.getters['user/isPathologist']) {
-    //         redirect('/')
-    //     }
-    // } else if (route.name == 'admin-images') {
-    //     if (store.getters['user/isLoggedIn'] && !store.getters['user/isUploader']) {
-    //         redirect('/')
-    //     }
-    // } else if (route.name == 'admin-users') {
-    //     if (store.getters['user/isLoggedIn'] && !store.getters['user/isAdmin']) {
-    //         redirect('/')
-    //     }
-    // }
+    // If this is the initial loading of the app, see if the user has a valid session.
+    if (!userStore.isLoaded) {
+        await userStore.login()
+    }
+
+    // Redirect if authentication doesn't match route.
+    if (pathologistPages.includes(to.name)) {
+        if (userStore.isLoggedIn && !userStore.isPathologist) {
+            return navigateTo('/')
+        }
+    } else if (investigatorPages.includes(to.name)) {
+        if (userStore.isLoggedIn && !userStore.isUploader) {
+            return navigateTo('/')
+        }
+    } else if (adminPages.includes(to.name)) {
+        if (userStore.isLoggedIn && !userStore.isAdmin) {
+            return navigateTo('/')
+        }
+    }
 })

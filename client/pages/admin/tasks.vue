@@ -57,34 +57,6 @@
 </template>
 
 <script>
-// TODO: remove when finished initial task development.
-const dummyData = [
-    {
-        'id': 1,
-        'short_name': 'task 1',
-        'prompt': 'Is this my question?',
-        'image_count': 54,
-        'observer_count': 3,
-        'progress': 45
-    },
-    {
-        'id': 2,
-        'short_name': 'another_task_beta_check_240623',
-        'prompt': 'Does this have alpha 1 marker properties?',
-        'image_count': 212,
-        'observer_count': 6,
-        'progress': 72
-    },
-    {
-        'id': 4,
-        'short_name': 'task b',
-        'prompt': 'Is this a blood parasite?',
-        'image_count': 100,
-        'observer_count': 4,
-        'progress': 66
-    }
-]
-
 const api = useApi()
 
 export default {

@@ -203,7 +203,7 @@ const imageController = {
         await tagOps.moveTag(tagId, oldParentTagId, newParentTagId)
         res.sendStatus(200)
     },
-    // TODO: Make sure the tag has now images associated with it before deleteing.
+    // TODO: Make sure the tag has no images associated with it before deleteing.
     // This is done on the frontend, but should really be done here too.
     /** Delete a tag. */
     async deleteTag(req, res, next) {

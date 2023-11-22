@@ -10,6 +10,7 @@ export const useUserStore = defineStore('user', () => {
     const uploader = ref(false)
     const pathologist = ref(false)
     const enabled = ref(false)
+    const initLogin = ref(false)
 
     // GETTERS
     // =======
@@ -17,6 +18,7 @@ export const useUserStore = defineStore('user', () => {
     const isAdmin = computed(() => admin.value && enabled.value)
     const isUploader = computed(() => uploader.value && enabled.value)
     const isPathologist = computed(() => pathologist.value && enabled.value)
+    const isLoaded = computed(() => initLogin.value)
 
     // ACTIONS
     // =======
@@ -27,6 +29,7 @@ export const useUserStore = defineStore('user', () => {
 
             // response.value will be false if not logged in
             if (response.value) {
+                console.log('Enabling User')
                 const user = response.value
 
                 loggedIn.value = true
@@ -38,6 +41,8 @@ export const useUserStore = defineStore('user', () => {
                 // Not logged in
                 resetUser()
             }
+
+            initLogin.value = true
         } catch (error) {
             console.log('Error with user login')
             console.error(error)
@@ -67,6 +72,6 @@ export const useUserStore = defineStore('user', () => {
         enabled.value = false
     }
 
-    return { isLoggedIn, isAdmin, isUploader, isPathologist, login, logout }
+    return { isLoaded, isLoggedIn, isAdmin, isUploader, isPathologist, login, logout }
 })
 

@@ -16,13 +16,14 @@
 <script>
 import { mapState } from "pinia";
 import { useUserStore } from "../store/user"
-const router = useRoute()
+const route = useRoute()
 
 export default {
     // This is more a layout for admin subpages
     mounted() {
-        // TODO: is this actually doing anything?
-        if (["/admin", "/admin/"].includes(router.path)) {
+        // All admin pages are at /admin/X so redirect bad paths.
+        if (["/admin", "/admin/"].includes(route.path)) {
+            const router = useRouter()
             router.push('/')
         }
     },

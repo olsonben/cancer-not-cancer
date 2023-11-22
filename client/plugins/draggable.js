@@ -1,4 +1,3 @@
-// TODO: Untested
 const createDragstartHandler = (binding) => (event) => {
     // el == event.target
     event.dataTransfer.setData('application/json', JSON.stringify(binding.value))
