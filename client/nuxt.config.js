@@ -5,12 +5,12 @@ const base = new URL(process.env.PUBLIC_PATH).pathname
 // const api = process.env.API_URL.replace(/\/+$/, '')
 
 export default defineNuxtConfig({
-  // globalName: 'pathapp',
+  // Note: You can no longer change the global context __NUXT__ as in Nuxt2.
+  // Some work arounds can be found here: https://github.com/nuxt/nuxt/issues/18870
   app: {
-    // TODO: reimplement the rootId and build asset folder
     rootId: 'pathapp',
-    // baseURL: 'http://localhost:3000/',
-    buildAssetsDir: '/cncclient/',
+    baseURL: base,
+    buildAssetsDir: 'cncclient/',
   },
 
   runtimeConfig: {
