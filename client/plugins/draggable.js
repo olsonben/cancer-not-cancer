@@ -20,8 +20,6 @@ const draggable = {
         const { value } = binding
         const { editable } = value
 
-        // console.log(el)
-        // console.log(editable)
         if (editable) {
             el.draggable = true
         }

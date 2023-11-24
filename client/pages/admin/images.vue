@@ -165,9 +165,6 @@ export default {
 
             // Add the files array object
             this.files.forEach((file, index) => {
-                console.log(file)
-                // TODO: Make sure uploadSizeLimit is defined for error printout
-                // console.log(this.$config.uploadSizeLimit)
                 if (file.size > this.$config.uploadSizeLimit) {
                     console.error(`${file.name} is too large. MAX_BYTES: ${this.$config.uploadSizeLimit}`)
                     this.appendSubmittedFile(file.name, {
@@ -211,9 +208,9 @@ export default {
                     console.log('Please login.')
                     router.push('/login')
                 } else {
+                    // TODO: Determine when error.data exists
                     if (error.data) {
                         for (const file of error.data) {
-                            console.log(file)
                             // update failed status
                             this.submittedFiles[file.filename].submissionSuccess = file.success || false
                             clearNotification(file.filename)

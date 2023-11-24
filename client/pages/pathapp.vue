@@ -271,7 +271,7 @@ export default {
                     }
 
                     const nextImageId = this.getNextImageId()
-                    console.log('next', nextImageId)
+
                     const { response } = await api.GET('/images/', {
                         imageId: nextImageId,
                     })

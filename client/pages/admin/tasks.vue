@@ -113,7 +113,6 @@ export default {
             this.taskToEdit = null
         },
         async deleteTask(task) {
-            console.log('deleteTask')
             try {
                 await api.POST('/tasks/delete', {
                     id: task.id
