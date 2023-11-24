@@ -1,5 +1,5 @@
 # Client
-(As of 27 October 2023)
+(As of 24 November 2023)
 
 ## Table of Contents
 1. [Setup](#setup)
@@ -35,10 +35,10 @@ npm run dev
 **Production & Staging Mode**
 Thanks to nuxt.js we can build the frontend client into a static site. Then a server can serve the static site with nginx or any other web serving software. We should also be able to put the site on a CDN.
 
-***Production:*** `npm run css-build && npm run build && npm run generate` - This will create a **dist** folder inside the **client** folder. You can copy this to your production location or you can symlink that folder to have it update automatically.
+***Production:*** `npm run css-build && npm run generate` - This will create a **.output/public** folder inside the **client** folder. You can copy this to your production location or you can symlink that folder to have it update automatically.
 
 ***Staging:*** The same instructions from production work for staging with the following command:
-`npm run css-build && npm run build-stage && npm run gen-stage`
+`npm run css-build && npm run gen-stage`
 
 
 ## Pages
@@ -265,7 +265,7 @@ A simple modal that checks the current route path in the application and if the 
 ```js
 const authPaths = ['pathapp', 'admin', 'admin-images', 'admin-users', 'admin-dataview', 'admin-tasks']
 ```
-*Note: paths with forward paths should be converted to hyphens. ex. `'admin/images'` ==> `'admin-images'`*
+*Note: paths with forward slash paths should be converted to hyphens. ex. `'admin/images'` ==> `'admin-images'`*
 
 ### NavBar.vue
 
@@ -351,9 +351,9 @@ A simple dropdown list of users. This component is design to be added to a page 
 
 **Usage:**
 ```html
-<Userview v-if='this.$store.state.user.permissions.admin' :userId.sync="userId" :label="'Created by:'"/>
+<Userview v-if='isAdmin' v-model:userId="userId" :label="'Created by:'"/>
 ```
-*Note: `:userId.sync` allows a data property in the current component to sync with the `userId` in the **Userview.vue** component.*
+*Note: ~~`:userId.sync`~~ `v-model:userId=` allows a data property in the current component to sync with the `userId` in the **Userview.vue** component.*
 
 ## Structure
 
