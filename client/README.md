@@ -40,6 +40,8 @@ Thanks to nuxt.js we can build the frontend client into a static site. Then a se
 ***Staging:*** The same instructions from production work for staging with the following command:
 `npm run css-build && npm run gen-stage`
 
+**Note:** With matomo running, the site may not work with ad blockers. During development, the site would not launch if an ad blocker was running, so ad blockers had to be disabled for dev work.
+
 
 ## Pages
 

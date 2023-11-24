@@ -79,7 +79,7 @@ export default defineNuxtConfig({
   /** 
    * Plugins: https://nuxt.com/docs/guide/directory-structure/plugins
    * Plugins are loaded during application creation and are usable throughout the app.
-   * TODO: Update readme about uBlockOrigin breaking the site because of matomo (also test further).
+   * Note: Ad blockers may breaking the site because of matomo.
    */
   plugins: [
     '~/plugins/error-handler.js',
