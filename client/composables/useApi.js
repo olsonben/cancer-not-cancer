@@ -9,6 +9,17 @@
 export const useApi = () => {
     const config = useRuntimeConfig()
 
+    const handleAuthErrors = async (error) => {
+        const statusCode = error.value.statusCode
+        if (statusCode === 401 || statusCode === 403) {
+            console.log('Unauthorized! Make sure you are logged in. Redirecting to login...')
+            navigateTo(getLoginUrl(), { external: true })
+        }
+        
+        // Still throw the error to reject upstream promises
+        throw error
+    }
+
     return {
         async GET(route, query, key = null) {
             const { data: response, status, error } = await useFetch(route, {
@@ -20,10 +31,11 @@ export const useApi = () => {
                 query: query,
                 ...(key ? { key: key} : {})
             })
-            if (error.value) {
-                throw error.value
+            if (status.value === "success") {
+                return { response, status }
+            } else {
+                await handleAuthErrors(error)
             }
-            return { response, status }
         },
         async POST(route, body, key) {
             const { data: response, status, error } = await useFetch(route, {
@@ -35,10 +47,11 @@ export const useApi = () => {
                 body: body,
                 ...(key ? { key: key } : {})
             })
-            if (error.value) {
-                throw error.value
+            if (status.value === "success") {
+                return { response, status }
+            } else {
+                await handleAuthErrors(error)
             }
-            return { response, status }
         },
     }
 }

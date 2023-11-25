@@ -204,28 +204,23 @@ export default {
                 }
 
             } catch (error) {
-                if ([401, 403].includes(error.statusCode)) {
-                    console.log('Please login.')
-                    router.push('/login')
-                } else {
-                    // TODO: Determine when error.data exists
-                    if (error.data) {
-                        for (const file of error.data) {
-                            // update failed status
-                            this.submittedFiles[file.filename].submissionSuccess = file.success || false
-                            clearNotification(file.filename)
-                        }
-                    } else {
-                        // Handle lost connection/server failure
-                        for (const filename in this.submittedFiles) {
-                            this.submittedFiles[filename].submissionSuccess = false
-                            this.submittedFiles[filename].message = 'Not Uploaded'
-                            clearNotification(filename)
-                        }
-
-                        // Generic Error
-                        console.error(error)
+                // TODO: Determine when error.data exists
+                if (error.data) {
+                    for (const file of error.data) {
+                        // update failed status
+                        this.submittedFiles[file.filename].submissionSuccess = file.success || false
+                        clearNotification(file.filename)
                     }
+                } else {
+                    // Handle lost connection/server failure
+                    for (const filename in this.submittedFiles) {
+                        this.submittedFiles[filename].submissionSuccess = false
+                        this.submittedFiles[filename].message = 'Not Uploaded'
+                        clearNotification(filename)
+                    }
+
+                    // Generic Error
+                    console.error(error)
                 }
             } finally {
                 // reset after submission

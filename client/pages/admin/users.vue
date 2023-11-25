@@ -166,11 +166,9 @@ export default {
                 // Note failure
                 this.submittedUsers[submissionId].submittionSuccess = false
 
-                if ([401, 403].includes(error.statusCode)) {
-                    // Reroute if you aren't logged in
-                    router.push('/login')
-                } else if (error.statusCode == 409) {
+                if (error.value.statusCode == 409) {
                     // email already exists
+                    // TODO: test error.data, it might exist at error.value.data
                     this.submittedUsers[submissionId].message = error.data.message
                 } else {
                     this.submittedUsers[submissionId].message = 'Something went wrong.'

@@ -10,9 +10,10 @@
 
 <script>
 export default {
-    data() {
+    setup() {
+        const loginLink = getLoginUrl()
         return {
-            loginLink: getLoginURL()
+            loginLink
         }
     }
 }
