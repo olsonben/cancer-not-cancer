@@ -8,7 +8,7 @@ const isLoggedIn = useUserStore().isLoggedIn
         <h1>Welcome to Cancer Not Cancer</h1>
         
         <div class="buttons">
-            <a v-if="!isLoggedIn" :href='getLoginUrl()' class='button is-light'>Log In</a>
+            <a v-if="!isLoggedIn" :href='getLoginUrl("/pathapp")' class='button is-light'>Log In and Go!</a>
         </div>
 
         <p>Cancer Not Cancer is a platform for labeling digitized biopsy slides as <i>cancer</i> or <i>not cancer</i>.</p>
