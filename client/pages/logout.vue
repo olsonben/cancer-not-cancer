@@ -6,12 +6,14 @@
 
 <script>
 import { useUserStore } from '~/store/user'
-const userStore = useUserStore()
 
 export default {
     // Automatically logout when coming to this page
     created() {
-        userStore.logout()
+        const user = useUserStore()
+        if (user.isLoggedIn) {
+            user.logout()
+        }
     }
 }
 </script>
