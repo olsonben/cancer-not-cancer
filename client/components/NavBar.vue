@@ -7,10 +7,18 @@
                 <img src="~assets/logo.svg" alt="Milmed Logo">
             </NuxtLink>
 
+            <div class="navbar-item is-hidden-desktop is-hidden-widescreen is-hidden-fullhd ml-auto">
+                <!-- Logout/Login -->
+                <div class="buttons">
+                    <NuxtLink v-if='isLoggedIn' to='/logout' class='button is-light'>Log Out</NuxtLink>
+                    <a v-else :href='loginLink' class='button is-light'>Log In</a>
+                </div>
+            </div>
+
             <!-- Burger menu -->
             <a 
                 role="button" 
-                class="navbar-burger" 
+                class="navbar-burger ml-0" 
                 aria-label="menu" 
                 aria-expanded="false" 
                 data-target="navContent"
@@ -21,7 +29,7 @@
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
             </a>
-        </div>
+        </div>        
 
         <!-- Navbar body -->
         <div id="navContent" class="navbar-menu" v-bind:class="{ 'is-active' : showNav }"> <!-- Show when the burger is clicked on mobile -->
@@ -58,7 +66,7 @@
                 </div>
             </div>
 
-            <div class="navbar-end">
+            <div class="navbar-end is-hidden-touch is-hidden-tablet">
                 <div class="navbar-item">
                     <!-- Logout/Login -->
                     <div class="buttons">
@@ -68,6 +76,7 @@
                 </div>
             </div>
         </div>
+        
     </nav>
 </template>
 
