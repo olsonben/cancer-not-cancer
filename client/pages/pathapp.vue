@@ -130,7 +130,7 @@ export default {
         document.addEventListener('touchend', this.handleTouchEnd, false)
     },
     
-    destroyed() {
+    unmounted() {
         // Reactivates swipe to reload (deactivated in the mount method)
         document.documentElement.style.setProperty('--overscroll', 'auto')
         // Allowing scrolling
