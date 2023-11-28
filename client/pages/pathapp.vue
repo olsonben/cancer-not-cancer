@@ -107,14 +107,17 @@ export default {
             swipeDistance: 100
         }
     },
-    async mounted() {
-        // move fetch() here
-        if (this.isLoggedIn) {
-            const { response } = await api.GET('/tasks/')
-            this.tasks = response.value // because response is a ref object
+    async created() {
+        // get tasks assigned to user
+        const { response } = await api.GET('/tasks/')
+        this.tasks = response.value
+        if (this.tasks[0]) {
             this.selectedTask = this.tasks[0].id
+        } else {
+            console.log('You have no assigned tasks.')
         }
-
+    },
+    async mounted() {
         // Fixes a firefox swipe conflict. When swiping if the reload page
         // swipe starts to engage, other animations freeze and hang. The
         // following line deactivates swiping to reload page.
@@ -159,18 +162,6 @@ export default {
         }
     },
     watch: {
-        isLoggedIn: {
-            async handler(loggedIn) {
-                if (loggedIn) {
-                    // Previously not logged in, and now logged in.
-                    const { response } = await api.GET('/tasks/')
-                    this.tasks = response.value // because response is a ref object
-                    this.selectedTask = this.tasks[0].id
-                    this.nextImage()
-
-                }
-            }
-        },
         selectedTask: {
             handler(newTaskId) {
                 this.queue = null
@@ -251,7 +242,6 @@ export default {
             }
 
             if (this.isPathologist) {
-                // try-catch is needed for async/await
                 try {
                     if (this.queue == null) {
                         await this.getImageQueue()
@@ -263,22 +253,32 @@ export default {
                         this.image = {} // reset main image
                         return
                     }
-
+                    // console.log('nextImage')
                     const nextImageId = this.getNextImageId()
 
                     const { response } = await api.GET('/images/', {
                         imageId: nextImageId,
                     })
+                    // console.log(response.value)
                     // We preload the image asynchronously allowing for smooth
                     // fade in and out between images. The image is loaded
                     // outside the DOM, but that data will be cached for the
                     // actually image load.
-                    var preloadImage = new Image()
-                    preloadImage.onload = () => {
+                    // if (Object.keys(this.image).length === 0) {
+                        // don't preload
+                        // console.log("Don't Preload")
                         this.onDeck = response.value
                         this.updateImage()
-                    }
-                    preloadImage.src = response.value.url
+                    // } else {
+                    //     // preload
+                    //     console.log("Preloading")
+                    //     var preloadImage = new Image()
+                    //     preloadImage.onload = () => {
+                    //         this.onDeck = response.value
+                    //         this.updateImage()
+                    //     }
+                    //     preloadImage.src = response.value.url
+                    // }
                     
                 } catch (error) {
                     console.error(error);

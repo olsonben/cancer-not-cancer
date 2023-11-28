@@ -37,7 +37,7 @@ export const useApi = () => {
                 await handleAuthErrors(error)
             }
         },
-        async POST(route, body, key) {
+        async POST(route, body, key = null) {
             const { data: response, status, error } = await useFetch(route, {
                 method: 'POST',
                 baseURL: config.public.apiUrl,
