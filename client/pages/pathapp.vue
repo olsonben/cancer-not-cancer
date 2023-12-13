@@ -2,40 +2,30 @@
     <div class='app' :style='cssVars'>
         <div class="bg no" :class="{'fade-out': transitioningOut}"></div>
         <div class="bg yes" :class="{'fade-out': transitioningOut}"></div>
-        <!-- Grade bars for clear user response -->
-        <!-- <span class='grade-bar no' :class="{ 'shown': moveLeft }" :style='cssVars'></span>
-        <span class='grade-bar yes' :class="{ 'shown': moveRight }" :style='cssVars'></span> -->
 
         <!-- Image to grade -->
         <div class='prompt'>
             <div class='controls level'>
-                <div class='task-picker level-left'>
-                    <!-- <strong>Task:</strong> -->
-                    <div class="select is-normal">
-                        <select v-model="selectedTask">
-                            <option v-for="task in tasks" :value="task.id">{{ task.prompt }}</option>
-                        </select>
-                    </div>
-                </div>
+                <TaskPicker></TaskPicker>
             </div>
-            <div class="has-text-danger" v-if="!this.image.id">No more images available in this task.</div>
-            <div v-if="this.image.id" class="image-container" @click="zoom=!zoom">
-                <transition
+            <div class="has-text-danger" v-if="!image.id">No more images available in this task.</div>
+            <div v-if="image.id" class="image-container" @click="zoom=!zoom" :style="imageContainerStyle">
+                <Transition
                     name="swap-img"
                     @after-leave="afterLeave"
                     @before-leave="beforeLeave"
                     appear
                 >
-                    <div v-if="showImage" class="zoom-box" :class="{'zoom': zoom }">
+                    <div v-show="showImage" class="zoom-box" :class="{'zoom': zoom }">
                         <div class='roi'></div>
-                        <img :src='this.image.url' :alt='image.url'/>
+                        <img :src='image.url' :alt='image.url'/>
                     </div>
-                </transition>
+                </Transition>
             </div>
         </div>
         
         <!-- Response section: grade + comment --> 
-        <div v-if="this.image.id" class='response-area'>
+        <div v-if="image.id" class='response-area'>
             <div class="has-text-centered swipe-pad" :class="{ 'shown': !commenting }">
                 <span class='icon swipe left'>
                     <img src="~assets/icons/arrow-set.svg" alt="swipe left">
@@ -67,11 +57,21 @@
 </template>
 
 <script>
+/**<div class='task-picker level-left'>
+    <!-- <strong>Task:</strong> -->
+    <div class="select is-normal">
+        <select v-model="selectedTask">
+            <option v-for="task in tasks" :value="task.id">{{ task.prompt }}</option>
+    </select>
+</div>
+                </div >*/
+
 import { mapState } from 'pinia'
 import { useUserStore } from '~/store/user'
 const api = useApi()
 
 const IMAGE_TRANSITION_TIME = 250 // ms
+// const IMAGE_TRANSITION_TIME = 2000 // ms
 
 export default {
     data() {
@@ -108,14 +108,14 @@ export default {
         }
     },
     async created() {
-        // get tasks assigned to user
-        const { response } = await api.GET('/tasks/')
-        this.tasks = response.value
-        if (this.tasks[0]) {
-            this.selectedTask = this.tasks[0].id
-        } else {
-            console.log('You have no assigned tasks.')
-        }
+    //     // get tasks assigned to user
+    //     const { response } = await api.GET('/tasks/')
+    //     this.tasks = response.value
+    //     if (this.tasks[0]) {
+    //         this.selectedTask = this.tasks[0].id
+    //     } else {
+    //         console.log('You have no assigned tasks.')
+    //     }
     },
     async mounted() {
         // Fixes a firefox swipe conflict. When swiping if the reload page
@@ -151,13 +151,21 @@ export default {
         // give the attribute `:style='cssVars'` to anything that should have access to these variables
         cssVars() {
             return {
-                '--x-diff': (this.xMove !== null ? this.xMove - this.xDown : 0) + 'px',
-                '--y-diff': (this.xMove !== null ? Math.abs(this.xMove - this.xDown) * -1 : 0) + 'px',
-                '--rot-diff': (this.percent),
                 '--bg-no-opacity': (this.percent > 0 ? this.percent : 0),
                 '--bg-yes-opacity': (this.percent < 0 ? this.percent*-1.0 : 0),
                 '--img-trans': IMAGE_TRANSITION_TIME + 'ms',
                 '--roi-ratio': this.roiRatio
+            }
+        },
+        imageContainerStyle() {
+            const xDiff = this.xMove !== null ? this.xMove - this.xDown : 0
+            const yDiff = this.xMove !== null ? Math.abs(this.xMove - this.xDown) * -1 : 0
+            // the numbers -6 and -12 are aesthetically chosen
+            const yAmount = yDiff / -6
+            const rotation = this.percent * -12
+
+            return {
+                transform: `translate(${xDiff}px, ${yAmount}px) rotate(${rotation}deg)`
             }
         }
     },
@@ -302,6 +310,7 @@ export default {
 
         // After the image fully transitions out. 
         afterLeave() {
+            console.log('after leave')
             // reset img props here
             this.resetImagePos()
             this.transitioningOut = false
@@ -309,6 +318,7 @@ export default {
         },
         // Before the image starts transitioning out.
         beforeLeave() {
+            console.log('before leave')
             this.transitioningOut = true
         },
 
@@ -458,9 +468,7 @@ export default {
     flex-direction: column;
     padding-top: $block-margin;
 }
-/* Grade Bars */
-$grade-bar-radius: 1rem;
-$grade-bar-speed: 200ms;
+
 $yes-cancer-color: #5A46B9;
 $no-cancer-color: #ff6184;
 
@@ -497,29 +505,6 @@ $no-cancer-color: #ff6184;
     }
 }
 
-.grade-bar {
-    /* flush with navbar and behind everything */
-    position: fixed;
-    bottom: 0;
-    height: calc(100vh - $navbar-height); /* fullscreen */ 
-    z-index: -1;
-
-    /* "no" on the left */
-    &.no {
-        left: 0;
-        width: calc(-1 * var(--x-diff, 0)); /* Come out opposite of a swipe */
-        background-color: $no-cancer-color;
-        border-top-right-radius: $grade-bar-radius;
-    }
-    /* "yes" on the right */
-    &.yes {
-        right: 0;
-        width: var(--x-diff, 0);
-        background-color: $yes-cancer-color;
-        border-top-left-radius: $grade-bar-radius;
-    }
-}
-
 /* Control image size + overlay */
 .prompt {
     margin: auto;
@@ -538,9 +523,6 @@ $no-cancer-color: #ff6184;
         width: 100%;
         padding: 0 $block-margin;
 
-        .task-picker select {
-            font-weight: 600;
-        }
 
         @include for-size(mobile) {
             padding: 0 0;
@@ -561,7 +543,7 @@ $no-cancer-color: #ff6184;
         overflow: hidden;
 
 
-        transform: translate(var(--x-diff), calc(var(--y-diff) / -6)) rotate(calc( var(--rot-diff) * -12deg));
+        // transform: translate(var(--x-diff), calc(var(--y-diff) / -6)) rotate(calc( var(--rot-diff) * -12deg));
 
         @include for-size(mobile) {
             height: calc(100vw - $block-margin - $block-margin);
@@ -583,10 +565,10 @@ $no-cancer-color: #ff6184;
 
             /** Transitions for image container during swap */
             &.swap-img-enter-active {
-                transition: all var(--img-trans) ease-in;
+                transition: opacity var(--img-trans) ease;
             }
             &.swap-img-leave-active {
-                transition: all var(--img-trans) ease-out;
+                transition: opacity var(--img-trans) ease;
             }
 
             &.swap-img-enter,
