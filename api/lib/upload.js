@@ -150,13 +150,33 @@ async function saveFile(file, fileInfo) {
     }
 }
 
+// date string helper : https://stackoverflow.com/a/17415677/3068136
+function toIsoWithTimezoneString(date) {
+    var tzo = -date.getTimezoneOffset(),
+        dif = tzo >= 0 ? '+' : '-',
+        pad = function (num) {
+            return (num < 10 ? '0' : '') + num;
+        };
+
+    return date.getFullYear() % 100 +
+        '' + pad(date.getMonth() + 1) +
+        '' + pad(date.getDate()) +
+        '_' + pad(date.getHours()) +
+        '-' + pad(date.getMinutes()) +
+        '-' + pad(date.getSeconds()) +
+        'TZ' + dif + pad(Math.floor(Math.abs(tzo) / 60)) +
+        '-' + pad(Math.abs(tzo) % 60);
+}
+
 // Handle upload image(s) request for express
 export async function uploadImages(req, res, next) {
     console.log('Uploading images...')
     console.log('UPLOAD:', req.headers.uploadtime, req.user.id)
 
+    const folderDateString = toIsoWithTimezoneString(new Date(req.headers.uploadtime))
+
     // Consider hashing the userid
-    const saveDirectory = `${req.user.id}_${req.headers.uploadtime}`
+    const saveDirectory = `${req.user.id}_${folderDateString}`
     // straight hash for directory
     // const saveDirectory = await nanoid()
     

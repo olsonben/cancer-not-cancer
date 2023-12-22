@@ -44,15 +44,15 @@ const imageController = {
     async saveUploadsToDb(req, res, next) {
         // TODO: this has no error handling if the req has ended... will cause getIP to throw an error.
         const ip = getIP(req)
-        // const date = new Date()
-        // const masterFolderName = `${date.toISOString().split('.')[0].replace('T', ' ')} Upload`
+        const date = new Date(req.headers.uploadtime)
         const masterFolderName = `${date.toISOString().split('.')[0].replace('T', ' ')} Upload`
+        // const masterFolderName = `${req.user.id}_${req.headers.uploadtime}`
 
         const folderStructure = VFS.createFolderStructure(req.files, masterFolderName)
         
         try {
             const folders = await imageOps.saveFolderStructure(folderStructure, req.user.id)
-            
+            console.log(folders)
             for (const file of req.files) {
                 if (file.success) {
                     try {
