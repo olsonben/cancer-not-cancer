@@ -61,8 +61,6 @@ const imageController = {
             const folders = await imageOps.saveFolderStructure(folderStructure, req.user.id, existingFolders)
             folderQueue[folderKey] = folders
 
-
-            console.log(folders)
             for (const file of req.files) {
                 if (file.success) {
                     try {
@@ -99,7 +97,12 @@ const imageController = {
             // TODO: delete files that have been uploaded
             next(error) // Pass error on to unified error handler.
         }
-            
+        
+        if (req.headers.finalblock) {
+            console.log('FINAL BLOCK, deleting folderQueue entry.')
+            delete folderQueue[folderKey]
+        }
+
         // TODO: if a file upload fails and there are no files associated with the
         // folder, then we should delete the folder
         next()

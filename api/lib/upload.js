@@ -170,9 +170,6 @@ function toIsoWithTimezoneString(date) {
 
 // Handle upload image(s) request for express
 export async function uploadImages(req, res, next) {
-    console.log('Uploading images...')
-    console.log('UPLOAD:', req.headers.uploadtime, req.user.id)
-
     const folderDateString = toIsoWithTimezoneString(new Date(req.headers.uploadtime))
 
     // Consider hashing the userid
@@ -213,7 +210,6 @@ export async function uploadImages(req, res, next) {
 
     // Listen for files being uploaded
     bb.on('file', async (fieldName, fileStream, fileInfo) => {
-        console.log(fileInfo)
         let isAcceptable = false
         fileInfo.sanitizedName = sanitizeFilename(fileInfo.filename)
         fileInfo.id = await randomUUID()

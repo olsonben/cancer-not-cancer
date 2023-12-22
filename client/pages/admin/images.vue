@@ -78,6 +78,9 @@ const router = useRouter()
 
 const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_FAILED = 3, STATUS_LOADED = 4
 
+// TODO: add this variable to .env files
+const filesPerRequest = 5
+
 export default {
     data() {
         return {
@@ -197,17 +200,19 @@ export default {
             })
 
             try {
-                // TODO: instead of a request for every file, it
-                // should be something like every 5 files.
-                let count = 1
-                for (const fileObj of rawData) {
+                for (let i = 0; i < rawData.length; i += filesPerRequest) {
+                    const uploadBlock = rawData.slice(i, i + filesPerRequest)
                     // image upload requires submittion via form data 
                     const formData = new FormData
-                    formData.append(fileObj.key, fileObj.file, fileObj.fileName)
-                    // const upKey = `upload_${uploadHeader.uploadtime}_${count++}`
+                    for (const fileObj of uploadBlock) {
+                        formData.append(fileObj.key, fileObj.file, fileObj.fileName)
+                    }
+                    if (i+filesPerRequest >= rawData.length) {
+                        uploadHeader['finalblock'] = true
+                    }
+
                     const { response } = await api.POST('/images/', formData, null, uploadHeader)
-                    console.log('part complete')
-                    console.log(response.value)
+                    console.log(`upload part ${i} thru ${i+filesPerRequest} complete`)
 
                     if (response.value !== 'No files uploaded.') {
                         for (let file of response.value) {
@@ -220,24 +225,8 @@ export default {
                     } else {
                         console.log('No Files to Upload')
                     }
-                    
                 }
                 this.imageManagerKey += 1
-                // const response = null
-
-                // Handling 0 file upload edge case
-                // if (response && response.value !== 'No files uploaded.') {
-                //     for (let file of response.value) {
-                //         // update file's success value
-                //         this.submittedFiles[file.filename].submissionSuccess = file.success
-                //         this.submittedFiles[file.filename].message = (file.message) ? file.message : null
-
-                //         clearNotification(file.filename)
-                //     }
-                //     this.imageManagerKey += 1
-                // } else {
-                //     console.log('No Files to Upload')
-                // }
 
             } catch (error) {
                 // TODO: Determine when error.data exists
