@@ -62,6 +62,7 @@ const imageOps = {
      * and { name, id, and parentFolderName}.
      */
     async saveFolderStructure(folderStructure, user_id) {
+        // TODO: handle existing tags
         const createFolderTag = `INSERT INTO tags (name, user_id) VALUES (?, ?)`
         const createTagRelation = `INSERT INTO tag_relations (tag_id, parent_tag_id) VALUES (?, ?)`
 

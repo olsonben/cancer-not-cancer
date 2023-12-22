@@ -153,16 +153,20 @@ async function saveFile(file, fileInfo) {
 // Handle upload image(s) request for express
 export async function uploadImages(req, res, next) {
     console.log('Uploading images...')
+    console.log('UPLOAD:', req.headers.uploadtime, req.user.id)
 
-    const saveDirectory = await nanoid()
-
+    // Consider hashing the userid
+    const saveDirectory = `${req.user.id}_${req.headers.uploadtime}`
+    // straight hash for directory
+    // const saveDirectory = await nanoid()
+    
     // Check for proper content-type, needs to be multipart/form-data
     // busboy should error out on malformed data, be we do our own check before starting.
     if (!req.headers['content-type'].includes('multipart/form-data')) {
         res.status(415).send('Content-Type must be multipart/form-data.')
         return
     }
-
+    
     const busboyConfig = {
         headers: req.headers, // pass headers to busboy
         limits: {
@@ -171,10 +175,11 @@ export async function uploadImages(req, res, next) {
         },
         preservePath: true
     }
-
+    
     const files = [] // keep track of the files for communicating success or failure.
     let finished = false // busboy upload status
     const bb = busboy(busboyConfig)
+
 
     // When all files have the property 'succees' AND busboy is finished,
     // we can send our response.
@@ -188,6 +193,7 @@ export async function uploadImages(req, res, next) {
 
     // Listen for files being uploaded
     bb.on('file', async (fieldName, fileStream, fileInfo) => {
+        console.log(fileInfo)
         let isAcceptable = false
         fileInfo.sanitizedName = sanitizeFilename(fileInfo.filename)
         fileInfo.id = await randomUUID()

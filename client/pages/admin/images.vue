@@ -73,11 +73,28 @@
 </template>
 
 <script>
-import FormData from 'form-data'
 const api = useApi()
 const router = useRouter()
 
 const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_FAILED = 3, STATUS_LOADED = 4
+
+// date string helper : https://stackoverflow.com/a/17415677/3068136
+function toIsoWithTimezoneString(date) {
+    var tzo = -date.getTimezoneOffset(),
+        dif = tzo >= 0 ? '+' : '-',
+        pad = function (num) {
+            return (num < 10 ? '0' : '') + num;
+        };
+
+    return date.getFullYear() +
+        '-' + pad(date.getMonth() + 1) +
+        '-' + pad(date.getDate()) +
+        'T' + pad(date.getHours()) +
+        ':' + pad(date.getMinutes()) +
+        ':' + pad(date.getSeconds()) +
+        dif + pad(Math.floor(Math.abs(tzo) / 60)) +
+        ':' + pad(Math.abs(tzo) % 60);
+}
 
 export default {
     data() {
@@ -140,6 +157,8 @@ export default {
         newImage(event) {
             for (let i = 0; i < event.target.files.length; i++) {
                 let file = event.target.files[i]
+                // TODO: this would allow other types like tiffs and svg,
+                // we should probably check for image/jpeg and image/png specifically
                 if (/image\/*/.test(file.type)) {
                     this.files.push(file)
                     this.fileCount++
@@ -153,8 +172,12 @@ export default {
         async saveImages() {
             this.currentStatus = STATUS_SAVING
 
-            // image upload requires submittion via form data 
-            const data = new FormData()
+            const uploadHeader = {
+                'uploadtime': `${toIsoWithTimezoneString(new Date())}`
+            }
+
+            // const data = new FormData()
+            const rawData = []
 
             const clearNotification = (filename) => {
                 // set a timer to kill the notification
@@ -176,7 +199,12 @@ export default {
                     return
                 }
                 const fileName = file.webkitRelativePath === '' ? file.name : file.webkitRelativePath
-                data.append(`files[${index}]`, file, fileName)
+                // data.append(`files[${index}]`, file, fileName)
+                rawData.push({
+                    'key': `files[${index}]`,
+                    'file': file,
+                    'fileName': fileName
+                })
 
                 // Keep track of important information for notifications
                 this.appendSubmittedFile(fileName, {
@@ -187,21 +215,47 @@ export default {
             })
 
             try {
-                const { response } = await api.POST('/images/', data)
+                // TODO: instead of a request for every file, it
+                // should be something like every 5 files.
+                let count = 1
+                for (const fileObj of rawData) {
+                    // image upload requires submittion via form data 
+                    const formData = new FormData
+                    formData.append(fileObj.key, fileObj.file, fileObj.fileName)
+                    // const upKey = `upload_${uploadHeader.uploadtime}_${count++}`
+                    const { response } = await api.POST('/images/', formData, null, uploadHeader)
+                    console.log('part complete')
+                    console.log(response.value)
+
+                    if (response.value !== 'No files uploaded.') {
+                        for (let file of response.value) {
+                            // update file's success value
+                            this.submittedFiles[file.filename].submissionSuccess = file.success
+                            this.submittedFiles[file.filename].message = (file.message) ? file.message : null
+
+                            clearNotification(file.filename)
+                        }
+                    } else {
+                        console.log('No Files to Upload')
+                    }
+                    
+                }
+                this.imageManagerKey += 1
+                // const response = null
 
                 // Handling 0 file upload edge case
-                if (response.value !== 'No files uploaded.') {
-                    for (let file of response.value) {
-                        // update file's success value
-                        this.submittedFiles[file.filename].submissionSuccess = file.success
-                        this.submittedFiles[file.filename].message = (file.message) ? file.message : null
+                // if (response && response.value !== 'No files uploaded.') {
+                //     for (let file of response.value) {
+                //         // update file's success value
+                //         this.submittedFiles[file.filename].submissionSuccess = file.success
+                //         this.submittedFiles[file.filename].message = (file.message) ? file.message : null
 
-                        clearNotification(file.filename)
-                    }
-                    this.imageManagerKey += 1
-                } else {
-                    console.log('No Files to Upload')
-                }
+                //         clearNotification(file.filename)
+                //     }
+                //     this.imageManagerKey += 1
+                // } else {
+                //     console.log('No Files to Upload')
+                // }
 
             } catch (error) {
                 // TODO: Determine when error.data exists
