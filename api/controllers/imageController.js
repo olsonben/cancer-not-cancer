@@ -8,6 +8,8 @@ import * as path from 'path'
 
 const imageBaseURL = process.env.IMAGE_URL
 
+const folderQueue = {}
+
 /** Express.js API endpoint handlers for image related requests. */
 const imageController = {
     /**
@@ -48,10 +50,18 @@ const imageController = {
         const masterFolderName = `${date.toISOString().split('.')[0].replace('T', ' ')} Upload`
         // const masterFolderName = `${req.user.id}_${req.headers.uploadtime}`
 
+        const folderKey = `${req.user.id}_masterFolderName`
         const folderStructure = VFS.createFolderStructure(req.files, masterFolderName)
+
         
         try {
-            const folders = await imageOps.saveFolderStructure(folderStructure, req.user.id)
+            let existingFolders = folderQueue[folderKey] || {}
+
+            // create additional folders here
+            const folders = await imageOps.saveFolderStructure(folderStructure, req.user.id, existingFolders)
+            folderQueue[folderKey] = folders
+
+
             console.log(folders)
             for (const file of req.files) {
                 if (file.success) {

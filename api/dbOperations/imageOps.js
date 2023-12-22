@@ -61,14 +61,20 @@ const imageOps = {
      * @returns {Object} - Object of all folders created with the folders path as the key
      * and { name, id, and parentFolderName}.
      */
-    async saveFolderStructure(folderStructure, user_id) {
+    async saveFolderStructure(folderStructure, user_id, folders = {}) {
+        console.log('saveFolderStructure')
+        console.log(folderStructure)
         // TODO: handle existing tags
         const createFolderTag = `INSERT INTO tags (name, user_id) VALUES (?, ?)`
         const createTagRelation = `INSERT INTO tag_relations (tag_id, parent_tag_id) VALUES (?, ?)`
 
-        let folders = {}
+        const newFolders = {}
         // first we iterate through and create all the folders/tags
         for (const folderPath of folderStructure) {
+            if (folderPath in folders) {
+                continue
+            }
+
             let folderArray = folderPath.split(path.sep)
             const folderName = folderArray.pop()
             const parentFolderName = folderArray.join(path.sep)
@@ -80,10 +86,16 @@ const imageOps = {
                 'id': results.insertId,
                 'parentFolderName': parentFolderName
             }
+
+            newFolders[folderPath] = {
+                'name': folderPath,
+                'id': results.insertId,
+                'parentFolderName': parentFolderName
+            }
         }
 
         // now we create a relation for each folder with a parent folder
-        for (const folder of Object.values(folders)) {
+        for (const folder of Object.values(newFolders)) {
             if (folder.parentFolderName !== '') {
                 // add parent relationship
                 const parentFolder = folders[folder.parentFolderName]
