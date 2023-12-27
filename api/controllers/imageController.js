@@ -127,6 +127,15 @@ const imageController = {
         await removeFile(absoluteFilePath)
         removeEmptyImageFolders()
     },
+
+    /** Delete files at the relative file path.
+     * @param {Array<String>} filePaths - should be relative with filename and extension.
+     */
+    async deleteFiles(filePaths) {
+        const absoluteFilePaths = filePaths.map((filePath) => path.join(process.env.IMAGES_DIR, filePath))
+        await Promise.all(absoluteFilePaths.map((absFilePath) => removeFile(absFilePath)))
+        removeEmptyImageFolders()
+    },
         
     /** Filters file upload output to relevant data only (Return to sender the
      * status of the upload). */
@@ -234,6 +243,23 @@ const imageController = {
             console.log('DeleteTag - FAILED')
             res.sendStatus(400)
         }
+    },
+    /** Delete a list of images and tags. */
+    async deleteAllContentsIn(req, res, next) {
+        const investigatorId = req.user.id
+        const tags = req.body.tags
+        const images = req.body.images
+        console.log('DeleteAllContentsIn:: User:', investigatorId)
+        console.log('images:', images)
+        console.log('tags:', tags)
+
+        const imgPaths = await imageOps.getPaths(images)
+        await imageController.deleteFiles(imgPaths)
+        await imageOps.deleteImages(images, investigatorId)
+        await tagOps.deleteTags(tags, investigatorId)
+
+        res.sendStatus(200)
+        
     },
     /**
      * Middleware for uploading and saving images.

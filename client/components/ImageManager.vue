@@ -118,6 +118,8 @@ export default {
                     return !(file.type == 'img' && file.id == changeData.fileId)
                 })
                 this.deleteFile(changeData.fileId)
+            } else if (eventType === 'folderDeleteAll') {
+                this.deleteAllContents(changeData.folder)
             }
          },
         async editTagName(tagId, newName) {
@@ -202,6 +204,44 @@ export default {
                 console.error('ImageManager deleteTag:', error.message)
                 // because folder delete can be nested, if we experience an error,
                 // we should refresh the data for accuracy
+                const newDataPromise = getFiles()
+                this.refreshData(newDataPromise)
+            }
+        },
+        getAllImageIds(folderObj, memo = []) {
+            for (const file of folderObj.contents) {
+                if (file.type === 'tag') {
+                    this.getAllImageIds(file, memo)
+                } else {
+                    memo.push(file.id)
+                }
+            }
+            return memo
+        },
+        getAllTagIds(folderObj, memo = []) {
+            memo.push(folderObj.id)
+            for (const file of folderObj.contents) {
+                if (file.type === 'tag') {
+                    this.getAllTagIds(file, memo)
+                }
+            }
+            return memo
+        },
+        async deleteAllContents(folder) {
+            try {
+                console.log('deleteAllContents - folder id:', folder.id)
+                const listOfImages = this.getAllImageIds(folder)
+                const listOfTags = this.getAllTagIds(folder)
+                console.log('Deleting...')
+                console.log('images:', listOfImages)
+                console.log('folders:', listOfTags)
+                const { response } = await api.POST('/images/deleteAllIn', {
+                    tags: listOfTags,
+                    images: listOfImages,
+                })
+            } catch (error) {
+                console.error('Error deleting folder contents.')
+                console.error(error)
                 const newDataPromise = getFiles()
                 this.refreshData(newDataPromise)
             }

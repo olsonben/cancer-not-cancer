@@ -91,7 +91,8 @@ export default {
             return `tag-${this.modelValue.id}`
         },
         deletable() {
-            return this.editable && this.modelValue.contents.length === 0
+            // return this.editable && this.modelValue.contents.length === 0
+            return this.editable
         },
         draggableConfig() {
             return {
@@ -142,11 +143,21 @@ export default {
             this.newName = ''
         },
         removeTag() {
-            const changeData = {
-                eventType: 'folderDelete',
-                folderId: this.modelValue.id
+            if (this.modelValue.contents.length > 0) {
+                console.log('You are about to delete all the files and this folder.')
+                const changeData = {
+                    eventType: 'folderDeleteAll',
+                    folder: this.modelValue
+                }
+                this.$emit('change', changeData)
+            } else {
+                console.log('removeTag!')
+                const changeData = {
+                    eventType: 'folderDelete',
+                    folderId: this.modelValue.id
+                }
+                this.$emit('change', changeData)
             }
-            this.$emit('change', changeData)
         },
         onDrop(event) {
             const { data, parentTagId } = JSON.parse(event.dataTransfer.getData('application/json'))
@@ -197,6 +208,11 @@ export default {
             if (changeData.eventType === 'folderDelete') {
                 this.modelValue.contents = this.modelValue.contents.filter((file) => {
                     return !(file.type == 'tag' && file.id == changeData.folderId)
+                })
+            }
+            if (changeData.eventType === 'folderDeleteAll') {
+                this.modelValue.contents = this.modelValue.contents.filter((file) => {
+                    return !(file.type == 'tag' && file.id == changeData.folder.id)
                 })
             }
             this.$emit('change', changeData)

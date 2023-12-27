@@ -28,6 +28,21 @@ const imageOps = {
     },
 
     /**
+     * Get list of image paths.
+     * @param {Array} imageIds - Image ids to look up.
+     * @returns {Array<String>} - [imagePath] - list of image paths.
+     */
+    async getPaths(imageIds) {
+        if (imageIds.length === 0) {
+            return []
+        }
+        const imagePlaceholders = Array.from(Array(imageIds.length), () => '?').join(', ')
+        const query = `SELECT path FROM images WHERE images.id IN (${imagePlaceholders})`
+        const rows = await dbOps.select(query, imageIds)
+        return rows.map(x => x.path)
+    },
+
+    /**
      * Database call that returns a queue of next images to be graded.
      * @param {Number} userId - User's id to check against existing ratings
      * @param {Number} taskId - Task id for which to build the queue of image ids.
@@ -176,6 +191,29 @@ const imageOps = {
         // TODO: Delete reference in image_tags too.
         await dbOps.execute(deleteImage, [imageId, user_id])
         await dbOps.execute(deleteImageFromTasks, [imageId])
+    },
+    /**
+     * Delete list of files
+     * @param {Number} imageIds - IDs of images to delete.
+     * @param {Number} user_id - User/owner's id of image.
+     */
+    async deleteImages(imageIds, user_id) {
+        console.log('deleteImages', imageIds)
+
+        if (imageIds.length === 0) {
+            console.log('no images to delete')
+            return
+        }
+
+        const imagePlaceholders = Array.from(Array(imageIds.length), () => '?').join(', ')
+        const deleteImage = `DELETE FROM images WHERE id IN (${imagePlaceholders}) AND user_id = ?`
+        // TODO: WARNING: deleting a photo will delete the photo from the task,
+        // this is not obvious in the UI to the investigator and cause DAMAGE!
+        const deleteImageFromTasks = `DELETE FROM task_images WHERE image_id IN (${imagePlaceholders})`
+
+        // TODO: Delete reference in image_tags too.
+        await dbOps.execute(deleteImage, [...imageIds, user_id])
+        await dbOps.execute(deleteImageFromTasks, imageIds)
     }
 }
 
