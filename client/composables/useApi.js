@@ -22,7 +22,6 @@ export const useApi = () => {
 
     return {
         async GET(route, query, key = null, headers = null) {
-		console.log('GET:', config.public.apiUrl)
             const { data: response, status, error } = await useFetch(route, {
                 method: 'GET',
                 baseURL: config.public.apiUrl,
