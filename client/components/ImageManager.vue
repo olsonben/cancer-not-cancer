@@ -4,7 +4,7 @@
 
         <div class="box">
             Create a folder
-             <div class="field-body pl-4 pb-2">
+            <div class="field-body pl-4 pb-2">
                 <div class="field is-grouped">
                     <div class="control">
                         <input ref="folderName" class="input is-small" :class="{ 'blink': attention }" type="text" placeholder="Folder Name" v-model="createTagName">
@@ -14,6 +14,17 @@
                     </div>
                 </div>
             </div>
+            Mode
+            <div class="field-body pl-4 pb-2">
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button class="button is-small is-info has-text-weight-bold" type="button" @click="toggleMode" :disabled="!deleteMode">Edit Mode</button>
+                        </div>
+                        <div class="control">
+                            <button class="button is-small is-danger has-text-weight-bold" type="button" @click="toggleMode" :disabled="deleteMode">Delete Mode</button>
+                        </div>
+                    </div>
+                </div>
             <!-- TODO: This is essentially the ImagePicker can that component be used here? -->
             <div class="menu">
                 <p class="menu-label">Images Folders: Drag files and folder where you want to move them.</p>
@@ -25,8 +36,9 @@
                         <folder v-if="isFolder(file)"
                         v-model="files[index]"
                         @change="masterChangeHandler"
-                        :editable="true"/>
-                        <File v-else v-model="files[index]" :editable="true" @change="masterChangeHandler"></File>
+                        :editable="!deleteMode"
+                        :deletable="deleteMode"/>
+                        <File v-else v-model="files[index]" :editable="!deleteMode" :deletable="deleteMode" @change="masterChangeHandler"></File>
                     </li>
 
                 </ul>
@@ -62,7 +74,8 @@ export default {
             files: ref([]), // using ref to make our nest array reactive
             createTagName: '',
             attention: false,
-            loading: true, 
+            loading: true,
+            deleteMode: ref(false),
         }
     },
     async created() {
@@ -77,6 +90,10 @@ export default {
             } catch (error) {
                 console.error('ImageManager refreshData:', error.message)
             }
+        },
+        toggleMode() {
+            console.log('toggle', this.deleteMode)
+            this.deleteMode = !this.deleteMode
         },
         fileKey(file) {
             return `${file.type}-${file.id}`
@@ -238,6 +255,10 @@ export default {
                 const { response } = await api.POST('/images/deleteAllIn', {
                     tags: listOfTags,
                     images: listOfImages,
+                })
+
+                this.files = this.files.filter((file) => {
+                    return !(file.type == folder.type && file.id == folder.id)
                 })
             } catch (error) {
                 console.error('Error deleting folder contents.')
