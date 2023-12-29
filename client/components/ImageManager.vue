@@ -14,7 +14,7 @@
                     </div>
                 </div>
             </div>
-            Mode
+            <span v-if="!deleteMode">In Edit </span><span v-else>In Delete </span>Mode
             <div class="field-body pl-4 pb-2">
                     <div class="field is-grouped">
                         <div class="control">
@@ -27,7 +27,8 @@
                 </div>
             <!-- TODO: This is essentially the ImagePicker can that component be used here? -->
             <div class="menu">
-                <p class="menu-label">Images Folders: Drag files and folder where you want to move them.</p>
+                <p v-if="!deleteMode" class="menu-label">Images Folders: Drag files and folder where you want to move them.</p>
+                <p v-else class="menu-label"><span class="has-text-danger">WARNING:</span> Deleting folders and images will permanently remove files, including images associated with existing tasks.</p>
                 <!-- TODO: Should probably be replaced with a app wide loading animation. -->
                 <button v-if="loading" class="button is-loading is-medium is-info">loading</button>
                 <ul class="menu-list">
@@ -92,7 +93,6 @@ export default {
             }
         },
         toggleMode() {
-            console.log('toggle', this.deleteMode)
             this.deleteMode = !this.deleteMode
         },
         fileKey(file) {
