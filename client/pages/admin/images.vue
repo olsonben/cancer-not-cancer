@@ -12,7 +12,9 @@
                 </ul>
             </div>
             <div>
-                <div class="dropbox">
+
+                <div class="dropbox mb-3">
+
                     <!-- File input -->
                     <input type="file"
                         multiple 
@@ -23,11 +25,6 @@
                         @change="newImage"
                         class="input-file"
                     >
-
-                    <!-- Display loaded files -->
-                    <ul>
-                        <li v-for="file in files">{{ file.name }}</li>
-                    </ul>
 
                     <!-- Various prompts -->
                     <p v-if="isInitial">
@@ -40,6 +37,17 @@
                         Uploading {{ fileCount }} {{ fileUpload ? 'file' : 'folder' }}s...
                     </p>
                 </div>
+
+                <div v-if="files.length > 0" class="">
+                    <h1 class="title is-6 mb-1">
+                        {{ files.length }} Files selected for upload:
+                    </h1>
+                    <!-- Display loaded files -->
+                    <ul class="box selected-files">
+                        <li v-for="file in files">{{ file.name }}</li>
+                    </ul>
+                </div>
+
                 <br>
                 
                 <!-- Submit or clear files -->
@@ -54,18 +62,26 @@
             </div>
         </section>
         <!-- Notifications of submission process -->
-        <template v-for='file in submittedFiles'>
-            <div v-if="file.submissionSuccess === null" class='notification is-warning is-light'>
-                File {{ file.originalname }} is submitted, awaiting response.
-            </div>
-            <div v-else-if="file.submissionSuccess === true" class='notification is-success is-light'>
-                File {{ file.originalname }} is successfully submitted.
-            </div>
-            <div v-else-if="file.submissionSuccess === false" class='notification is-danger is-light'>
-                <!--                                             Don't add a period to messages ending w/ a period -->
-                File {{ file.originalname }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
-            </div>
-        </template>
+        <section v-if="isSaving" class="section pt-3 pb-3 is-flex is-flex-direction-row">
+            <h2 class="title is-5 is-flex-shrink-0 pr-3">
+                Upload Progress:
+            </h2>
+            <progress class="progress is-info" :value="progress" max="100">{{ progress }}%</progress>
+        </section>
+        <section class="notification-container section pb-0 pt-0">
+            <template v-for='file in submittedFiles'>
+                <div v-if="file.submissionSuccess === null" class='notification is-warning is-light'>
+                    File {{ file.originalname }} is submitted, awaiting response.
+                </div>
+                <div v-else-if="file.submissionSuccess === true" class='notification is-success is-light'>
+                    File {{ file.originalname }} is successfully submitted.
+                </div>
+                <div v-else-if="file.submissionSuccess === false" class='notification is-danger is-light'>
+                    <!--                                             Don't add a period to messages ending w/ a period -->
+                    File {{ file.originalname }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
+                </div>
+            </template>
+        </section>
         <div class="section pt-3">
             <ImageManager :key="imageManagerKey"/>
         </div>
@@ -95,7 +111,8 @@ export default {
             // Notification stuff
             submittedFiles: {},
             notificationTime: "10000", // 10 sec in ms
-            imageManagerKey: 1 // we can force and update by incrementing this on upload complete
+            imageManagerKey: 1, // we can force and update by incrementing this on upload complete
+            progress: 0
         }
     },
 
@@ -128,6 +145,7 @@ export default {
             this.currentStatus = STATUS_INITIAL
             this.files = []
             this.fileCount = 0
+            this.progress = 0
         },
 
         appendSubmittedFile(filename, propObj) {
@@ -200,6 +218,7 @@ export default {
             })
 
             try {
+                const progressIncrement = Math.min(100 / (rawData.length / filesPerRequest), 100)
                 for (let i = 0; i < rawData.length; i += filesPerRequest) {
                     const uploadBlock = rawData.slice(i, i + filesPerRequest)
                     // image upload requires submittion via form data 
@@ -213,6 +232,8 @@ export default {
 
                     const { response } = await api.POST('/images/', formData, null, uploadHeader)
                     console.log(`upload part ${i} thru ${i+filesPerRequest} complete`)
+                    this.progress = Math.min(this.progress + progressIncrement, 100)
+
 
                     if (response.value !== 'No files uploaded.') {
                         for (let file of response.value) {
@@ -300,10 +321,20 @@ li.upload-active a:hover{
 .dropbox ul {
     margin: $block-margin;
 }
+.selected-files {
+    max-height: 220px;
+    overflow-y: auto;
+}
 /* For the prompt */
 .dropbox p {
     font-size: 1.2em;
     text-align: center;
     padding: 50px 0;
+}
+
+.notification-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-right: 3rem;
 }
 </style>
