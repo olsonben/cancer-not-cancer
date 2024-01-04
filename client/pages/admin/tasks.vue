@@ -57,33 +57,7 @@
 </template>
 
 <script>
-// TODO: remove when finished initial task development.
-const dummyData = [
-    {
-        'id': 1,
-        'short_name': 'task 1',
-        'prompt': 'Is this my question?',
-        'image_count': 54,
-        'observer_count': 3,
-        'progress': 45
-    },
-    {
-        'id': 2,
-        'short_name': 'another_task_beta_check_240623',
-        'prompt': 'Does this have alpha 1 marker properties?',
-        'image_count': 212,
-        'observer_count': 6,
-        'progress': 72
-    },
-    {
-        'id': 4,
-        'short_name': 'task b',
-        'prompt': 'Is this a blood parasite?',
-        'image_count': 100,
-        'observer_count': 4,
-        'progress': 66
-    }
-]
+const api = useApi()
 
 export default {
     data() {
@@ -110,12 +84,12 @@ export default {
     methods: {
         async createTask() {
             try {
-                const response = await this.$axios.$post('/tasks/', {
+                const { response } = await api.POST('/tasks/', {
                     short_name: this.task.name,
                     prompt: this.task.prompt,
                 })
                 this.taskData.push({
-                    id: response.newTaskId,
+                    id: response.value.newTaskId,
                     short_name: this.task.name,
                     prompt: this.task.prompt,
                     image_count: 0,
@@ -139,9 +113,8 @@ export default {
             this.taskToEdit = null
         },
         async deleteTask(task) {
-            console.log('deleteTask')
             try {
-                await this.$axios.$post('/tasks/delete', {
+                await api.POST('/tasks/delete', {
                     id: task.id
                 })
                 const index = this.taskData.findIndex(curTask => curTask.id === task.id)
@@ -152,20 +125,19 @@ export default {
         },
         async getTasksTable() {
             try {
-                const response = await this.$axios.$get('/tasks/table')
-                this.taskData = response
+                const { response } = await api.GET('/tasks/table')
+                this.taskData = response.value
             } catch (err) {
                 console.error(err);
             }
         },
         async updateTaskProgress(taskIndex) {
             try {
-                const response = await this.$axios.$get('/tasks/progress', {
-                    params: {
-                        task_id: this.taskData[taskIndex].id
-                    }
+                const { response } = await api.GET('/tasks/progress', {
+                    task_id: this.taskData[taskIndex].id
                 })
-                this.taskData[taskIndex].progress = response.progress ? response.progress : 0
+                const progress = response.value.progress
+                this.taskData[taskIndex].progress = progress ? progress : 0
             } catch (err) {
                 console.log(err)
             }

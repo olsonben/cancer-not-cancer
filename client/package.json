@@ -1,11 +1,14 @@
 {
   "name": "client",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
-    "dev": "kill-port $PORT ;  npm run css-watch & nuxt --dotenv .env.development --port $PORT ; fg",
+    "dev": "nuxt dev --dotenv .env.development",
+    "old-dev": "kill-port $PORT ;  npm run css-watch & nuxt --dotenv .env.development --port $PORT ; fg",
     "build": "NODE_OPTIONS=--openssl-legacy-provider nuxt build --dotenv .env.production",
     "generate": "NODE_OPTIONS=--openssl-legacy-provider nuxt generate --dotenv .env.production",
+    "buildDev": "nuxt build --dotenv .env.development",
+    "generateDev": "nuxt generate --dotenv .env.development",
     "css-build": "sass --no-source-map assets/scss/main.scss assets/css/main.css > ../log/sass.log",
     "css-watch": "npm run css-build -- --watch",
     "staging": "NODE_OPTIONS=--openssl-legacy-provider nuxt start --dotenv .env.staging --port $PORT",
@@ -13,26 +16,16 @@
     "gen-stage": "NODE_OPTIONS=--openssl-legacy-provider nuxt generate --dotenv .env.staging"
   },
   "devDependencies": {
-    "@nuxtjs/style-resources": "^1.2.1",
-    "kill-port": "^2.0.0",
-    "nuxt-matomo": "^1.2.4",
-    "sass": "^1.52.1",
-    "sass-loader": "10.1.1",
-    "webpack": "^4.46.0"
-  },
-  "dependencies": {
-    "@nuxtjs/axios": "^5.13.6",
-    "axios": "^0.27.2",
-    "bootstrap-icons": "^1.8.3",
+    "@nuxt/devtools": "latest",
+    "@pinia/nuxt": "^0.5.1",
     "bulma": "^0.9.4",
-    "bulma-tooltip": "^3.0.2",
-    "core-js": "^3.19.3",
-    "crypto-js": "^4.1.1",
     "form-data": "^4.0.0",
-    "nuxt": "^2.15.8",
-    "tiny-cookie": "^2.3.2",
-    "vue": "^2.6.14",
-    "vue-server-renderer": "^2.6.14",
-    "vue-template-compiler": "^2.6.14"
+    "kill-port": "^2.0.0",
+    "nuxt": "^3.8.0",
+    "pinia": "^2.1.7",
+    "sass": "^1.52.1",
+    "vue": "^3.3.7",
+    "vue-matomo": "^4.2.0",
+    "vue-router": "^4.2.5"
   }
 }

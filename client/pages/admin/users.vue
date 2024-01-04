@@ -2,7 +2,7 @@
     <section class='section'>
         <!-- Main form -->
         <h1 class='title'>Adding Users</h1>
-        <form @submit.prevent='submitUser()'>
+        <form @submit.prevent='submitUser'>
             <div class='field is-horizontal'> <!-- Formatting stuff -->
                 <div class='field-label'>
                     <label class='label'>Information</label>
@@ -72,12 +72,12 @@
         <!-- Feedback after submission -->
         <div v-for='user in submittedUsers'>
             <div v-if="user.submittionSuccess != null && user.submittionSuccess === true" class='notification is-success is-light'>
-                User {{ user.fullname }} is successfully submitted.
+                User {{ user.fullname }} was successfully submitted.
             </div>
             <div v-else-if="user.submittionSuccess != null && user.submittionSuccess === false" class='notification is-danger is-light'>
-                User {{ user.fullname }} failed to submit: {{ user.message }}.
+                User {{ user.fullname }} failed to submit: {{ user.message }}
             </div>
-            <div v-else-if="user.submittionSuccess != -1" class='notification is-warning is-light'>
+            <div v-else-if="user.submittionSuccess === null" class='notification is-warning is-light'>
                 User {{ user.fullname }} is submitted, awaiting response.
             </div>
         </div>
@@ -85,6 +85,9 @@
 </template>
 
 <script>
+const api = useApi()
+const router = useRouter()
+let submitCounter = 0;
 
 export default {
     data() {
@@ -105,33 +108,48 @@ export default {
             },
             
             // Keeping track of submission responses
-            submittedUsers: [],
+            submittedUsers: {},
             notificationTime: "5000",
         }
     },
 
     methods: {
+        addSubmittedUser(submitId, propObj) {
+            this.submittedUsers[submitId] = Object.assign({}, propObj)
+        },
+
+        removeSubmittedUser(submitId) {
+            // Remove user and notification after timeout
+            setTimeout(() => {
+                delete this.submittedUsers[submitId]
+            }, this.notificationTime)
+        },
+        validEmail(email) {
+            var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(email);
+        },
         // Submit new user (activated on clicking Submit button in Users tab)
         async submitUser() {
-            // Remember the submission for notification
-            this.user.id = this.submittedUsers.length
-            this.submittedUsers.push(structuredClone(this.user))
-
-            // Config data
-            let axiosData = JSON.stringify(this.user)
-            const axiosConfig = {
-                headers: {
-                    "Content-Type": "application/json",
-                }
+            // valid email required
+            if (!this.validEmail(this.user.email)) {
+                // TODO: visualize the validation in the form
+                console.log('A valid email is needed.')
+                return
             }
-            
+
+            // Remember the submission for notification
+            const submissionId = submitCounter++
+            this.addSubmittedUser(submissionId, this.user)
+
             // POST to /users
             try {
-                const response = await this.$axios.post('/users/', axiosData, axiosConfig)
+                // unique identifier to keep multiple request submissions unique
+                const key = `submitUser_${this.user.fullname}_${this.user.email}`
+                await api.POST('/users/', this.user, key)
 
                 // This is all for notifications of successful uploads
-                this.submittedUsers[response.data.id].submittionSuccess = true // Note success
-
+                this.submittedUsers[submissionId].submittionSuccess = true // Note success
+                
                 // Clear the form for more user entries
                 this.user.fullname = ''
                 this.user.email =''
@@ -141,24 +159,24 @@ export default {
                 this.user.permissions.pathologist = 0
                 this.user.permissions.admin = 0
 
-                setTimeout(() => {
-                    this.submittedUsers[response.data.id].submittionSuccess = -1
-                }, this.notificationTime) // "kill" notification after some time
+                // clear user from message queue
+                this.removeSubmittedUser(submissionId)
 
             } catch (error) {
-                // Reroute if you aren't logged in
-                if ([401, 403].includes(error.response.status)) {
-                    this.$router.push('/login')
+                // Note failure
+                this.submittedUsers[submissionId].submittionSuccess = false
+
+                if (error.value.statusCode == 409) {
+                    // email already exists
+                    // TODO: test error.data, it might exist at error.value.data
+                    this.submittedUsers[submissionId].message = error.data.message
                 } else {
+                    this.submittedUsers[submissionId].message = 'Something went wrong.'
                     console.error(error)
-
-                    this.submittedUsers[error.response.data.user.id].submittionSuccess = false // Note failure
-                    this.submittedUsers[error.response.data.user.id].message = error.response.data.message
-
-                    setTimeout(() => {
-                        this.submittedUsers[error.response.data.user.id].submittionSuccess = -1
-                    }, this.notificationTime) // "kill" notification
                 }
+
+                // clear user from message queue
+                this.removeSubmittedUser(submissionId)
             }
         }
     }

@@ -9,8 +9,8 @@
                 v-draggable="draggableConfig"
                 @drop="onDrop" @dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave"
             >
-                {{ value.name }}
-                <span v-if="value.contents.length > 0" class="expander" :class="{ 'is-expanded': expand }"></span>
+                {{ modelValue.name }}
+                <span v-if="modelValue.contents.length > 0" class="expander" :class="{ 'is-expanded': expand }"></span>
                 <span class="icon add"><i class="cnc-xmark"></i></span>
             </a>
             
@@ -32,11 +32,11 @@
                 </div>
             </div>
         </div>
-            <ul v-if="value.contents.length > 0" class="menu-list" :class="{ 'is-expanded': expand }">
+            <ul v-if="modelValue.contents.length > 0" class="menu-list" :class="{ 'is-expanded': expand }">
                 <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
-                <li v-for="(file, index) in value.contents" :key="fileKey(file)">
-                    <folder v-if="isFolder(file)" v-model="value.contents[index]" :editable="editable" @change="changeHandler" :parentTagId="value.id"/>
-                    <File v-else v-model="value.contents[index]" :editable="editable" @change="changeHandler" :parentTagId="value.id"></File>
+                <li v-for="(file, index) in modelValue.contents" :key="fileKey(file)">
+                    <folder v-if="isFolder(file)" v-model="modelValue.contents[index]" :editable="editable" @change="changeHandler" :parentTagId="modelValue.id"/>
+                    <File v-else v-model="modelValue.contents[index]" :editable="editable" @change="changeHandler" :parentTagId="modelValue.id"></File>
                 </li>
             </ul>
     </li>
@@ -49,11 +49,12 @@
 //     contents: [array of files and folders],
 //     type: 'tag', // tag == folder
 // }
+const fileTools = useFileTools()
 
 export default {
     name: 'folder',
     props: {
-        value: Object,
+        modelValue: Object,
         editable: {
             default: false,
             type: Boolean
@@ -63,10 +64,11 @@ export default {
             type: Number
         }
     },
+    emits: ['update:modelValue', 'change'],
     data() {
         return {
             expand: false,
-            checked: !(this.$common.getSelectedState(this.value) === 'none'),
+            checked: !(fileTools.getSelectedState(this.modelValue) === 'none'),
             changeName: false,
             newName: '',
             dragOverStyle: false
@@ -82,19 +84,19 @@ export default {
             if (this.editable) {
                 return 'none'
             }
-            const state = this.$common.getSelectedState(this.value)
+            const state = fileTools.getSelectedState(this.modelValue)
             return state
         },
         inputName() {
-            return `tag-${this.value.id}`
+            return `tag-${this.modelValue.id}`
         },
         deletable() {
-            return this.editable && this.value.contents.length === 0
+            return this.editable && this.modelValue.contents.length === 0
         },
         draggableConfig() {
             return {
                 editable: this.editable,
-                data: this.value,
+                data: this.modelValue,
                 parentTagId: this.parentTagId
             }
         }
@@ -107,10 +109,10 @@ export default {
         onCheck(event) {
             if (this.checked) {
                 // uncheck children
-                this.checkChildren(this.value, false)
+                this.checkChildren(this.modelValue, false)
             } else {
                 // check children
-                this.checkChildren(this.value, true)
+                this.checkChildren(this.modelValue, true)
             }
         },
         checkChildren(folderObject, checkVal) {
@@ -131,18 +133,18 @@ export default {
         setNewName() {
             const changeData = {
                 eventType: 'folderName',
-                folderId: this.value.id,
+                folderId: this.modelValue.id,
                 newName: this.newName
             }
             this.$emit('change', changeData)
-            this.value.name = this.newName
+            this.modelValue.name = this.newName
             this.changeName = false
             this.newName = ''
         },
         removeTag() {
             const changeData = {
                 eventType: 'folderDelete',
-                folderId: this.value.id
+                folderId: this.modelValue.id
             }
             this.$emit('change', changeData)
         },
@@ -150,22 +152,22 @@ export default {
             const { data, parentTagId } = JSON.parse(event.dataTransfer.getData('application/json'))
             if (data.type == 'tag') {
                 // A folder was dropped on this folder.
-                if (data.id !== this.value.id) { // if not self
+                if (data.id !== this.modelValue.id) { // if not self
                     const changeData = {
                         eventType: 'folderMove',
                         folderId: data.id,
-                        newParentTagId: this.value.id,
+                        newParentTagId: this.modelValue.id,
                         oldParentTagId: parentTagId
                     }
                     this.$emit('change', changeData)
                 } 
             } else {
                 // A file was dropped on this folder.
-                if (parentTagId !== this.value.id) {  // if file not already in this folder  
+                if (parentTagId !== this.modelValue.id) {  // if file not already in this folder  
                     const changeData = {
                         eventType: 'fileMove',
                         fileId: data.id,
-                        newParentTagId: this.value.id,
+                        newParentTagId: this.modelValue.id,
                         oldParentTagId: parentTagId
                     }
                     this.$emit('change', changeData)
@@ -177,7 +179,7 @@ export default {
             event.preventDefault()
             const { data } = JSON.parse(event.dataTransfer.getData('application/json'))
             // Add '+' icon to indicate droppable area.
-            if (data.type === 'img' || data.id != this.value.id) { // if dragged item is not self
+            if (data.type === 'img' || data.id != this.modelValue.id) { // if dragged item is not self
                 this.dragOverStyle = true
             }
         },
@@ -188,12 +190,12 @@ export default {
         changeHandler(changeData) {
             // We catch incoming change events. Make necessary changes before passing change event up
             if (changeData.eventType === 'fileDelete') {
-                this.value.contents = this.value.contents.filter((file) => {
+                this.modelValue.contents = this.modelValue.contents.filter((file) => {
                     return !(file.type == 'img' && file.id == changeData.fileId)
                 })
             }
             if (changeData.eventType === 'folderDelete') {
-                this.value.contents = this.value.contents.filter((file) => {
+                this.modelValue.contents = this.modelValue.contents.filter((file) => {
                     return !(file.type == 'tag' && file.id == changeData.folderId)
                 })
             }

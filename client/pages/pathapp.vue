@@ -67,7 +67,9 @@
 </template>
 
 <script>
-import { mapGetters } from "vuex";
+import { mapState } from 'pinia'
+import { useUserStore } from '~/store/user'
+const api = useApi()
 
 const IMAGE_TRANSITION_TIME = 250 // ms
 
@@ -105,13 +107,14 @@ export default {
             swipeDistance: 100
         }
     },
-    async fetch() {
-        const response = await this.$axios.$get('/tasks/')
-        this.tasks = response
-        this.selectedTask = this.tasks[0].id
-    },
-    fetchOnServer: false,
-    mounted() {
+    async mounted() {
+        // move fetch() here
+        if (this.isLoggedIn) {
+            const { response } = await api.GET('/tasks/')
+            this.tasks = response.value // because response is a ref object
+            this.selectedTask = this.tasks[0].id
+        }
+
         // Fixes a firefox swipe conflict. When swiping if the reload page
         // swipe starts to engage, other animations freeze and hang. The
         // following line deactivates swiping to reload page.
@@ -127,7 +130,7 @@ export default {
         document.addEventListener('touchend', this.handleTouchEnd, false)
     },
     
-    destroyed() {
+    unmounted() {
         // Reactivates swipe to reload (deactivated in the mount method)
         document.documentElement.style.setProperty('--overscroll', 'auto')
         // Allowing scrolling
@@ -140,7 +143,7 @@ export default {
     },
 
     computed: {
-        ...mapGetters('user', ['isLoggedIn', 'isPathologist']),
+        ...mapState(useUserStore, ['isLoggedIn', 'isPathologist']),
 
         // give the attribute `:style='cssVars'` to anything that should have access to these variables
         cssVars() {
@@ -157,10 +160,14 @@ export default {
     },
     watch: {
         isLoggedIn: {
-            handler(loggedIn) {
+            async handler(loggedIn) {
                 if (loggedIn) {
                     // Previously not logged in, and now logged in.
+                    const { response } = await api.GET('/tasks/')
+                    this.tasks = response.value // because response is a ref object
+                    this.selectedTask = this.tasks[0].id
                     this.nextImage()
+
                 }
             }
         },
@@ -209,30 +216,22 @@ export default {
 
         },
 
-        async postData(pathHistory) {
+        async postData(bodyData) {
             // POST with axios
             try {
-                await this.$axios.$post('/hotornot', pathHistory)
+                // api
+                await api.POST('/hotornot', bodyData)
             } catch(error) {
-                if ([401, 403].includes(error.response.status)) {
-                    // unauthorized, update login status
-                    await this.$store.dispatch('user/login')
-                } else {
-                    // throw other errors so they can be caught upstream
-                    throw error
-                }
+                console.error(error)
             }
         },
 
         async getImageQueue() {
             try {
-                const response = await this.$axios.get('/images/queue', {
-                    params: {
-                        taskId: this.selectedTask
-                    }
+                const { response } = await api.GET('/images/queue', {
+                    taskId: this.selectedTask
                 })
-                console.log(response.data)
-                this.queue = response.data
+                this.queue = response.value
             } catch (error) {
                 console.error(error)
             }
@@ -266,11 +265,9 @@ export default {
                     }
 
                     const nextImageId = this.getNextImageId()
-                    console.log('next', nextImageId)
-                    const response = await this.$axios.get('/images/', {
-                        params: {
-                            imageId: nextImageId,
-                        }
+
+                    const { response } = await api.GET('/images/', {
+                        imageId: nextImageId,
                     })
                     // We preload the image asynchronously allowing for smooth
                     // fade in and out between images. The image is loaded
@@ -278,13 +275,12 @@ export default {
                     // actually image load.
                     var preloadImage = new Image()
                     preloadImage.onload = () => {
-                        this.onDeck = response.data
+                        this.onDeck = response.value
                         this.updateImage()
                     }
-                    preloadImage.src = response.data.url
+                    preloadImage.src = response.value.url
                     
                 } catch (error) {
-                    if ([401, 403].includes(error.response.status)) this.$router.push('/')
                     console.error(error);
                 }
             } else {
@@ -460,6 +456,7 @@ export default {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    padding-top: $block-margin;
 }
 /* Grade Bars */
 $grade-bar-radius: 1rem;
@@ -558,16 +555,17 @@ $no-cancer-color: #ff6184;
     .image-container {
         position: relative;
         width: 100%;
-        // height: calc(50vh - $block-margin - $block-margin);
+        // TODO: Figure out how to handle rectangular images and their ROIs
+        height: calc(50vh - $block-margin - $block-margin);
         line-height: 0;
         overflow: hidden;
 
 
         transform: translate(var(--x-diff), calc(var(--y-diff) / -6)) rotate(calc( var(--rot-diff) * -12deg));
 
-        // @include for-size(mobile) {
-        //     // height: calc(100vw - $block-margin - $block-margin);
-        // }
+        @include for-size(mobile) {
+            height: calc(100vw - $block-margin - $block-margin);
+        }
 
         .zoom-box {
             width: 100%;

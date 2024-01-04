@@ -1,5 +1,3 @@
-import Vue from 'vue'
-
 const createDragstartHandler = (binding) => (event) => {
     // el == event.target
     event.dataTransfer.setData('application/json', JSON.stringify(binding.value))
@@ -8,7 +6,7 @@ const createDragstartHandler = (binding) => (event) => {
     //  styling
     event.target.style.opacity = "0.5"
 
-    console.log(event.dataTransfer)
+    // console.log(event.dataTransfer)
 }
 
 const dragendHandler = (event) => {
@@ -18,12 +16,10 @@ const dragendHandler = (event) => {
 }
 
 const draggable = {
-    inserted(el, binding) {
+    mounted(el, binding) {
         const { value } = binding
         const { editable } = value
-        
-        // console.log(el)
-        // console.log(editable)
+
         if (editable) {
             el.draggable = true
         }
@@ -40,7 +36,7 @@ const draggable = {
     
             draggable.handlersMap.set(el, dragstartHandler)
     },
-    unbind(el) {
+    unmounted(el) {
 
         const dragstartHandler = draggable.handlersMap.get(el)
 
@@ -51,4 +47,7 @@ const draggable = {
     }
 }
 
-Vue.directive('draggable', draggable)
+// Vue.directive('draggable', draggable)
+export default defineNuxtPlugin((nuxtApp) => {
+    nuxtApp.vueApp.directive('draggable', draggable)
+})

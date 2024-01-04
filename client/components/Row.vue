@@ -26,6 +26,7 @@
 <script>
     export default {
         props: ['row', 'order'],
+        emits: ['edit', 'delete'],
         methods: {
             editRow() {
                 this.$emit('edit', this.row)

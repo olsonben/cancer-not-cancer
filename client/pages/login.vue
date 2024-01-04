@@ -9,11 +9,11 @@
 </template>
 
 <script>
-
 export default {
-    data() {
+    setup() {
+        const loginLink = getLoginUrl()
         return {
-            loginLink: this.$axios.defaults.baseURL + "/auth/google"
+            loginLink
         }
     }
 }

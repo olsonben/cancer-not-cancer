@@ -19,6 +19,7 @@
 <script>
 export default {
     props: ['files'],
+    emits: ['report'],
     methods: {
         report() {
             this.$emit('report')

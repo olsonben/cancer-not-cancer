@@ -74,6 +74,8 @@
 
 <script>
 import FormData from 'form-data'
+const api = useApi()
+const router = useRouter()
 
 const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_FAILED = 3, STATUS_LOADED = 4
 
@@ -127,11 +129,11 @@ export default {
         },
 
         appendSubmittedFile(filename, propObj) {
-            this.$set(this.submittedFiles, filename, propObj)
+            this.submittedFiles[filename] = propObj
         },
 
         removeSubmittedFile(filename) {
-            this.$delete(this.submittedFiles, filename)
+            delete this.submittedFiles[filename]
         },
 
         // Fill this.files with the files added at ref=fileInput
@@ -163,9 +165,6 @@ export default {
 
             // Add the files array object
             this.files.forEach((file, index) => {
-                console.log(file)
-                // TODO: Make sure uploadSizeLimit is defined for error printout
-                // console.log(this.$config.uploadSizeLimit)
                 if (file.size > this.$config.uploadSizeLimit) {
                     console.error(`${file.name} is too large. MAX_BYTES: ${this.$config.uploadSizeLimit}`)
                     this.appendSubmittedFile(file.name, {
@@ -188,11 +187,11 @@ export default {
             })
 
             try {
-                const response = await this.$axios.post('/images/', data)
+                const { response } = await api.POST('/images/', data)
 
                 // Handling 0 file upload edge case
-                if (response.data !== 'No files uploaded.') {
-                    for (let file of response.data) {
+                if (response.value !== 'No files uploaded.') {
+                    for (let file of response.value) {
                         // update file's success value
                         this.submittedFiles[file.filename].submissionSuccess = file.success
                         this.submittedFiles[file.filename].message = (file.message) ? file.message : null
@@ -205,27 +204,23 @@ export default {
                 }
 
             } catch (error) {
-                if ([401, 403].includes(error.response.status)) {
-                    console.log('Please login.')
-                    this.$router.push('/login')
-                } else {
-                    console.log("error")
-                    console.log(error)
-                    if (error.response.data) {
-                        for (const file of error.response.data) {
-                            console.log(file)
-                            // update failed status
-                            this.submittedFiles[file.filename].submissionSuccess = file.success || false
-                            clearNotification(file.filename)
-                        }
-                    } else {
-                        // Handle lost connection/server failure
-                        for (const filename in this.submittedFiles) {
-                            this.submittedFiles[filename].submissionSuccess = false
-                            this.submittedFiles[filename].message = 'Not Uploaded'
-                            clearNotification(filename)
-                        }
+                // TODO: Determine when error.data exists
+                if (error.data) {
+                    for (const file of error.data) {
+                        // update failed status
+                        this.submittedFiles[file.filename].submissionSuccess = file.success || false
+                        clearNotification(file.filename)
                     }
+                } else {
+                    // Handle lost connection/server failure
+                    for (const filename in this.submittedFiles) {
+                        this.submittedFiles[filename].submissionSuccess = false
+                        this.submittedFiles[filename].message = 'Not Uploaded'
+                        clearNotification(filename)
+                    }
+
+                    // Generic Error
+                    console.error(error)
                 }
             } finally {
                 // reset after submission
