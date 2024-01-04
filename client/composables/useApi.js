@@ -15,9 +15,9 @@ export const useApi = () => {
             console.log('Unauthorized! Make sure you are logged in. Redirecting to login...')
             navigateTo(getLoginUrl(), { external: true })
         }
-        
+
         // Still throw the error to reject upstream promises
-        throw error
+        throw error.value // error is just a ref
     }
 
     return {
