@@ -21,7 +21,7 @@ export const useApi = () => {
     }
 
     return {
-        async GET(route, query, key = null) {
+        async GET(route, query, key = null, headers = null) {
             const { data: response, status, error } = await useFetch(route, {
                 method: 'GET',
                 baseURL: config.public.apiUrl,
@@ -29,6 +29,7 @@ export const useApi = () => {
                 server: false, // Fire on client
                 watch: false, // Don't re-fetch on query change
                 query: query,
+                ...(headers ? { headers: headers } : {}),
                 ...(key ? { key: key} : {})
             })
             if (status.value === "success") {
@@ -37,7 +38,7 @@ export const useApi = () => {
                 await handleAuthErrors(error)
             }
         },
-        async POST(route, body, key) {
+        async POST(route, body, key = null, headers = null) {
             const { data: response, status, error } = await useFetch(route, {
                 method: 'POST',
                 baseURL: config.public.apiUrl,
@@ -45,6 +46,7 @@ export const useApi = () => {
                 server: false, // should fire on client
                 watch: false, // Don't re-fetch when body data changes
                 body: body,
+                ...(headers ? { headers: headers } : {}),
                 ...(key ? { key: key } : {})
             })
             if (status.value === "success") {
@@ -52,6 +54,6 @@ export const useApi = () => {
             } else {
                 await handleAuthErrors(error)
             }
-        },
+        }
     }
 }

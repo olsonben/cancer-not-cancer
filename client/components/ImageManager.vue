@@ -4,7 +4,7 @@
 
         <div class="box">
             Create a folder
-             <div class="field-body pl-4 pb-2">
+            <div class="field-body pl-4 pb-2">
                 <div class="field is-grouped">
                     <div class="control">
                         <input ref="folderName" class="input is-small" :class="{ 'blink': attention }" type="text" placeholder="Folder Name" v-model="createTagName">
@@ -14,9 +14,21 @@
                     </div>
                 </div>
             </div>
+            <span v-if="!deleteMode">In Edit </span><span v-else>In Delete </span>Mode
+            <div class="field-body pl-4 pb-2">
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button class="button is-small is-info has-text-weight-bold" type="button" @click="toggleMode" :disabled="!deleteMode">Edit Mode</button>
+                        </div>
+                        <div class="control">
+                            <button class="button is-small is-danger has-text-weight-bold" type="button" @click="toggleMode" :disabled="deleteMode">Delete Mode</button>
+                        </div>
+                    </div>
+                </div>
             <!-- TODO: This is essentially the ImagePicker can that component be used here? -->
             <div class="menu">
-                <p class="menu-label">Images Folders: Drag files and folder where you want to move them.</p>
+                <p v-if="!deleteMode" class="menu-label">Images Folders: Drag files and folder where you want to move them.</p>
+                <p v-else class="menu-label"><span class="has-text-danger">WARNING:</span> Deleting folders and images will permanently remove files, including images associated with existing tasks.</p>
                 <!-- TODO: Should probably be replaced with a app wide loading animation. -->
                 <button v-if="loading" class="button is-loading is-medium is-info">loading</button>
                 <ul class="menu-list">
@@ -25,8 +37,9 @@
                         <folder v-if="isFolder(file)"
                         v-model="files[index]"
                         @change="masterChangeHandler"
-                        :editable="true"/>
-                        <File v-else v-model="files[index]" :editable="true" @change="masterChangeHandler"></File>
+                        :editable="!deleteMode"
+                        :deletable="deleteMode"/>
+                        <File v-else v-model="files[index]" :editable="!deleteMode" :deletable="deleteMode" @change="masterChangeHandler"></File>
                     </li>
 
                 </ul>
@@ -62,7 +75,8 @@ export default {
             files: ref([]), // using ref to make our nest array reactive
             createTagName: '',
             attention: false,
-            loading: true, 
+            loading: true,
+            deleteMode: ref(false),
         }
     },
     async created() {
@@ -77,6 +91,9 @@ export default {
             } catch (error) {
                 console.error('ImageManager refreshData:', error.message)
             }
+        },
+        toggleMode() {
+            this.deleteMode = !this.deleteMode
         },
         fileKey(file) {
             return `${file.type}-${file.id}`
@@ -118,6 +135,8 @@ export default {
                     return !(file.type == 'img' && file.id == changeData.fileId)
                 })
                 this.deleteFile(changeData.fileId)
+            } else if (eventType === 'folderDeleteAll') {
+                this.deleteAllContents(changeData.folder)
             }
          },
         async editTagName(tagId, newName) {
@@ -202,6 +221,48 @@ export default {
                 console.error('ImageManager deleteTag:', error.message)
                 // because folder delete can be nested, if we experience an error,
                 // we should refresh the data for accuracy
+                const newDataPromise = getFiles()
+                this.refreshData(newDataPromise)
+            }
+        },
+        getAllImageIds(folderObj, memo = []) {
+            for (const file of folderObj.contents) {
+                if (file.type === 'tag') {
+                    this.getAllImageIds(file, memo)
+                } else {
+                    memo.push(file.id)
+                }
+            }
+            return memo
+        },
+        getAllTagIds(folderObj, memo = []) {
+            memo.push(folderObj.id)
+            for (const file of folderObj.contents) {
+                if (file.type === 'tag') {
+                    this.getAllTagIds(file, memo)
+                }
+            }
+            return memo
+        },
+        async deleteAllContents(folder) {
+            try {
+                console.log('deleteAllContents - folder id:', folder.id)
+                const listOfImages = this.getAllImageIds(folder)
+                const listOfTags = this.getAllTagIds(folder)
+                console.log('Deleting...')
+                console.log('images:', listOfImages)
+                console.log('folders:', listOfTags)
+                const { response } = await api.POST('/images/deleteAllIn', {
+                    tags: listOfTags,
+                    images: listOfImages,
+                })
+
+                this.files = this.files.filter((file) => {
+                    return !(file.type == folder.type && file.id == folder.id)
+                })
+            } catch (error) {
+                console.error('Error deleting folder contents.')
+                console.error(error)
                 const newDataPromise = getFiles()
                 this.refreshData(newDataPromise)
             }

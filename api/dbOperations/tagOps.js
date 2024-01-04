@@ -65,6 +65,32 @@ const tagOps = {
         } else {
             return false
         }
+    },
+    /**
+     * Delete a list of tags.
+     * @param {Number} tagIds - Id of tag to delete
+     * @param {Number} user_id - Id of tag owner
+     */
+    async deleteTags(tagIds, user_id) {
+        if (tagIds.length === 0) {
+            // This shouldn't happen.
+            console.log('Empty array of tag ids sent to deleteTags.')
+            return true
+        }
+
+        const tagPlaceholders = Array.from(Array(tagIds.length), () => '?').join(', ')
+        const hasDependencies = `SELECT 1 AS result
+            WHERE
+            EXISTS (SELECT 1 FROM image_tags WHERE image_tags.tag_id IN (${tagPlaceholders}))`
+        const deleteTag = `DELETE FROM tags WHERE id IN (${tagPlaceholders}) AND user_id = ?`
+
+        const result = await dbOps.select(hasDependencies, tagIds)
+        if (result.length === 0) { // No dependencies
+            await dbOps.execute(deleteTag, [...tagIds, user_id])
+            return true
+        } else {
+            return false
+        }
     }
 }
 

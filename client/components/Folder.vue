@@ -1,7 +1,7 @@
 <template>
     <li>
         <div class="is-flex">
-            <input v-if="!editable" type="checkbox" :value="inputName" v-model="checked" :indeterminate.prop="selectedState === 'partial'" @click="onCheck">
+            <input v-if="!editable & !deletable" type="checkbox" :value="inputName" v-model="checked" :indeterminate.prop="selectedState === 'partial'" @click="onCheck">
             <a
                 class="file-link folder"
                 :class="{ 'dragHover': dragOverStyle }"
@@ -35,8 +35,8 @@
             <ul v-if="modelValue.contents.length > 0" class="menu-list" :class="{ 'is-expanded': expand }">
                 <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
                 <li v-for="(file, index) in modelValue.contents" :key="fileKey(file)">
-                    <folder v-if="isFolder(file)" v-model="modelValue.contents[index]" :editable="editable" @change="changeHandler" :parentTagId="modelValue.id"/>
-                    <File v-else v-model="modelValue.contents[index]" :editable="editable" @change="changeHandler" :parentTagId="modelValue.id"></File>
+                    <folder v-if="isFolder(file)" v-model="modelValue.contents[index]" :editable="editable" :deletable="deletable" @change="changeHandler" :parentTagId="modelValue.id"/>
+                    <File v-else v-model="modelValue.contents[index]" :editable="editable" :deletable="deletable" @change="changeHandler" :parentTagId="modelValue.id"></File>
                 </li>
             </ul>
     </li>
@@ -56,6 +56,10 @@ export default {
     props: {
         modelValue: Object,
         editable: {
+            default: false,
+            type: Boolean
+        },
+        deletable: {
             default: false,
             type: Boolean
         },
@@ -89,9 +93,6 @@ export default {
         },
         inputName() {
             return `tag-${this.modelValue.id}`
-        },
-        deletable() {
-            return this.editable && this.modelValue.contents.length === 0
         },
         draggableConfig() {
             return {
@@ -142,11 +143,21 @@ export default {
             this.newName = ''
         },
         removeTag() {
-            const changeData = {
-                eventType: 'folderDelete',
-                folderId: this.modelValue.id
+            if (this.modelValue.contents.length > 0) {
+                console.log('You are about to delete all the files and this folder.')
+                const changeData = {
+                    eventType: 'folderDeleteAll',
+                    folder: this.modelValue
+                }
+                this.$emit('change', changeData)
+            } else {
+                console.log('removeTag!')
+                const changeData = {
+                    eventType: 'folderDelete',
+                    folderId: this.modelValue.id
+                }
+                this.$emit('change', changeData)
             }
-            this.$emit('change', changeData)
         },
         onDrop(event) {
             const { data, parentTagId } = JSON.parse(event.dataTransfer.getData('application/json'))
@@ -197,6 +208,11 @@ export default {
             if (changeData.eventType === 'folderDelete') {
                 this.modelValue.contents = this.modelValue.contents.filter((file) => {
                     return !(file.type == 'tag' && file.id == changeData.folderId)
+                })
+            }
+            if (changeData.eventType === 'folderDeleteAll') {
+                this.modelValue.contents = this.modelValue.contents.filter((file) => {
+                    return !(file.type == 'tag' && file.id == changeData.folder.id)
                 })
             }
             this.$emit('change', changeData)
