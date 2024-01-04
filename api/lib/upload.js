@@ -170,6 +170,7 @@ function toIsoWithTimezoneString(date) {
 
 // Handle upload image(s) request for express
 export async function uploadImages(req, res, next) {
+    // console.log('UPLOAD REQUEST MADE::', req.headers)
     const folderDateString = toIsoWithTimezoneString(new Date(req.headers.uploadtime))
 
     // Consider hashing the userid
@@ -202,7 +203,8 @@ export async function uploadImages(req, res, next) {
     // we can send our response.
     function onWriteFinish() {
         if (files.every(fileObj => fileObj.hasOwnProperty('success')) && finished) {
-            console.log('Upload Complete')
+            const isoDate = new Date().toISOString()
+            console.log(`${isoDate}: Upload Complete`)
             req.files = files
             next()
         }
