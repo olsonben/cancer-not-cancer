@@ -29,13 +29,16 @@
 <script>
     export default {
         props: ['row', 'order'],
-        emits: ['edit', 'delete'],
+        emits: ['edit', 'delete', 'export'],
         methods: {
             editRow() {
                 this.$emit('edit', this.row)
             },
             deleteRow() {
                 this.$emit('delete', this.row)
+            },
+            exportAction() {
+                this.$emit('export', this.row)
             }
         }
     }

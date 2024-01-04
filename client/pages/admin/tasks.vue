@@ -45,7 +45,7 @@
                         </thead>
                         <tbody>
 
-                            <Row v-for="row in taskData" :key="row[indexProp]" :class="{ 'is-selected': false }"  :row="row" :order="order" @edit="editTask" @delete="deleteTask" />
+                            <Row v-for="row in taskData" :key="row[indexProp]" :class="{ 'is-selected': false }"  :row="row" :order="order" @edit="editTask" @delete="deleteTask" @export="exportTask" />
                         </tbody>
                     </table>
                 </div>
@@ -121,6 +121,19 @@ export default {
                 this.taskData.splice(index, 1)
             } catch (err) {
                 console.log(err)
+            }
+        },
+        async exportTask(task) {
+            try {
+                console.log(`Export Task ${task.id}`)
+                const result = await api.GET('/tasks/export', {
+                    id: task.id
+                })
+                console.log(results)
+
+            } catch (err) {
+                console.log('Export Task Error')
+                console.error(err)
             }
         },
         async getTasksTable() {
