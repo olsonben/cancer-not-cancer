@@ -66,7 +66,7 @@
                 </div>
             </div>
 
-            <div class="navbar-end is-hidden-touch is-hidden-tablet">
+            <div class="navbar-end is-hidden-touch">
                 <div class="navbar-item">
                     <!-- Logout/Login -->
                     <div class="buttons">
