@@ -5,10 +5,10 @@
 
 
             <button v-if="editable & !changeName" class="button is-small is-info" type="button" @click="changeName = !changeName">
-                <span class="icon"><i class="cnc-pen-to-square"></i></span>
+                <span class="icon"><fa-icon :icon="['far', 'pen-to-square']" /></span>
             </button>
             <button v-if="deletable" class="button is-small is-danger ml-1" type="button" @click="removeFile">
-                <span class="icon"><i class="cnc-xmark"></i></span>
+                <span class="icon"><fa-icon :icon="['fas', 'xmark']" /></span>
             </button>
 
 
@@ -19,7 +19,7 @@
                     </div>
                     <div class="control">
                         <button class="button is-small is-warning" type="button" @click="setNewName">save</button>
-                        <button class="button is-small is-danger" type="button" @click="changeName = !changeName"><span class="icon"><i class="cnc-xmark"></i></span></button>
+                        <button class="button is-small is-danger" type="button" @click="changeName = !changeName"><span class="icon"><fa-icon :icon="['fas', 'xmark']" /></span></button>
                     </div>
                 </div>
             </div>

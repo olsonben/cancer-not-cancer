@@ -14,13 +14,13 @@
                             <p class="control has-icons-left">
                                 <input class="input" type="text" :maxlength="100" placeholder="name" v-model="task.name">
                                 <span class="icon is-small is-left">
-                                <i class="cnc-label-tag"></i>
+                                <fa-icon :icon="['fas', 'tag']" />
                                 </span>
                             </p>
                             <p class="control is-expanded has-icons-left has-icons-right">
                                 <input class="input" type="text" placeholder="Prompt" v-model="task.prompt" />
                                 <span class="icon is-small is-left">
-                                <i class="cnc-question"></i>
+                                <fa-icon :icon="['fas', 'question']" />
                                 </span>
                             </p>
                             <p class="control">
