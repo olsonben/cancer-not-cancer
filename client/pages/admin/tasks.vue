@@ -58,6 +58,7 @@
 
 <script>
 const api = useApi()
+const dataTools = useDataTools()
 
 export default {
     data() {
@@ -129,7 +130,9 @@ export default {
                 const { response } = await api.GET('/tasks/export', {
                     id: task.id
                 })
-                console.log(response.value)
+
+                const fileName = `${task.short_name.replaceAll(' ', '_')}_data.csv`
+                dataTools.downloadAsCSV(response.value, fileName)
 
             } catch (err) {
                 console.log('Export Task Error')
