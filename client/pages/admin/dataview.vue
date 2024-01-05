@@ -10,7 +10,13 @@
                             <select v-model="selectedTask">
                                 <option v-for="task in tasks" :value="task.id">{{ task.prompt }}</option>
                             </select>
-                    </div></div>
+                        </div>
+                        <div v-show="selectedTask" class="buttons is-center pl-5">
+                            <button class="button is-success" type="button" @click="exportTask">
+                                <span class="icon"><fa-icon :icon="['fas', 'download']" /></span>
+                            </button>
+                        </div>
+                    </div>
                     <Userview class="level-right" v-if='isAdmin' v-model:userId="userId" :label="'Created by:'"/>
                 </div>
                 <div class="task-stats">
@@ -40,6 +46,7 @@
 import { mapState } from 'pinia'
 import { useUserStore } from '~/store/user'
 const api = useApi()
+const dataTools = useDataTools()
 
 const percentage = (part, total) => {
     const percent = part/total*100
@@ -190,7 +197,24 @@ export default {
             } catch (err) {
                 console.error(err);
             }
-        }
+        },
+        async exportTask() {
+            try {
+                const task = this.tasks.find((t) => t.id === this.selectedTask)
+
+                console.log(`Export Task ${task.id}`)
+                const { response } = await api.GET('/tasks/export', {
+                    id: task.id
+                })
+
+                const fileName = `${task.short_name.replaceAll(' ', '_')}_data.csv`
+                dataTools.downloadAsCSV(response.value, fileName)
+
+            } catch (err) {
+                console.log('Export Task Error')
+                console.error(err)
+            }
+        },
     }
 }
 </script>
