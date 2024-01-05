@@ -126,10 +126,10 @@ export default {
         async exportTask(task) {
             try {
                 console.log(`Export Task ${task.id}`)
-                const result = await api.GET('/tasks/export', {
+                const { response } = await api.GET('/tasks/export', {
                     id: task.id
                 })
-                console.log(results)
+                console.log(response.value)
 
             } catch (err) {
                 console.log('Export Task Error')

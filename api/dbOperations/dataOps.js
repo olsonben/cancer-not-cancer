@@ -108,6 +108,33 @@ const dataOps = {
         const rows = await dbOps.select(query, [taskId, taskId, userId])
         return rows
     },
+
+    /**
+     * Export task stat data.
+     * @param {Number} userId - task owner's id
+     * @param {Number} taskId - id of task data to be exported
+     * @returns {Array.<Object>} - [{tag_id, tag_name, parent_tag_id, parent_tag_name,
+     * image_id, hash, owner_id, original_name, selected}] 
+     */
+    async getDataExportByTaskId(userId, taskId) {
+        // TODO: add userId to query to prevent cross user calls
+        const query = `SELECT
+                        task_images.task_id as task_id,
+                        task_images.image_id as image_id,
+                        hotornot.user_id as observer_id,
+                        hotornot.rating as rating,
+                        images.original_name
+                       FROM
+                        task_images
+                        JOIN images on images.id = task_images.image_id
+                        LEFT JOIN hotornot on hotornot.image_id = task_images.image_id
+                       WHERE
+                        task_images.task_id = ?`
+
+        const rows = await dbOps.select(query, [taskId])
+
+        return rows
+    }
 }
 
 export default dataOps
