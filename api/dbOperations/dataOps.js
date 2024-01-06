@@ -117,7 +117,8 @@ const dataOps = {
      * image_id, hash, owner_id, original_name, selected}] 
      */
     async getDataExportByTaskId(userId, taskId) {
-        // TODO: add userId to query to prevent cross user calls
+        // TODO: decide whether to limit by tasks owned. Not limiting is convenient for admin purposes.
+        // BUT can be unsafe for data that should be private.
         const query = `SELECT
                         task_images.task_id as task_id,
                         task_images.image_id as image_id,

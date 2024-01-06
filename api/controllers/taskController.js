@@ -151,7 +151,7 @@ const taskController = {
     async exportTaskById(req, res) {
         let investigatorId = req.user.id
         const taskId = req.query.id
-        console.log(`Gathering data for task ${taskId}, owned by ${investigatorId}`)
+        console.log(`Gathering data for task ${taskId}, by user: ${investigatorId}`)
         const results = await dataOps.getDataExportByTaskId(investigatorId, taskId)
         res.send(results)
     }
