@@ -39,6 +39,7 @@
                 </div>
             </div>
         </section>
+        <Export v-if="exportData != null" :data="exportData" @done="exportData = null" />
     </div>
 </template>
 
@@ -46,7 +47,6 @@
 import { mapState } from 'pinia'
 import { useUserStore } from '~/store/user'
 const api = useApi()
-const dataTools = useDataTools()
 
 const percentage = (part, total) => {
     const percent = part/total*100
@@ -73,7 +73,8 @@ export default {
             maybe: 0,
             userChart: [],
             imageChart: [],
-            userId: null
+            userId: null,
+            exportData: null
         }
     },
     computed: {
@@ -207,8 +208,7 @@ export default {
                     id: task.id
                 })
 
-                const fileName = `${task.short_name.replaceAll(' ', '_')}_data.csv`
-                dataTools.downloadAsCSV(response.value, fileName)
+                this.exportData = { name: task.short_name, data: response.value }
 
             } catch (err) {
                 console.log('Export Task Error')

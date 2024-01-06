@@ -30,21 +30,32 @@ export const useDataTools = () => {
         return csvStr
     }
 
+    /** Download a blob as a file. */
+    function downloadBlob(blob, filename) {
+        const link = document.createElement('a')
+        const url = URL.createObjectURL(blob)
+        link.href = url
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+    }
 
     return {
         /** download data as csv */
         downloadAsCSV(dataObjectArray, desiredFilename) {
             const csv = convertToCSV(dataObjectArray)
             const csvBlob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-            const link = document.createElement('a')
-
-            const url = URL.createObjectURL(csvBlob)
-            link.href = url
-            link.download = desiredFilename
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-            URL.revokeObjectURL(url)
+            
+            downloadBlob(csvBlob, desiredFilename)
+        },
+        /** download data as json */
+        downloadAsJSON(dataObjectArray, desiredFilename) {
+            const jsonString = JSON.stringify(dataObjectArray)
+            const jsonBlob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' })
+            
+            downloadBlob(jsonBlob, desiredFilename)
         },
         
     }

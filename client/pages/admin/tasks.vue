@@ -52,13 +52,13 @@
             </div>
         </section>
         <!-- Edit Task -->
-        <TaskEdit v-if="taskToEdit != null" class='login-modal' :task="taskToEdit" @save="finishTaskEdit" @cancel="taskToEdit = null"/>
+        <TaskEdit v-if="taskToEdit != null" :task="taskToEdit" @save="finishTaskEdit" @cancel="taskToEdit = null"/>
+        <Export v-if="exportData != null" :data="exportData" @done="exportData=null" />
     </div>
 </template>
 
 <script>
 const api = useApi()
-const dataTools = useDataTools()
 
 export default {
     data() {
@@ -72,6 +72,7 @@ export default {
             indexProp: 'id',
             taskData: [],
             taskToEdit: null,
+            exportData: null,
         }
     },
     computed: {
@@ -131,8 +132,7 @@ export default {
                     id: task.id
                 })
 
-                const fileName = `${task.short_name.replaceAll(' ', '_')}_data.csv`
-                dataTools.downloadAsCSV(response.value, fileName)
+                this.exportData = { name: task.short_name, data: response.value }
 
             } catch (err) {
                 console.log('Export Task Error')
