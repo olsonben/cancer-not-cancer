@@ -98,7 +98,7 @@ async function saveFile(file, fileInfo) {
             const hash = createHash('sha256')
             file.pipe(hash)
             hash.on('error', err => { console.error(err) })
-            hash.on('finish', () => { fileInfo.hash = hash.update('utf8').digest('base64') })
+            hash.on('finish', () => { fileInfo.hash = hash.digest('base64') })
 
             // on read stream errors (failed reading the uploading file)
             file.on('error', (err) => {
