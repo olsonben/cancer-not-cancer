@@ -45,7 +45,7 @@
             <!-- Comment -->
             <button class='button icon-button comment' @click='commenting = !commenting'>
                 <span class='icon'>
-                    <img src="~assets/icons/pencil.svg" alt="pencil" width="32" height="32">
+                    <fa-icon :icon="['fas', 'pencil']" class="fa-xl" />
                 </span>
             </button>
             <div class="container">

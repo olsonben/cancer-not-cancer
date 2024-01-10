@@ -65,14 +65,14 @@ export default defineNuxtConfig({
    * Central SASS/SCSS/CSS setup. The css config in vite allows the usage of the variables and colors
    * throughout the application.
    */
-  css: ["@/assets/scss/main.scss"],
+  css: ["@/assets/scss/main.scss", "@fortawesome/fontawesome-svg-core/styles.css"],
   vite: {
     css: {
       preprocessorOptions: {
         scss: {
           additionalData: '@import "@/assets/scss/variables.scss"; @import "@/assets/scss/colors.scss";',
         }
-      }
+      },
     }
   },
 
@@ -117,5 +117,6 @@ export default defineNuxtConfig({
    */
   // sourcemap: true,
   // devtools: { enabled: true }
+  // debug: true
 
 })

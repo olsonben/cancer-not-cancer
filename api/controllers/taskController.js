@@ -1,3 +1,4 @@
+import dataOps from '../dbOperations/dataOps.js'
 import taskOps from '../dbOperations/taskOps.js'
 import { virtualFileSystem as VFS } from '../lib/functions.js'
 
@@ -145,6 +146,14 @@ const taskController = {
         const imageIds = JSON.parse(req.body.imageIds)
         await taskOps.setTaskImages(investigatorId, taskId, imageIds)
         res.sendStatus(200)
+    },
+    /** Export task as JSON */
+    async exportTaskById(req, res) {
+        let investigatorId = req.user.id
+        const taskId = req.query.id
+        console.log(`Gathering data for task ${taskId}, by user: ${investigatorId}`)
+        const results = await dataOps.getDataExportByTaskId(investigatorId, taskId)
+        res.send(results)
     }
 }
 

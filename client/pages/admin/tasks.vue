@@ -14,13 +14,13 @@
                             <p class="control has-icons-left">
                                 <input class="input" type="text" :maxlength="100" placeholder="name" v-model="task.name">
                                 <span class="icon is-small is-left">
-                                <i class="cnc-label-tag"></i>
+                                <fa-icon :icon="['fas', 'tag']" />
                                 </span>
                             </p>
                             <p class="control is-expanded has-icons-left has-icons-right">
                                 <input class="input" type="text" placeholder="Prompt" v-model="task.prompt" />
                                 <span class="icon is-small is-left">
-                                <i class="cnc-question"></i>
+                                <fa-icon :icon="['fas', 'question']" />
                                 </span>
                             </p>
                             <p class="control">
@@ -45,14 +45,15 @@
                         </thead>
                         <tbody>
 
-                            <Row v-for="row in taskData" :key="row[indexProp]" :class="{ 'is-selected': false }"  :row="row" :order="order" @edit="editTask" @delete="deleteTask" />
+                            <Row v-for="row in taskData" :key="row[indexProp]" :class="{ 'is-selected': false }"  :row="row" :order="order" @edit="editTask" @delete="deleteTask" @export="exportTask" />
                         </tbody>
                     </table>
                 </div>
             </div>
         </section>
         <!-- Edit Task -->
-        <TaskEdit v-if="taskToEdit != null" class='login-modal' :task="taskToEdit" @save="finishTaskEdit" @cancel="taskToEdit = null"/>
+        <TaskEdit v-if="taskToEdit != null" :task="taskToEdit" @save="finishTaskEdit" @cancel="taskToEdit = null"/>
+        <Export v-if="exportData != null" :task="exportData" @done="exportData=null" />
     </div>
 </template>
 
@@ -71,6 +72,7 @@ export default {
             indexProp: 'id',
             taskData: [],
             taskToEdit: null,
+            exportData: null,
         }
     },
     computed: {
@@ -122,6 +124,10 @@ export default {
             } catch (err) {
                 console.log(err)
             }
+        },
+        exportTask(task) {
+            console.log(`Export Task ${task.id}`)
+            this.exportData = task
         },
         async getTasksTable() {
             try {
