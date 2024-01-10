@@ -53,7 +53,7 @@
         </section>
         <!-- Edit Task -->
         <TaskEdit v-if="taskToEdit != null" :task="taskToEdit" @save="finishTaskEdit" @cancel="taskToEdit = null"/>
-        <Export v-if="exportData != null" :data="exportData" @done="exportData=null" />
+        <Export v-if="exportData != null" :task="exportData" @done="exportData=null" />
     </div>
 </template>
 
@@ -125,19 +125,9 @@ export default {
                 console.log(err)
             }
         },
-        async exportTask(task) {
-            try {
-                console.log(`Export Task ${task.id}`)
-                const { response } = await api.GET('/tasks/export', {
-                    id: task.id
-                })
-
-                this.exportData = { name: task.short_name, data: response.value }
-
-            } catch (err) {
-                console.log('Export Task Error')
-                console.error(err)
-            }
+        exportTask(task) {
+            console.log(`Export Task ${task.id}`)
+            this.exportData = task
         },
         async getTasksTable() {
             try {

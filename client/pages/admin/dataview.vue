@@ -39,7 +39,7 @@
                 </div>
             </div>
         </section>
-        <Export v-if="exportData != null" :data="exportData" @done="exportData = null" />
+        <Export v-if="exportData != null" :task="exportData" @done="exportData = null" />
     </div>
 </template>
 
@@ -199,21 +199,10 @@ export default {
                 console.error(err);
             }
         },
-        async exportTask() {
-            try {
-                const task = this.tasks.find((t) => t.id === this.selectedTask)
-
-                console.log(`Export Task ${task.id}`)
-                const { response } = await api.GET('/tasks/export', {
-                    id: task.id
-                })
-
-                this.exportData = { name: task.short_name, data: response.value }
-
-            } catch (err) {
-                console.log('Export Task Error')
-                console.error(err)
-            }
+        exportTask() {
+            const task = this.tasks.find((t) => t.id === this.selectedTask)
+            console.log(`Export Task ${task.id}`)
+            this.exportData = task
         },
     }
 }

@@ -1,19 +1,19 @@
 // Using the composable api
 <script setup>
 const dataTools = useDataTools()
-const { data } = defineProps(['data'])
+const { task } = defineProps(['task'])
 const emit = defineEmits(['done'])
 
 const getJSON = () => {
-    const fileName = `${data.name.replaceAll(' ', '_')}_data.json`
-    dataTools.downloadAsJSON(data.data, fileName)
+    const fileName = `${task.short_name.replaceAll(' ', '_')}_data.json`
+    dataTools.downloadTaskAsJSON(task, fileName)
 
     emit('done')
 }
 
 const getCSV = () => {
-    const fileName = `${data.name.replaceAll(' ', '_')}_data.csv`
-    dataTools.downloadAsCSV(data.data, fileName)
+    const fileName = `${task.short_name.replaceAll(' ', '_')}_data.csv`
+    dataTools.downloadTaskAsCSV(task, fileName)
 
     emit('done')
 }
@@ -29,7 +29,7 @@ const getCSV = () => {
                     <div class="field">
                         <label class="label">Export Data</label>
                         <p>
-                            Saving the image rating data for the task named <strong>{{ data.name }}</strong>.
+                            Saving the image rating data for the task named <strong>{{ task.short_name }}</strong>.
                             <br />
                             You can choose to download it as JSON or as a CSV format.
                         </p>
