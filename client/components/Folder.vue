@@ -11,14 +11,14 @@
             >
                 {{ modelValue.name }}
                 <span v-if="modelValue.contents.length > 0" class="expander" :class="{ 'is-expanded': expand }"></span>
-                <span class="icon add"><i class="cnc-xmark"></i></span>
+                <span class="icon add"><fa-icon :icon="['fas', 'xmark']" /></span>
             </a>
             
             <button v-if="editable & !changeName" class="button is-small is-info" type="button" @click="changeName = !changeName">
-                <span class="icon"><i class="cnc-pen-to-square"></i></span>
+                <span class="icon"><fa-icon :icon="['far', 'pen-to-square']" /></span>
             </button>
             <button v-if="deletable" class="button is-small is-danger ml-1" type="button" @click="removeTag">
-                <span class="icon"><i class="cnc-xmark"></i></span>
+                <span class="icon"><fa-icon :icon="['fas', 'xmark']" /></span>
             </button>
             <div v-if="changeName" class="field-body pl-4">
                 <div class="field is-grouped">
@@ -27,7 +27,7 @@
                     </div>
                     <div class="control">
                         <button class="button is-small is-warning" type="button" @click="setNewName">save</button>
-                        <button class="button is-small is-danger" type="button" @click="changeName = !changeName"><span class="icon"><i class="cnc-xmark"></i></span></button>
+                        <button class="button is-small is-danger" type="button" @click="changeName = !changeName"><span class="icon"><fa-icon :icon="['fas', 'xmark']" /></span></button>
                     </div>
                 </div>
             </div>
