@@ -58,6 +58,7 @@ const api = useApi()
 const fileTools = useFileTools()
 const Adder = resolveComponent('Adder')
 const ImagePicker = resolveComponent('ImagePicker')
+const RoiController = resolveComponent('RoiController')
 
 export default {
     props: ['task'],
@@ -95,6 +96,14 @@ export default {
                     component: ImagePicker,
                     props: { files: this.root.contents },
                     events: { report: this.report }
+
+                },
+                {
+                    name: 'roi',
+                    label: "ROI",
+                    component: RoiController,
+                    props: {},
+                    events: {}
 
                 }
             ]
