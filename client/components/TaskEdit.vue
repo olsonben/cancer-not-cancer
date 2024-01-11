@@ -4,6 +4,8 @@
         <div class="modal-content">
             <div class="section">
                 <div class="box p-5 smooth-height">
+
+                    <!-- Name and Prompt update fields -->
                     <div class="field">
                         <label class="label">Name</label>
                         <div class="control is-large ">
@@ -16,20 +18,27 @@
                             <textarea class="textarea has-text-weight-medium" v-model="localTask.prompt" />
                         </div>
                     </div>
+
+                    <!-- Tab navigation -->
                     <div class="task-edit-nav tabs is-boxed">
                         <ul>
-                            <li :class="{ 'is-active': activeTab === 'observers' }" @click="activeTab = 'observers'"><a>Observers</a></li>
-                            <li :class="{ 'is-active': activeTab === 'images' }" @click="activeTab = 'images'"><a>Images</a></li>
+                            <li v-for="tab in tabs"
+                                :key="tab.name"
+                                :class="{ 'is-active': activeTab === tab.name }"
+                                @click="activeTab = tab.name">
+                                <a>{{ tab.label }}</a>
+                            </li>
                         </ul>
                     </div>
-                    <div v-if="activeTab === 'observers'" class="field">
-                        <!-- <label class="label">Observers</label> -->
-                        <Adder :tags="observers" @update="updateObservers" />
-                    </div>
-                    <div v-if="activeTab === 'images'" class="field">
-                        <!-- <label class="label">Images</label> -->
-                        <ImagePicker :files="root.contents" @report="report"/>
-                    </div>
+                    
+                    <!-- Tab contents for editing the task -->
+                    <template v-for="tab in tabs">
+                        <div v-if="activeTab === tab.name" :key="tab.name" class="field">
+                            <component :is="tab.component" v-bind="tab.props" v-on="tab.events" />
+                        </div>
+                    </template>
+
+                    <!-- Save Controls -->
                     <div class="field is-grouped">
                         <p class="control">
                             <button class="button is-warning" @click="cancelChanges">Cancel</button>
@@ -47,6 +56,8 @@
 <script>
 const api = useApi()
 const fileTools = useFileTools()
+const Adder = resolveComponent('Adder')
+const ImagePicker = resolveComponent('ImagePicker')
 
 export default {
     props: ['task'],
@@ -66,6 +77,27 @@ export default {
                 type: 'tag',
                 selected: [],
             },
+        }
+    },
+    computed: {
+        tabs() {
+            return [
+                {
+                    name: 'observers',
+                    label: "Observers",
+                    component: Adder,
+                    props: { tags: this.observers },
+                    events: { update: this.updateObservers }
+                },
+                {
+                    name: 'images',
+                    label: "Images",
+                    component: ImagePicker,
+                    props: { files: this.root.contents },
+                    events: { report: this.report }
+
+                }
+            ]
         }
     },
     async mounted() {
