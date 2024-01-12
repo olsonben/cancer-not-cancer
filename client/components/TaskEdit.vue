@@ -4,18 +4,17 @@
         <div class="modal-content">
             <div class="section">
                 <div class="box p-5 smooth-height">
-
                     <!-- Name and Prompt update fields -->
                     <div class="field">
                         <label class="label">Name</label>
-                        <div class="control is-large ">
-                            <input class="input is-large has-text-weight-bold" type="text" v-model="localTask.short_name">
+                        <div class="control is-medium">
+                            <input class="input is-medium has-text-weight-bold" type="text" v-model="localTask.short_name">
                         </div>
                     </div>
                     <div class="field">
                         <label class="label">Prompt</label>
                         <div class="control is-medium">
-                            <textarea class="textarea has-text-weight-medium" v-model="localTask.prompt" />
+                            <textarea class="textarea has-text-weight-medium prompt" v-model="localTask.prompt" />
                         </div>
                     </div>
 
@@ -30,13 +29,19 @@
                             </li>
                         </ul>
                     </div>
-                    
+                
                     <!-- Tab contents for editing the task -->
-                    <template v-for="tab in tabs">
-                        <div v-if="activeTab === tab.name" :key="tab.name" class="field">
-                            <component :is="tab.component" v-bind="tab.props" v-on="tab.events" />
-                        </div>
-                    </template>
+                    <div class="field">
+                        <template v-for="tab in tabs">
+                            <component
+                                :is="tab.component"
+                                :key="tab.name"
+                                v-if="activeTab === tab.name"
+                                v-bind="tab.props"
+                                v-on="tab.events"
+                            />
+                        </template>
+                    </div>
 
                     <!-- Save Controls -->
                     <div class="field is-grouped">
@@ -186,9 +191,9 @@ export default {
 
 
 <style lang='scss' scoped>
-// .modal-background {
-//     // background-color: white;
-// }
+.prompt {
+    min-height: 3.5rem;
+}
 .task-edit-nav.tabs {
     
     li {
@@ -208,6 +213,17 @@ export default {
 }
 
 .smooth-height {
-    transition: height 0.5s ease;
+    transition: max-height 0.5s ease;
+    max-height: 100vh;
+}
+
+.tab-enter-active, .tab-leave-active {
+    transition: max-height 0.5s ease;
+    overflow: hidden;
+}
+
+.tab-enter-from, .tab-leave-to {
+    max-height: 0;
+    overflow: hidden;
 }
 </style>
