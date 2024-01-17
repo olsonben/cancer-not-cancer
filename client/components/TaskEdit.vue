@@ -3,7 +3,7 @@
         <div class="modal-background" @click="cancelChanges"></div>
         <div class="modal-content">
             <div class="section">
-                <div class="box p-5 smooth-height">
+                <div class="box p-5">
                     <!-- Name and Prompt update fields -->
                     <div class="field">
                         <label class="label">Name</label>
