@@ -168,9 +168,9 @@ export default {
 
                 this.task.short_name = this.localTask.short_name
                 this.task.prompt = this.localTask.prompt
-                this.task.chip_size = this.localTask.chipSize
-                this.task.fov_size = this.localTask.fovSize
-                this.task.zoom_scale = this.localTask.zoomScale
+                this.task.chip_size = this.localTask.chip_size
+                this.task.fov_size = this.localTask.fov_size
+                this.task.zoom_scale = this.localTask.zoom_scale
 
                 // Emit save event to update stats in task table.
                 this.$emit('save', {

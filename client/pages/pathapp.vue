@@ -27,7 +27,7 @@
                     appear
                 >
                     <div v-if="showImage" class="zoom-box" :class="{'zoom': zoom }">
-                        <div class='roi'></div>
+                        <div class='roi' :class="{ 'is-hidden': showRoiBox }"></div>
                         <img :src='this.image.url' :alt='image.url'/>
                     </div>
                 </transition>
@@ -85,6 +85,7 @@ export default {
             onDeck: null,
             queue: null,
             selectedTask: null,
+            currentTask: null,
             tasks: [],
 
             // State information
@@ -114,6 +115,7 @@ export default {
             const { response } = await api.GET('/tasks/')
             this.tasks = response.value // because response is a ref object
             this.selectedTask = this.tasks[0].id
+            this.currentTask = this.tasks[0]
         }
 
         // Fixes a firefox swipe conflict. When swiping if the reload page
@@ -148,10 +150,9 @@ export default {
         roiRatio() {
             let roiRatio = 128/911 // default
 
-            const currentTask = this.tasks.find((task) => task.id === this.selectedTask)
-            if (currentTask !== undefined && currentTask.chip_size) {
+            if (this.currentTask !== null && this.currentTask.chip_size) {
                 // roiRatio assigned to task
-                roiRatio = currentTask.chip_size/currentTask.fov_size
+                roiRatio = this.currentTask.chip_size/ this.currentTask.fov_size
             }
 
             return roiRatio
@@ -159,13 +160,15 @@ export default {
         zoomScale() {
             let zoomScale = 4 // 4x default
 
-            const currentTask = this.tasks.find((task) => task.id === this.selectedTask)
-            if (currentTask !== undefined && currentTask.zoom_scale) {
+            if (this.currentTask !== null && this.currentTask.zoom_scale) {
                 // zoom_scale assigned to task
-                zoomScale = currentTask.zoom_scale
+                zoomScale = this.currentTask.zoom_scale
             }
 
             return zoomScale
+        },
+        showRoiBox() {
+            return !((this.currentTask === null) || (this.currentTask.chip_size !== 0))
         },
         // give the attribute `:style='cssVars'` to anything that should have access to these variables
         cssVars() {
@@ -189,6 +192,7 @@ export default {
                     const { response } = await api.GET('/tasks/')
                     this.tasks = response.value // because response is a ref object
                     this.selectedTask = this.tasks[0].id
+                    this.currentTask = this.tasks[0]
                     this.nextImage()
 
                 }
@@ -197,6 +201,7 @@ export default {
         selectedTask: {
             handler(newTaskId) {
                 this.queue = null
+                this.currentTask = this.tasks.find((task) => task.id === newTaskId)
                 this.nextImage()
             }
         }

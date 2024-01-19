@@ -1,23 +1,39 @@
 <script setup>
 const placeholder = usePlaceholder()
 
-const { chipSize: initChipSize, fovSize, zoomScale: initZoomScale } = defineProps(['chipSize', 'fovSize', 'zoomScale'])
-console.log('ROI:', initChipSize, fovSize, initZoomScale)
-const receptiveField = ref(fovSize || 911)
-const chipSize = ref(initChipSize || 128)
-const zoomScale = ref(initZoomScale || 4)
-const zoom = ref(false) // value for toggling zoom
-const dataUrlPlaceholder = ref(placeholder.generate(receptiveField.value))
-const emit = defineEmits(['update'])
-const percentage = computed({
-    get () {
-        const p = chipSize.value / receptiveField.value * 100
-        return p
-    },
-    set (newValue) {
-        chipSize.value = receptiveField.value * (newValue/100)
-    }
+// initial/existing roi settings
+const props = defineProps({
+    'chipSize' : { default: null },
+    'fovSize': {},
+    'zoomScale': {}
 })
+
+// local roi settings
+const receptiveField = ref(props.fovSize || 911)
+const chipSize = ref(props.chipSize === null ? 128 : props.chipSize)
+const zoomScale = ref(props.zoomScale || 4)
+
+// simple boolean to track zoom toggle
+const zoom = ref(false)
+
+// generated placeholder image
+const dataUrlPlaceholder = ref(placeholder.generate(receptiveField.value))
+
+// this is the roi size to fov size ratio
+const roiPercentage = computed(() => chipSize.value / receptiveField.value * 100)
+
+// for inline zoom css
+const zoomStyle = computed(() => {
+    let scale = '1'
+    if (zoom.value) {
+        scale = String(zoomScale.value)
+    }
+
+    return { transform: `scale(${scale})` }
+})
+
+// Events: Update tell the parent component that values have changed
+const emit = defineEmits(['update'])
 const update = () => {
     emit('update', {
         chipSize: chipSize.value,
@@ -25,39 +41,20 @@ const update = () => {
         zoomScale: zoomScale.value
     })
 }
-watch(receptiveField, async (newSize, oldSize) => {
-    if (newSize !== oldSize) {
-        dataUrlPlaceholder.value = placeholder.generate(newSize)
-        update()
-    }
-})
 
-watch(chipSize, (newSize, oldSize) => {
-    if (newSize !== oldSize) {
-        update()
+// watch for changes to update the parent
+watch([receptiveField, chipSize, zoomScale], (newValues, oldValues) => {
+    // if the receptiveField changes, update placeholder image size
+    if (newValues[0] !== oldValues[0]) {
+        dataUrlPlaceholder.value = placeholder.generate(newValues[0])
     }
+    update()
 })
-watch(zoom, (newScale, oldScale) => {
-    if (newScale !== oldScale) {
-        update()
-    }
-})
-
-const zoomStyle = computed(() => {
-    let scale = '1'
-    if (zoom.value) {
-        scale = String(zoomScale.value)
-    }
-
-    return { transform: `scale(${scale})`}
-})
-
 
 </script>
 
 <template>
-    <div class="subtitle is-6">If you don't want a chip size box, set to 0.</div>
-
+    
     <div class="slide-container">
         
         <div class="field">
@@ -65,9 +62,9 @@ const zoomStyle = computed(() => {
             <div class="control">
                 <input class="input" type="text" v-model="chipSize" placeholder="ROI size">
                 <p class="help">Region of interest size in pixels</p>
+                <p class="help mt-0">To remove the roi, set chip size to 0.</p>
             </div>
         </div>
-        
 
         <div class="field width-limiter">
             
@@ -79,13 +76,14 @@ const zoomStyle = computed(() => {
 
             <div class="image-container" @click="zoom = !zoom">
                 <div class="zoom-box" :style="zoomStyle">
-                    <div v-if="chipSize > 0" class='roi has-text-white is-size-7' :style="{ 'height': `${percentage}%`, 'width': `${percentage}%` }">
+                    <div v-if="chipSize > 0" class='roi has-text-white is-size-7' :style="{ 'height': `${roiPercentage}%`, 'width': `${roiPercentage}%` }">
                         <div class="down-shift">{{ chipSize }}x{{ chipSize }}</div>
                     </div>
                     <img :src="dataUrlPlaceholder" alt="placeholder image" >
                 </div>
             </div>
         </div>
+
         <div class="field">
             <label class="label">Receptive Field Size</label>
             <div class="control">

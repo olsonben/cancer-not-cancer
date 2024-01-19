@@ -55,7 +55,6 @@ const taskOps = {
      * @param {String} zoom_scale - Amount slide zooms when tapped
      */
     async updateTask(userId, taskId, short_name, prompt, chip_size, fov_size, zoom_scale) {
-        console.log(userId, taskId, short_name, prompt, chip_size, fov_size, zoom_scale)
         const query = `UPDATE tasks
                     SET short_name = ?,
                         prompt = ?,
