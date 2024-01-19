@@ -45,19 +45,26 @@ const taskOps = {
 
     },
     /**
-     * Change a task's name or prompt.
+     * Change a task's name, prompt, chip_size, fov_size, or zoom_scale.
      * @param {Number} userId - Id of task owner
      * @param {Number} taskId - Id of task to update
      * @param {String} short_name - Task name
      * @param {String} prompt - Question to be displayed to observers
+     * @param {String} chip_size - Size of the region of interest (ROI)
+     * @param {String} fov_size - Default image size
+     * @param {String} zoom_scale - Amount slide zooms when tapped
      */
-    async updateTask(userId, taskId, short_name, prompt) {
+    async updateTask(userId, taskId, short_name, prompt, chip_size, fov_size, zoom_scale) {
+        console.log(userId, taskId, short_name, prompt, chip_size, fov_size, zoom_scale)
         const query = `UPDATE tasks
                     SET short_name = ?,
-                        prompt = ?
+                        prompt = ?,
+                        chip_size = ?,
+                        fov_size = ?,
+                        zoom_scale = ?
                     WHERE investigator = ?
                         AND id = ?`
-        await dbOps.execute(query, [short_name, prompt, userId, taskId])
+        await dbOps.execute(query, [short_name, prompt, chip_size, fov_size, zoom_scale, userId, taskId])
     },
     /**
      * Delete a task by id.
@@ -114,7 +121,7 @@ const taskOps = {
         FROM progress_table
         GROUP BY progress_table.task_id
         )
-        SELECT tasks.id, tasks.short_name, tasks.prompt,
+        SELECT tasks.id, tasks.short_name, tasks.prompt, tasks.chip_size, tasks.fov_size, tasks.zoom_scale,
             COALESCE(image_count_table.image_count, 0) AS image_count,
             COALESCE(observer_count_table.observer_count, 0) AS observer_count,
             COALESCE(overall.overall_progress, 0) AS progress

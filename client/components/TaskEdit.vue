@@ -87,6 +87,9 @@ export default {
     },
     computed: {
         tabs() {
+            const chipSize = this.localTask.chip_size
+            const fovSize = this.localTask.fov_size
+            const zoomScale = this.localTask.zoom_scale
             return [
                 {
                     name: 'observers',
@@ -107,8 +110,8 @@ export default {
                     name: 'roi',
                     label: "ROI",
                     component: RoiController,
-                    props: {},
-                    events: {}
+                    props: { chipSize, fovSize, zoomScale },
+                    events: { update: this.updateRoi }
 
                 }
             ]
@@ -149,6 +152,9 @@ export default {
                         id: this.localTask.id,
                         short_name: this.localTask.short_name,
                         prompt: this.localTask.prompt,
+                        chip_size: this.localTask.chip_size,
+                        fov_size: this.localTask.fov_size,
+                        zoom_scale: this.localTask.zoom_scale,
                     }),
                     api.POST('/tasks/observers', {
                         task_id: this.localTask.id,
@@ -162,6 +168,9 @@ export default {
 
                 this.task.short_name = this.localTask.short_name
                 this.task.prompt = this.localTask.prompt
+                this.task.chip_size = this.localTask.chipSize
+                this.task.fov_size = this.localTask.fovSize
+                this.task.zoom_scale = this.localTask.zoomScale
 
                 // Emit save event to update stats in task table.
                 this.$emit('save', {
@@ -179,6 +188,11 @@ export default {
         updateObservers(observersData) {
             this.observers.applied = observersData.applied
             this.observers.available = observersData.available
+        },
+        updateRoi(roiData){
+            this.localTask.chip_size = roiData.chipSize
+            this.localTask.fov_size = roiData.fovSize
+            this.localTask.zoom_scale = roiData.zoomScale
         },
         report() {
             console.log('Files selected')

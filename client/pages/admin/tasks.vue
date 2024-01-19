@@ -94,6 +94,9 @@ export default {
                     id: response.value.newTaskId,
                     short_name: this.task.name,
                     prompt: this.task.prompt,
+                    chip_size: null,
+                    fov_size: null,
+                    zoom_scale: null,
                     image_count: 0,
                     observer_count: 0,
                     progress: 0

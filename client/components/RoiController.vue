@@ -1,9 +1,14 @@
 <script setup>
 const placeholder = usePlaceholder()
 
-const receptiveField = ref(911)
-const chipSize = ref(128)
+const { chipSize: initChipSize, fovSize, zoomScale: initZoomScale } = defineProps(['chipSize', 'fovSize', 'zoomScale'])
+console.log('ROI:', initChipSize, fovSize, initZoomScale)
+const receptiveField = ref(fovSize || 911)
+const chipSize = ref(initChipSize || 128)
+const zoomScale = ref(initZoomScale || 4)
+const zoom = ref(false) // value for toggling zoom
 const dataUrlPlaceholder = ref(placeholder.generate(receptiveField.value))
+const emit = defineEmits(['update'])
 const percentage = computed({
     get () {
         const p = chipSize.value / receptiveField.value * 100
@@ -13,20 +18,45 @@ const percentage = computed({
         chipSize.value = receptiveField.value * (newValue/100)
     }
 })
+const update = () => {
+    emit('update', {
+        chipSize: chipSize.value,
+        fovSize: receptiveField.value,
+        zoomScale: zoomScale.value
+    })
+}
 watch(receptiveField, async (newSize, oldSize) => {
     if (newSize !== oldSize) {
         dataUrlPlaceholder.value = placeholder.generate(newSize)
+        update()
     }
 })
-const zoom = ref(false)
+
+watch(chipSize, (newSize, oldSize) => {
+    if (newSize !== oldSize) {
+        update()
+    }
+})
+watch(zoom, (newScale, oldScale) => {
+    if (newScale !== oldScale) {
+        update()
+    }
+})
+
+const zoomStyle = computed(() => {
+    let scale = '1'
+    if (zoom.value) {
+        scale = String(zoomScale.value)
+    }
+
+    return { transform: `scale(${scale})`}
+})
+
 
 </script>
 
 <template>
-    <div class="has-text-danger has-text-weight-semibold">WARNING: These settings are not currently saved and will not affect the task.</div>
-    <!-- <div class="title is-5">Chip size</div> -->
     <div class="subtitle is-6">If you don't want a chip size box, set to 0.</div>
-    <!-- <div class="subtitle is-6">This percentage is based on a image size of {{ receptiveField }} pixels.</div> -->
 
     <div class="slide-container">
         
@@ -38,19 +68,17 @@ const zoom = ref(false)
             </div>
         </div>
         
-        
 
         <div class="field width-limiter">
             
             <div class="field-body">
                 <div class="field">
                     <input type="range" id="roi" name="roi" min="0" :max="receptiveField" v-model="chipSize" class="slider"/>
-                    <!-- <p class="help" for="roi">Percentage: {{ (Math.round(percentage * 100) / 100).toFixed(2) }}%</p> -->
                 </div>
             </div>
 
             <div class="image-container" @click="zoom = !zoom">
-                <div class="zoom-box" :class="{ 'zoom': zoom }">
+                <div class="zoom-box" :style="zoomStyle">
                     <div v-if="chipSize > 0" class='roi has-text-white is-size-7' :style="{ 'height': `${percentage}%`, 'width': `${percentage}%` }">
                         <div class="down-shift">{{ chipSize }}x{{ chipSize }}</div>
                     </div>
@@ -63,6 +91,13 @@ const zoom = ref(false)
             <div class="control">
                 <input class="input" type="text" v-model="receptiveField" placeholder="slide size">
                 <p class="help">Image size in pixels</p>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label">Click to Zoom Amount</label>
+            <div class="control">
+                <input class="input" type="text" v-model="zoomScale" placeholder="zoom amount">
+                <p class="help">How much should the image enlarge when clicked.</p>
             </div>
         </div>
         
