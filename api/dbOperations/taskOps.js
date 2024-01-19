@@ -23,7 +23,7 @@ const taskOps = {
      * @returns {Array.<Object>} - An array of assign task objects {id, short_name, prompt}
      */
     async getTasked(userId) {
-        const query = `SELECT tasks.id as id, tasks.short_name as short_name, tasks.prompt as prompt
+        const query = `SELECT tasks.id as id, tasks.short_name as short_name, tasks.prompt as prompt, tasks.chip_size, tasks.fov_size, tasks.zoom_scale
                     FROM observers
                     LEFT JOIN tasks ON tasks.id = observers.task_id
                     WHERE observers.user_id = ?

@@ -32,6 +32,10 @@
                     </div>
                 </transition>
             </div>
+            <div class='controls level'>
+                <p class="help is-hidden-desktop">Tap to zoom.</p>
+                <p class="help is-hidden-touch">Click to zoom.</p>
+            </div>
         </div>
         
         <!-- Response section: grade + comment --> 
@@ -91,9 +95,6 @@ export default {
             showImage: true,
             transitioningOut: false,
 
-            // To be updated dynamically from Db in the future
-            roiRatio: 128/911,
-
             // For swiping
             xDown: null,
             yDown: null,
@@ -144,7 +145,28 @@ export default {
 
     computed: {
         ...mapState(useUserStore, ['isLoggedIn', 'isPathologist']),
+        roiRatio() {
+            let roiRatio = 128/911 // default
 
+            const currentTask = this.tasks.find((task) => task.id === this.selectedTask)
+            if (currentTask !== undefined && currentTask.chip_size) {
+                // roiRatio assigned to task
+                roiRatio = currentTask.chip_size/currentTask.fov_size
+            }
+
+            return roiRatio
+        },
+        zoomScale() {
+            let zoomScale = 4 // 4x default
+
+            const currentTask = this.tasks.find((task) => task.id === this.selectedTask)
+            if (currentTask !== undefined && currentTask.zoom_scale) {
+                // zoom_scale assigned to task
+                zoomScale = currentTask.zoom_scale
+            }
+
+            return zoomScale
+        },
         // give the attribute `:style='cssVars'` to anything that should have access to these variables
         cssVars() {
             return {
@@ -154,7 +176,8 @@ export default {
                 '--bg-no-opacity': (this.percent > 0 ? this.percent : 0),
                 '--bg-yes-opacity': (this.percent < 0 ? this.percent*-1.0 : 0),
                 '--img-trans': IMAGE_TRANSITION_TIME + 'ms',
-                '--roi-ratio': this.roiRatio
+                '--roi-ratio': this.roiRatio,
+                '--zoom-scale': this.zoomScale
             }
         }
     },
@@ -578,7 +601,7 @@ $no-cancer-color: #ff6184;
             transition-timing-function: ease-out;
 
             &.zoom {
-                transform: scale(4);
+                transform: scale(var(--zoom-scale));
             }
 
             /** Transitions for image container during swap */
