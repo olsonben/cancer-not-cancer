@@ -63,7 +63,7 @@ const api = useApi()
 const fileTools = useFileTools()
 const Adder = resolveComponent('Adder')
 const ImagePicker = resolveComponent('ImagePicker')
-const RoiController = resolveComponent('RoiController')
+const RoiSettings = resolveComponent('RoiSettings')
 
 export default {
     props: ['task'],
@@ -109,7 +109,7 @@ export default {
                 {
                     name: 'roi',
                     label: "ROI",
-                    component: RoiController,
+                    component: RoiSettings,
                     props: { chipSize, fovSize, zoomScale },
                     events: { update: this.updateRoi }
 
