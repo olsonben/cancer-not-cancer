@@ -47,7 +47,11 @@ const taskController = {
         const taskId = req.body.id
         const short_name = req.body.short_name
         const prompt = req.body.prompt
-        await taskOps.updateTask(investigatorId, taskId, short_name, prompt)
+        const chip_size = req.body.chip_size || null
+        const fov_size = req.body.fov_size || null
+        const zoom_scale = req.body.zoom_scale || null
+        await taskOps.updateTask(investigatorId, taskId, short_name, prompt, chip_size, fov_size, zoom_scale)
+
         res.sendStatus(200)
     },
     /** Handle a post request to delete a task. */

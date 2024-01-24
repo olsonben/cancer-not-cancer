@@ -16,11 +16,15 @@
                     @before-leave="beforeLeave"
                     appear
                 >
-                    <div v-show="showImage" class="zoom-box" :class="{'zoom': zoom }">
-                        <div class='roi'></div>
+                    <div v-if="showImage" class="zoom-box" :class="{'zoom': zoom }">
+                        <div class='roi' :class="{ 'is-hidden': showRoiBox }"></div>
                         <img :src='image.url' :alt='image.url'/>
                     </div>
                 </Transition>
+            </div>
+            <div class='controls level'>
+                <p class="help is-hidden-desktop">Tap to zoom.</p>
+                <p class="help is-hidden-touch">Click to zoom.</p>
             </div>
         </div>
         
@@ -81,6 +85,7 @@ export default {
             onDeck: null,
             queue: null,
             selectedTask: null,
+            currentTask: null,
             tasks: [],
 
             // State information
@@ -90,9 +95,6 @@ export default {
             zoom: false,
             showImage: true,
             transitioningOut: false,
-
-            // To be updated dynamically from Db in the future
-            roiRatio: 128/911,
 
             // For swiping
             xDown: null,
@@ -118,6 +120,14 @@ export default {
     //     }
     },
     async mounted() {
+        // move fetch() here
+        if (this.isLoggedIn) {
+            const { response } = await api.GET('/tasks/')
+            this.tasks = response.value // because response is a ref object
+            this.selectedTask = this.tasks[0].id
+            this.currentTask = this.tasks[0]
+        }
+
         // Fixes a firefox swipe conflict. When swiping if the reload page
         // swipe starts to engage, other animations freeze and hang. The
         // following line deactivates swiping to reload page.
@@ -147,14 +157,37 @@ export default {
 
     computed: {
         ...mapState(useUserStore, ['isLoggedIn', 'isPathologist']),
+        roiRatio() {
+            let roiRatio = 128/911 // default
 
+            if (this.currentTask !== null && this.currentTask.chip_size) {
+                // roiRatio assigned to task
+                roiRatio = this.currentTask.chip_size/ this.currentTask.fov_size
+            }
+
+            return roiRatio
+        },
+        zoomScale() {
+            let zoomScale = 4 // 4x default
+
+            if (this.currentTask !== null && this.currentTask.zoom_scale) {
+                // zoom_scale assigned to task
+                zoomScale = this.currentTask.zoom_scale
+            }
+
+            return zoomScale
+        },
+        showRoiBox() {
+            return !((this.currentTask === null) || (this.currentTask.chip_size !== 0))
+        },
         // give the attribute `:style='cssVars'` to anything that should have access to these variables
         cssVars() {
             return {
                 '--bg-no-opacity': (this.percent > 0 ? this.percent : 0),
                 '--bg-yes-opacity': (this.percent < 0 ? this.percent*-1.0 : 0),
                 '--img-trans': IMAGE_TRANSITION_TIME + 'ms',
-                '--roi-ratio': this.roiRatio
+                '--roi-ratio': this.roiRatio,
+                '--zoom-scale': this.zoomScale
             }
         },
         imageContainerStyle() {
@@ -170,9 +203,23 @@ export default {
         }
     },
     watch: {
+        isLoggedIn: {
+            async handler(loggedIn) {
+                if (loggedIn) {
+                    // Previously not logged in, and now logged in.
+                    const { response } = await api.GET('/tasks/')
+                    this.tasks = response.value // because response is a ref object
+                    this.selectedTask = this.tasks[0].id
+                    this.currentTask = this.tasks[0]
+                    this.nextImage()
+
+                }
+            }
+        },
         selectedTask: {
             handler(newTaskId) {
                 this.queue = null
+                this.currentTask = this.tasks.find((task) => task.id === newTaskId)
                 this.nextImage()
             }
         }
@@ -560,7 +607,7 @@ $no-cancer-color: #ff6184;
             transition-timing-function: ease-out;
 
             &.zoom {
-                transform: scale(4);
+                transform: scale(var(--zoom-scale));
             }
 
             /** Transitions for image container during swap */
