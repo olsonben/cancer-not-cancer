@@ -6,7 +6,7 @@
         <!-- Image to grade -->
         <div class='prompt'>
             <div class='controls level'>
-                <TaskPicker></TaskPicker>
+                <TaskPicker @taskSelected="(newTaskId) => { selectedTask = newTaskId }"></TaskPicker>
             </div>
             <div class="has-text-danger" v-if="!image.id">No more images available in this task.</div>
             <div v-if="image.id" class="image-container" @click="zoom=!zoom" :style="imageContainerStyle">
@@ -61,15 +61,6 @@
 </template>
 
 <script>
-/**<div class='task-picker level-left'>
-    <!-- <strong>Task:</strong> -->
-    <div class="select is-normal">
-        <select v-model="selectedTask">
-            <option v-for="task in tasks" :value="task.id">{{ task.prompt }}</option>
-    </select>
-</div>
-                </div >*/
-
 import { mapState } from 'pinia'
 import { useUserStore } from '~/store/user'
 const api = useApi()
@@ -109,18 +100,7 @@ export default {
             swipeDistance: 100
         }
     },
-    async created() {
-    //     // get tasks assigned to user
-    //     const { response } = await api.GET('/tasks/')
-    //     this.tasks = response.value
-    //     if (this.tasks[0]) {
-    //         this.selectedTask = this.tasks[0].id
-    //     } else {
-    //         console.log('You have no assigned tasks.')
-    //     }
-    },
     async mounted() {
-        // move fetch() here
         if (this.isLoggedIn) {
             const { response } = await api.GET('/tasks/')
             this.tasks = response.value // because response is a ref object
@@ -374,14 +354,9 @@ export default {
         * Modified from https://stackoverflow.com/a/23230280/16755079
         *************************************************************/
 
-        getTouches(event) {
-            return event.touches ||             // browser API
-                    event.originalEvent.touches; // jQuery
-        },
-
         // Handler for touchstart event
         handleTouchStart(event) {
-            const firstTouch = this.getTouches(event)[0]
+            const firstTouch = event.touches[0]
             this.xDown = firstTouch.clientX
             this.yDown = firstTouch.clientY
             this.innerWidth = window.innerWidth
@@ -390,7 +365,7 @@ export default {
         // Handler for touchmove event
         handleTouchMove(event) {
             this.touchEvent = event
-            const firstTouch = this.getTouches(event)[0]
+            const firstTouch = event.touches[0]
 
             // Record xMove for grade-bar css (see computed: cssVars)
             this.xMove = firstTouch.clientX
@@ -465,7 +440,7 @@ export default {
             }
 
             // Get the movement difference
-            const touches = this.getTouches(event)
+            const touches = event.touches
 
             const xDiff = this.xDown - touches[0].clientX
             const yDiff = this.yDown - touches[0].clientY

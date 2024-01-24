@@ -18,7 +18,9 @@ if (tasks.value[0]) {
     console.log('You have no assigned tasks.')
 }
 
-watch(selectedTask, async (newTask, oldTask) => {})
+watch(selectedTask, async (newTask, oldTask) => {
+    emit('taskSelected', newTask)
+})
 </script>
 
 <template>
