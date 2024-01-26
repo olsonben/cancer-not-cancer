@@ -16,10 +16,7 @@
                     @before-leave="beforeLeave"
                     appear
                 >
-                    <div v-if="showImage" class="zoom-box" :class="{'zoom': zoom }">
-                        <div class='roi' :class="{ 'is-hidden': showRoiBox }"></div>
-                        <img :src='image.url' :alt='image.url'/>
-                    </div>
+                    <ImageDisplay v-if="this.currentTask" :imageUrl="image.url" :chipSize="this.currentTask.chip_size" :fovSize="this.currentTask.fov_size" :zoomScale="this.currentTask.zoom_scale"/>
                 </Transition>
             </div>
             <div class='controls level'>
@@ -137,38 +134,15 @@ export default {
 
     computed: {
         ...mapState(useUserStore, ['isLoggedIn', 'isPathologist']),
-        roiRatio() {
-            let roiRatio = 128/911 // default
-
-            if (this.currentTask !== null && this.currentTask.chip_size) {
-                // roiRatio assigned to task
-                roiRatio = this.currentTask.chip_size/ this.currentTask.fov_size
-            }
-
-            return roiRatio
-        },
-        zoomScale() {
-            let zoomScale = 4 // 4x default
-
-            if (this.currentTask !== null && this.currentTask.zoom_scale) {
-                // zoom_scale assigned to task
-                zoomScale = this.currentTask.zoom_scale
-            }
-
-            return zoomScale
-        },
-        showRoiBox() {
-            return !((this.currentTask === null) || (this.currentTask.chip_size !== 0))
-        },
         // give the attribute `:style='cssVars'` to anything that should have access to these variables
         cssVars() {
             return {
                 '--bg-no-opacity': (this.percent > 0 ? this.percent : 0),
                 '--bg-yes-opacity': (this.percent < 0 ? this.percent*-1.0 : 0),
-                '--img-trans': IMAGE_TRANSITION_TIME + 'ms',
-                '--roi-ratio': this.roiRatio,
-                '--zoom-scale': this.zoomScale
+                '--img-trans': IMAGE_TRANSITION_TIME + 'ms'
             }
+            // '--roi-ratio': this.roiRatio,
+            // '--zoom-scale': this.zoomScale
         },
         imageContainerStyle() {
             const xDiff = this.xMove !== null ? this.xMove - this.xDown : 0
@@ -571,66 +545,6 @@ $no-cancer-color: #ff6184;
             height: calc(100vw - $block-margin - $block-margin);
         }
 
-        .zoom-box {
-            width: 100%;
-            height: 100%;
-            position: relative;
-
-            /** Image zooming */
-            transition-property: transform;
-            transition-duration: 0.5s;
-            transition-timing-function: ease-out;
-
-            &.zoom {
-                transform: scale(var(--zoom-scale));
-            }
-
-            /** Transitions for image container during swap */
-            &.swap-img-enter-active {
-                transition: opacity var(--img-trans) ease;
-            }
-            &.swap-img-leave-active {
-                transition: opacity var(--img-trans) ease;
-            }
-
-            &.swap-img-enter,
-            &.swap-img-leave-to {
-                opacity: 0;
-            }
-
-            
-
-            img {
-                object-fit: contain;
-                width: 100%;
-                height: 100%;
-            }
-    
-            /**
-            * ROI is a white box centered in the image
-            *
-            * Important for .roi to be `position: absolute` and parent `position: relative`
-            * That way the overlay will be centered on the image.
-            */
-            .roi {
-                position: absolute;
-                left: 0;
-                right: 0;
-                top: 0;
-                bottom: 0;
-    
-                // TODO: make this sizing dynamic
-                // ROI fallback
-                width: 14.05%;
-                height: 14.05%;
-                // ROI most accurate
-                width: calc(100% * var(--roi-ratio));
-                height: calc(100% * var(--roi-ratio));
-                margin: auto;
-                border: 1px solid white;
-                pointer-events: none;
-            }
-        }
     }    
 }
 /* stuck to the bottom of the screen */
