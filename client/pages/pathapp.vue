@@ -8,8 +8,10 @@
             <div class='controls level'>
                 <TaskPicker @taskSelected="(newTaskId) => { selectedTask = newTaskId }"></TaskPicker>
             </div>
-            <div class="has-text-danger" v-if="!image.id">No more images available in this task.</div>
-            <div v-if="image.id" class="image-container" @click="zoom=!zoom" :style="imageContainerStyle">
+            <div ref="test" class="has-text-danger" v-if="!image.id">No more images available in this task.</div>
+            
+            <!-- OLD -->
+            <!-- <div v-if="image.id" class="image-container" @click="zoom=!zoom" :style="imageContainerStyle">
                 <Transition
                     name="swap-img"
                     @after-leave="afterLeave"
@@ -18,7 +20,13 @@
                 >
                     <ImageDisplay v-if="this.currentTask" :imageUrl="image.url" :chipSize="this.currentTask.chip_size" :fovSize="this.currentTask.fov_size" :zoomScale="this.currentTask.zoom_scale"/>
                 </Transition>
-            </div>
+            </div> -->
+
+            <!-- NEW -->
+            <ImageSwipe>
+                <ImageDisplay v-if="this.currentTask" :imageUrl="image.url" :chipSize="this.currentTask.chip_size" :fovSize="this.currentTask.fov_size" :zoomScale="this.currentTask.zoom_scale"/>
+            </ImageSwipe>  
+
             <div class='controls level'>
                 <p class="help is-hidden-desktop">Tap to zoom.</p>
                 <p class="help is-hidden-touch">Click to zoom.</p>
@@ -61,15 +69,29 @@
 import { mapState } from 'pinia'
 import { useUserStore } from '~/store/user'
 const api = useApi()
+// const swipe = useSwipe()
+// console.log(document.documentElement)
+// console.log(window)
+let swipe = null
 
 const IMAGE_TRANSITION_TIME = 250 // ms
 // const IMAGE_TRANSITION_TIME = 2000 // ms
 
 export default {
+    setup() {
+        console.log('setup')
+        // console.log(this.$refs.test)
+        // const test = ref(null)
+        // swipe = useSwipe(test)
+        // return {
+        //     test,
+        //     xDistance: swipe.xDistance
+        // }
+    },
     data() {
         return {
             // Information to display and grade the current image
-            image: {},
+            image: { url: '' },
             onDeck: null,
             queue: null,
             selectedTask: null,
@@ -98,6 +120,7 @@ export default {
         }
     },
     async mounted() {
+        // console.log(this.$refs.test)
         if (this.isLoggedIn) {
             const { response } = await api.GET('/tasks/')
             this.tasks = response.value // because response is a ref object
@@ -108,28 +131,30 @@ export default {
         // Fixes a firefox swipe conflict. When swiping if the reload page
         // swipe starts to engage, other animations freeze and hang. The
         // following line deactivates swiping to reload page.
-        document.documentElement.style.setProperty('--overscroll', 'none')
-        // Turn scrolling off
-        document.documentElement.style.setProperty('--overflow', 'hidden')
+        // document.documentElement.style.setProperty('--overscroll', 'none')
+        // // Turn scrolling off
+        // document.documentElement.style.setProperty('--overflow', 'hidden')
 
         this.nextImage()
         
-        // Required for touches
-        document.addEventListener('touchstart', this.handleTouchStart, false)
-        document.addEventListener('touchmove', this.handleTouchMove, false)
-        document.addEventListener('touchend', this.handleTouchEnd, false)
+        // // Required for touches
+        // document.addEventListener('touchstart', this.handleTouchStart, false)
+        // document.addEventListener('touchmove', this.handleTouchMove, false)
+        // document.addEventListener('touchend', this.handleTouchEnd, false)
+        // swipe.activate()
     },
     
     unmounted() {
-        // Reactivates swipe to reload (deactivated in the mount method)
-        document.documentElement.style.setProperty('--overscroll', 'auto')
-        // Allowing scrolling
-        document.documentElement.style.setProperty('--overflow', 'initial')
+        // // Reactivates swipe to reload (deactivated in the mount method)
+        // document.documentElement.style.setProperty('--overscroll', 'auto')
+        // // Allowing scrolling
+        // document.documentElement.style.setProperty('--overflow', 'initial')
 
-        // We need to cleanup our event listeners. So we don't have duplicates when we return.
-        document.removeEventListener('touchstart', this.handleTouchStart, false)
-        document.removeEventListener('touchmove', this.handleTouchMove, false)
-        document.removeEventListener('touchend', this.handleTouchEnd, false)
+        // // We need to cleanup our event listeners. So we don't have duplicates when we return.
+        // document.removeEventListener('touchstart', this.handleTouchStart, false)
+        // document.removeEventListener('touchmove', this.handleTouchMove, false)
+        // document.removeEventListener('touchend', this.handleTouchEnd, false)
+        // swipe.deactivate()
     },
 
     computed: {
@@ -176,7 +201,12 @@ export default {
                 this.currentTask = this.tasks.find((task) => task.id === newTaskId)
                 this.nextImage()
             }
-        }
+        },
+        // xDistance: {
+        //     handler(distance) {
+        //         // console.log('xDistance:', distance)
+        //     }
+        // }
     },
     methods: {
         /**********************************************
@@ -259,7 +289,7 @@ export default {
                     // if the image queue is empty, do not proceed
                     if (this.queue && !this.queue.length) {
                         // TODO: handle the last image more gracefully with transitions.
-                        this.image = {} // reset main image
+                        this.image = { url: '' } // reset main image
                         return
                     }
                     // console.log('nextImage')
@@ -530,22 +560,22 @@ $no-cancer-color: #ff6184;
         }
     }
 
-    .image-container {
-        position: relative;
-        width: 100%;
-        // TODO: Figure out how to handle rectangular images and their ROIs
-        height: calc(50vh - $block-margin - $block-margin);
-        line-height: 0;
-        overflow: hidden;
+    // .image-container {
+    //     position: relative;
+    //     width: 100%;
+    //     // TODO: Figure out how to handle rectangular images and their ROIs
+    //     height: calc(50vh - $block-margin - $block-margin);
+    //     line-height: 0;
+    //     overflow: hidden;
 
 
-        // transform: translate(var(--x-diff), calc(var(--y-diff) / -6)) rotate(calc( var(--rot-diff) * -12deg));
+    //     // transform: translate(var(--x-diff), calc(var(--y-diff) / -6)) rotate(calc( var(--rot-diff) * -12deg));
 
-        @include for-size(mobile) {
-            height: calc(100vw - $block-margin - $block-margin);
-        }
+    //     @include for-size(mobile) {
+    //         height: calc(100vw - $block-margin - $block-margin);
+    //     }
 
-    }    
+    // }    
 }
 /* stuck to the bottom of the screen */
 .response-area {
