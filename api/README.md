@@ -13,7 +13,7 @@ mysql -e 'CREATE DATABASE pathapp'
 mysql pathapp < ./database/pathapp.sql
 mysql pathapp < ./database/updatetotask.sql
 # Make a super admin user with a SSO google email. Replace [NAME] and [EMAIL] below.
-mysql test -e 'INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES ("[NAME]", "[EMAIL]", "", 1, 1, 1, 1)'
+mysql pathapp -e 'INSERT INTO users (fullname, username, password, is_enabled, is_pathologist, is_uploader, is_admin) VALUES ("[NAME]", "[EMAIL]", "", 1, 1, 1, 1)'
 
 # install node modules
 npm install

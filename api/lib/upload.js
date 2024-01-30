@@ -98,7 +98,7 @@ async function saveFile(file, fileInfo) {
             const hash = createHash('sha256')
             file.pipe(hash)
             hash.on('error', err => { console.error(err) })
-            hash.on('finish', () => { fileInfo.hash = hash.update('utf8').digest('base64') })
+            hash.on('finish', () => { fileInfo.hash = hash.digest('base64') })
 
             // on read stream errors (failed reading the uploading file)
             file.on('error', (err) => {
@@ -150,19 +150,41 @@ async function saveFile(file, fileInfo) {
     }
 }
 
+// date string helper : https://stackoverflow.com/a/17415677/3068136
+function toIsoWithTimezoneString(date) {
+    var tzo = -date.getTimezoneOffset(),
+        dif = tzo >= 0 ? '+' : '-',
+        pad = function (num) {
+            return (num < 10 ? '0' : '') + num;
+        };
+
+    return date.getFullYear() % 100 +
+        '' + pad(date.getMonth() + 1) +
+        '' + pad(date.getDate()) +
+        '_' + pad(date.getHours()) +
+        '-' + pad(date.getMinutes()) +
+        '-' + pad(date.getSeconds()) +
+        'TZ' + dif + pad(Math.floor(Math.abs(tzo) / 60)) +
+        '-' + pad(Math.abs(tzo) % 60);
+}
+
 // Handle upload image(s) request for express
 export async function uploadImages(req, res, next) {
-    console.log('Uploading images...')
+    // console.log('UPLOAD REQUEST MADE::', req.headers)
+    const folderDateString = toIsoWithTimezoneString(new Date(req.headers.uploadtime))
 
-    const saveDirectory = await nanoid()
-
+    // Consider hashing the userid
+    const saveDirectory = `${req.user.id}_${folderDateString}`
+    // straight hash for directory
+    // const saveDirectory = await nanoid()
+    
     // Check for proper content-type, needs to be multipart/form-data
     // busboy should error out on malformed data, be we do our own check before starting.
     if (!req.headers['content-type'].includes('multipart/form-data')) {
         res.status(415).send('Content-Type must be multipart/form-data.')
         return
     }
-
+    
     const busboyConfig = {
         headers: req.headers, // pass headers to busboy
         limits: {
@@ -171,16 +193,18 @@ export async function uploadImages(req, res, next) {
         },
         preservePath: true
     }
-
+    
     const files = [] // keep track of the files for communicating success or failure.
     let finished = false // busboy upload status
     const bb = busboy(busboyConfig)
+
 
     // When all files have the property 'succees' AND busboy is finished,
     // we can send our response.
     function onWriteFinish() {
         if (files.every(fileObj => fileObj.hasOwnProperty('success')) && finished) {
-            console.log('Upload Complete')
+            const isoDate = new Date().toISOString()
+            console.log(`${isoDate}: Upload Complete`)
             req.files = files
             next()
         }

@@ -10,7 +10,13 @@
                             <select v-model="selectedTask">
                                 <option v-for="task in tasks" :value="task.id">{{ task.prompt }}</option>
                             </select>
-                    </div></div>
+                        </div>
+                        <div v-show="selectedTask" class="buttons is-center pl-5">
+                            <button class="button is-success" type="button" @click="exportTask">
+                                <span class="icon"><fa-icon :icon="['fas', 'download']" /></span>
+                            </button>
+                        </div>
+                    </div>
                     <Userview class="level-right" v-if='isAdmin' v-model:userId="userId" :label="'Created by:'"/>
                 </div>
                 <div class="task-stats">
@@ -33,6 +39,7 @@
                 </div>
             </div>
         </section>
+        <Export v-if="exportData != null" :task="exportData" @done="exportData = null" />
     </div>
 </template>
 
@@ -66,7 +73,8 @@ export default {
             maybe: 0,
             userChart: [],
             imageChart: [],
-            userId: null
+            userId: null,
+            exportData: null
         }
     },
     computed: {
@@ -190,7 +198,12 @@ export default {
             } catch (err) {
                 console.error(err);
             }
-        }
+        },
+        exportTask() {
+            const task = this.tasks.find((t) => t.id === this.selectedTask)
+            console.log(`Export Task ${task.id}`)
+            this.exportData = task
+        },
     }
 }
 </script>
