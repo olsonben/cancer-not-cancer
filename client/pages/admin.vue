@@ -3,24 +3,33 @@
         <div class='tabs'>
             <ul>
                 <!-- Tabs visible based on permissions -->
-                <li><nuxt-link v-if='this.$store.state.user.permissions.uploader' to='/admin/images'>Images</nuxt-link></li>
-                <li><nuxt-link v-if='this.$store.state.user.permissions.admin' to='/admin/users'>Users</nuxt-link></li>
-                <li><nuxt-link v-if='this.$store.state.user.permissions.uploader' to='/admin/tasks'>Tasks</nuxt-link></li>
-                <li><nuxt-link v-if='this.$store.state.user.permissions.uploader' to='/admin/dataview'>Stats</nuxt-link></li>
+                <li><nuxt-link v-if='isUploader' to='/admin/images'>Images</nuxt-link></li>
+                <li><nuxt-link v-if='isAdmin' to='/admin/users'>Users</nuxt-link></li>
+                <li><nuxt-link v-if='isUploader' to='/admin/tasks'>Tasks</nuxt-link></li>
+                <li><nuxt-link v-if='isUploader' to='/admin/dataview'>Stats</nuxt-link></li>
             </ul>
         </div>
-        <nuxt-child class='nuxt-child'/>
+        <NuxtPage/>
     </div>
 </template>
 
 <script>
+import { mapState } from "pinia";
+import { useUserStore } from "../store/user"
+const route = useRoute()
+
 export default {
     // This is more a layout for admin subpages
     mounted() {
-        if (["/admin", "/admin/"].includes(this.$pathapp.$route.path)) {
-            this.$router.push('/')
+        // All admin pages are at /admin/X so redirect bad paths.
+        if (["/admin", "/admin/"].includes(route.path)) {
+            const router = useRouter()
+            router.push('/')
         }
-    }
+    },
+    computed: {
+        ...mapState(useUserStore, ['isAdmin', 'isUploader'])
+    },
 }
 </script>
 
@@ -29,9 +38,5 @@ a.nuxt-link-exact-active {
     color: $info;
     font-weight: bold;
     border-bottom-color: $info;
-}
-/* move .section up to avoid oddly large whitespace */
-.tabs, section.section {
-    margin-top: calc(-1 * $block-margin);
 }
 </style>

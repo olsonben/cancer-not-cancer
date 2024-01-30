@@ -19,5 +19,6 @@ router.get('/observers', isValid, asyncHandler(taskController.getObservers))
 router.post('/observers', isValid, asyncHandler(taskController.updateObservers))
 router.get('/images', isValid, asyncHandler(taskController.getImages))
 router.post('/images', isValid, asyncHandler(taskController.setTaskImages))
+router.get('/export', isValid, asyncHandler(taskController.exportTaskById))
 
 export default router

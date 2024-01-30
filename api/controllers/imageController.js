@@ -8,6 +8,8 @@ import * as path from 'path'
 
 const imageBaseURL = process.env.IMAGE_URL
 
+const folderQueue = {}
+
 /** Express.js API endpoint handlers for image related requests. */
 const imageController = {
     /**
@@ -42,15 +44,23 @@ const imageController = {
     
     /** Save successfull image uploads with the uploaders ip */
     async saveUploadsToDb(req, res, next) {
+        // TODO: this has no error handling if the req has ended... will cause getIP to throw an error.
         const ip = getIP(req)
-        const date = new Date()
+        const date = new Date(req.headers.uploadtime)
         const masterFolderName = `${date.toISOString().split('.')[0].replace('T', ' ')} Upload`
+        // const masterFolderName = `${req.user.id}_${req.headers.uploadtime}`
 
+        const folderKey = `${req.user.id}_masterFolderName`
         const folderStructure = VFS.createFolderStructure(req.files, masterFolderName)
+
         
         try {
-            const folders = await imageOps.saveFolderStructure(folderStructure, req.user.id)
-            
+            let existingFolders = folderQueue[folderKey] || {}
+
+            // create additional folders here
+            const folders = await imageOps.saveFolderStructure(folderStructure, req.user.id, existingFolders)
+            folderQueue[folderKey] = folders
+
             for (const file of req.files) {
                 if (file.success) {
                     try {
@@ -87,7 +97,12 @@ const imageController = {
             // TODO: delete files that have been uploaded
             next(error) // Pass error on to unified error handler.
         }
-            
+        
+        if (req.headers.finalblock) {
+            console.log('FINAL BLOCK, deleting folderQueue entry.')
+            delete folderQueue[folderKey]
+        }
+
         // TODO: if a file upload fails and there are no files associated with the
         // folder, then we should delete the folder
         next()
@@ -110,6 +125,15 @@ const imageController = {
     async deleteFile(filePath) {
         const absoluteFilePath = path.join(process.env.IMAGES_DIR, filePath)
         await removeFile(absoluteFilePath)
+        removeEmptyImageFolders()
+    },
+
+    /** Delete files at the relative file path.
+     * @param {Array<String>} filePaths - should be relative with filename and extension.
+     */
+    async deleteFiles(filePaths) {
+        const absoluteFilePaths = filePaths.map((filePath) => path.join(process.env.IMAGES_DIR, filePath))
+        await Promise.all(absoluteFilePaths.map((absFilePath) => removeFile(absFilePath)))
         removeEmptyImageFolders()
     },
         
@@ -203,7 +227,7 @@ const imageController = {
         await tagOps.moveTag(tagId, oldParentTagId, newParentTagId)
         res.sendStatus(200)
     },
-    // TODO: Make sure the tag has now images associated with it before deleteing.
+    // TODO: Make sure the tag has no images associated with it before deleteing.
     // This is done on the frontend, but should really be done here too.
     /** Delete a tag. */
     async deleteTag(req, res, next) {
@@ -219,6 +243,23 @@ const imageController = {
             console.log('DeleteTag - FAILED')
             res.sendStatus(400)
         }
+    },
+    /** Delete a list of images and tags. */
+    async deleteAllContentsIn(req, res, next) {
+        const investigatorId = req.user.id
+        const tags = req.body.tags
+        const images = req.body.images
+        console.log('DeleteAllContentsIn:: User:', investigatorId)
+        console.log('images:', images)
+        console.log('tags:', tags)
+
+        const imgPaths = await imageOps.getPaths(images)
+        await imageController.deleteFiles(imgPaths)
+        await imageOps.deleteImages(images, investigatorId)
+        await tagOps.deleteTags(tags, investigatorId)
+
+        res.sendStatus(200)
+        
     },
     /**
      * Middleware for uploading and saving images.

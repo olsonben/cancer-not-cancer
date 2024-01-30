@@ -5,10 +5,15 @@
 </template>
 
 <script>
+import { useUserStore } from '~/store/user'
+
 export default {
     // Automatically logout when coming to this page
     created() {
-        this.$store.dispatch('user/logout')
+        const user = useUserStore()
+        if (user.isLoggedIn) {
+            user.logout()
+        }
     }
 }
 </script>

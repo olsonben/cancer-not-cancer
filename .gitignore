@@ -9,9 +9,15 @@ log/*
 **/workspace.code-workspace
 .vscode
 
-client/.nuxt/*
-client/dist/*
 client/assets/css/main.css
+
+# Nuxt dev/build outputs
+client/.output
+client/.data
+client/.nuxt
+client/.nitro
+client/.cache
+client/dist
 
 api/images/*
 

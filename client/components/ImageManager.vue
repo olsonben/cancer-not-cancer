@@ -4,7 +4,7 @@
 
         <div class="box">
             Create a folder
-             <div class="field-body pl-4 pb-2">
+            <div class="field-body pl-4 pb-2">
                 <div class="field is-grouped">
                     <div class="control">
                         <input ref="folderName" class="input is-small" :class="{ 'blink': attention }" type="text" placeholder="Folder Name" v-model="createTagName">
@@ -14,17 +14,32 @@
                     </div>
                 </div>
             </div>
+            <span v-if="!deleteMode">In Edit </span><span v-else>In Delete </span>Mode
+            <div class="field-body pl-4 pb-2">
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button class="button is-small is-info has-text-weight-bold" type="button" @click="toggleMode" :disabled="!deleteMode">Edit Mode</button>
+                        </div>
+                        <div class="control">
+                            <button class="button is-small is-danger has-text-weight-bold" type="button" @click="toggleMode" :disabled="deleteMode">Delete Mode</button>
+                        </div>
+                    </div>
+                </div>
             <!-- TODO: This is essentially the ImagePicker can that component be used here? -->
             <div class="menu">
-                <p class="menu-label">Images Folders: Drag files and folder where you want to move them.</p>
+                <p v-if="!deleteMode" class="menu-label">Images Folders: Drag files and folder where you want to move them.</p>
+                <p v-else class="menu-label"><span class="has-text-danger">WARNING:</span> Deleting folders and images will permanently remove files, including images associated with existing tasks.</p>
+                <!-- TODO: Should probably be replaced with a app wide loading animation. -->
+                <button v-if="loading" class="button is-loading is-medium is-info">loading</button>
                 <ul class="menu-list">
                     <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
                     <li v-for="(file, index) in files" :key="fileKey(file)">
                         <folder v-if="isFolder(file)"
                         v-model="files[index]"
                         @change="masterChangeHandler"
-                        :editable="true"/>
-                        <File v-else v-model="files[index]" :editable="true" @change="masterChangeHandler"></File>
+                        :editable="!deleteMode"
+                        :deletable="deleteMode"/>
+                        <File v-else v-model="files[index]" :editable="!deleteMode" :deletable="deleteMode" @change="masterChangeHandler"></File>
                     </li>
 
                 </ul>
@@ -34,18 +49,52 @@
 </template>
 
 <script>
+const api = useApi()
+
+async function getFiles() {
+    try {
+        // TODO: change this over to an images/all request.
+        // The task_id is arbitrary.
+        const { response } = await api.GET('/tasks/images', {
+            task_id: 14
+        })
+        return response.value
+    } catch (error) {
+        console.error('ImageManager fetch:', error.message)
+    }
+}
+
+// Note: We start the initial api call here. We could wait for firstData in the
+// setup function but that blocks the the entire page from displaying.
+const firstData = getFiles()
+
 export default {
-    data() {
+    // Using setup because it fire just before data()
+    async setup() {
         return {
-            files: [],
+            files: ref([]), // using ref to make our nest array reactive
             createTagName: '',
-            attention: false
+            attention: false,
+            loading: true,
+            deleteMode: ref(false),
         }
     },
-    async fetch() {
-        this.refreshData()
+    async created() {
+        // We can asynchronously attach the data here
+        this.refreshData(firstData)
     },
     methods: {
+        async refreshData(dataPromise) {
+            try {
+                this.files = await dataPromise
+                this.loading = false
+            } catch (error) {
+                console.error('ImageManager refreshData:', error.message)
+            }
+        },
+        toggleMode() {
+            this.deleteMode = !this.deleteMode
+        },
         fileKey(file) {
             return `${file.type}-${file.id}`
         },
@@ -86,12 +135,14 @@ export default {
                     return !(file.type == 'img' && file.id == changeData.fileId)
                 })
                 this.deleteFile(changeData.fileId)
+            } else if (eventType === 'folderDeleteAll') {
+                this.deleteAllContents(changeData.folder)
             }
          },
         async editTagName(tagId, newName) {
             console.log('editTagName:', tagId, newName)
             try {
-                const response = await this.$axios.$post('/images/renameTag', {
+                const { response } = await api.POST('/images/renameTag', {
                     tagId: tagId,
                     tagName: newName,
                 })
@@ -129,7 +180,7 @@ export default {
                 newParent.contents.unshift(movingTag)
 
                 // Save changes remotely
-                const response = await this.$axios.post('images/moveTag', {
+                const { response } = await api.POST('images/moveTag', {
                     tagId: tagId,
                     oldParentTagId: oldParentTagId,
                     newParentTagId: newParentTagId
@@ -141,9 +192,10 @@ export default {
         async createTag() {
             try {
                 if (this.createTagName !== '') {
-                    const newTagFolder = await this.$axios.$post('/images/tag', {
+                    const { response } = await api.POST('/images/tag', {
                         tagName: this.createTagName,
                     })
+                    const newTagFolder = response.value
                     this.createTagName = ''
                     this.files.unshift(newTagFolder)
                 } else {
@@ -162,17 +214,62 @@ export default {
         },
         async deleteTag(tagId) {
             try {
-                const response = await this.$axios.$post('/images/deleteTag', {
+                const { response } = await api.POST('/images/deleteTag', {
                     tagId: tagId,
                 })
             } catch (error) {
                 console.error('ImageManager deleteTag:', error.message)
-                this.refreshData()
+                // because folder delete can be nested, if we experience an error,
+                // we should refresh the data for accuracy
+                const newDataPromise = getFiles()
+                this.refreshData(newDataPromise)
+            }
+        },
+        getAllImageIds(folderObj, memo = []) {
+            for (const file of folderObj.contents) {
+                if (file.type === 'tag') {
+                    this.getAllImageIds(file, memo)
+                } else {
+                    memo.push(file.id)
+                }
+            }
+            return memo
+        },
+        getAllTagIds(folderObj, memo = []) {
+            memo.push(folderObj.id)
+            for (const file of folderObj.contents) {
+                if (file.type === 'tag') {
+                    this.getAllTagIds(file, memo)
+                }
+            }
+            return memo
+        },
+        async deleteAllContents(folder) {
+            try {
+                console.log('deleteAllContents - folder id:', folder.id)
+                const listOfImages = this.getAllImageIds(folder)
+                const listOfTags = this.getAllTagIds(folder)
+                console.log('Deleting...')
+                console.log('images:', listOfImages)
+                console.log('folders:', listOfTags)
+                const { response } = await api.POST('/images/deleteAllIn', {
+                    tags: listOfTags,
+                    images: listOfImages,
+                })
+
+                this.files = this.files.filter((file) => {
+                    return !(file.type == folder.type && file.id == folder.id)
+                })
+            } catch (error) {
+                console.error('Error deleting folder contents.')
+                console.error(error)
+                const newDataPromise = getFiles()
+                this.refreshData(newDataPromise)
             }
         },
         async editFileName(fileId, newName) {
             try {
-                const response = await this.$axios.$post('/images/rename', {
+                const { response } = await api.POST('/images/rename', {
                     imageId: fileId,
                     newName: newName,
                 })
@@ -183,7 +280,7 @@ export default {
         async deleteFile(fileId) {
             try {
                 // TODO: Add Unlock button that warns users.
-                const response = await this.$axios.$post('/images/delete', {
+                const { response } = await api.POST('/images/delete', {
                     imageId: fileId
                 })
             } catch (error) {
@@ -217,27 +314,13 @@ export default {
                 newParent.contents.unshift(movingFile)
 
                 // Save move remotely
-                const response = await this.$axios.$post('images/move', {
+                const { response } = await api.POST('images/move', {
                     imageId: fileId,
                     oldParentTagId: oldParentTagId,
                     newParentTagId: newParentTagId
                 })
             } catch (error) {
                 console.error('ImageManager moveFile:', error.message)
-            }
-        },
-        async refreshData() {
-            try {
-                // TODO: change this over to an images/all request.
-                // The task_id is arbitrary.
-                const images = await this.$axios.$get('/tasks/images', {
-                    params: {
-                        task_id: 14
-                    }
-                })
-                this.files = images
-            } catch (error) {
-                console.error('ImageManager fetch:', error.message)
             }
         }
     }

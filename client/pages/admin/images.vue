@@ -12,7 +12,9 @@
                 </ul>
             </div>
             <div>
-                <div class="dropbox">
+
+                <div class="dropbox mb-3">
+
                     <!-- File input -->
                     <input type="file"
                         multiple 
@@ -23,11 +25,6 @@
                         @change="newImage"
                         class="input-file"
                     >
-
-                    <!-- Display loaded files -->
-                    <ul>
-                        <li v-for="file in files">{{ file.name }}</li>
-                    </ul>
 
                     <!-- Various prompts -->
                     <p v-if="isInitial">
@@ -40,6 +37,17 @@
                         Uploading {{ fileCount }} {{ fileUpload ? 'file' : 'folder' }}s...
                     </p>
                 </div>
+
+                <div v-if="files.length > 0" class="">
+                    <h1 class="title is-6 mb-1">
+                        {{ files.length }} Files selected for upload:
+                    </h1>
+                    <!-- Display loaded files -->
+                    <ul class="box selected-files">
+                        <li v-for="file in files">{{ file.name }}</li>
+                    </ul>
+                </div>
+
                 <br>
                 
                 <!-- Submit or clear files -->
@@ -54,18 +62,26 @@
             </div>
         </section>
         <!-- Notifications of submission process -->
-        <template v-for='file in submittedFiles'>
-            <div v-if="file.submissionSuccess === null" class='notification is-warning is-light'>
-                File {{ file.originalname }} is submitted, awaiting response.
-            </div>
-            <div v-else-if="file.submissionSuccess === true" class='notification is-success is-light'>
-                File {{ file.originalname }} is successfully submitted.
-            </div>
-            <div v-else-if="file.submissionSuccess === false" class='notification is-danger is-light'>
-                <!--                                             Don't add a period to messages ending w/ a period -->
-                File {{ file.originalname }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
-            </div>
-        </template>
+        <section v-if="isSaving" class="section pt-3 pb-3 is-flex is-flex-direction-row">
+            <h2 class="title is-5 is-flex-shrink-0 pr-3">
+                Upload Progress:
+            </h2>
+            <progress class="progress is-info" :value="progress" max="100">{{ progress }}%</progress>
+        </section>
+        <section class="notification-container section pb-0 pt-0">
+            <template v-for='file in submittedFiles'>
+                <div v-if="file.submissionSuccess === null" class='notification is-warning is-light'>
+                    File {{ file.originalname }} is submitted, awaiting response.
+                </div>
+                <div v-else-if="file.submissionSuccess === true" class='notification is-success is-light'>
+                    File {{ file.originalname }} is successfully submitted.
+                </div>
+                <div v-else-if="file.submissionSuccess === false" class='notification is-danger is-light'>
+                    <!--                                             Don't add a period to messages ending w/ a period -->
+                    File {{ file.originalname }} failed to submit: {{ file.message + (/\.\s*$/.test(file.message) ? '' : '.')}}
+                </div>
+            </template>
+        </section>
         <div class="section pt-3">
             <ImageManager :key="imageManagerKey"/>
         </div>
@@ -73,9 +89,13 @@
 </template>
 
 <script>
-import FormData from 'form-data'
+const api = useApi()
+const router = useRouter()
 
 const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_FAILED = 3, STATUS_LOADED = 4
+
+// TODO: add this variable to .env files
+const filesPerRequest = 5
 
 export default {
     data() {
@@ -91,7 +111,8 @@ export default {
             // Notification stuff
             submittedFiles: {},
             notificationTime: "10000", // 10 sec in ms
-            imageManagerKey: 1 // we can force and update by incrementing this on upload complete
+            imageManagerKey: 1, // we can force and update by incrementing this on upload complete
+            progress: 0
         }
     },
 
@@ -124,20 +145,23 @@ export default {
             this.currentStatus = STATUS_INITIAL
             this.files = []
             this.fileCount = 0
+            this.progress = 0
         },
 
         appendSubmittedFile(filename, propObj) {
-            this.$set(this.submittedFiles, filename, propObj)
+            this.submittedFiles[filename] = propObj
         },
 
         removeSubmittedFile(filename) {
-            this.$delete(this.submittedFiles, filename)
+            delete this.submittedFiles[filename]
         },
 
         // Fill this.files with the files added at ref=fileInput
         newImage(event) {
             for (let i = 0; i < event.target.files.length; i++) {
                 let file = event.target.files[i]
+                // TODO: this would allow other types like tiffs and svg,
+                // we should probably check for image/jpeg and image/png specifically
                 if (/image\/*/.test(file.type)) {
                     this.files.push(file)
                     this.fileCount++
@@ -151,8 +175,12 @@ export default {
         async saveImages() {
             this.currentStatus = STATUS_SAVING
 
-            // image upload requires submittion via form data 
-            const data = new FormData()
+            const uploadHeader = {
+                'uploadtime': new Date().toISOString()
+            }
+
+            // const data = new FormData()
+            const rawData = []
 
             const clearNotification = (filename) => {
                 // set a timer to kill the notification
@@ -163,9 +191,6 @@ export default {
 
             // Add the files array object
             this.files.forEach((file, index) => {
-                console.log(file)
-                // TODO: Make sure uploadSizeLimit is defined for error printout
-                // console.log(this.$config.uploadSizeLimit)
                 if (file.size > this.$config.uploadSizeLimit) {
                     console.error(`${file.name} is too large. MAX_BYTES: ${this.$config.uploadSizeLimit}`)
                     this.appendSubmittedFile(file.name, {
@@ -177,7 +202,12 @@ export default {
                     return
                 }
                 const fileName = file.webkitRelativePath === '' ? file.name : file.webkitRelativePath
-                data.append(`files[${index}]`, file, fileName)
+                // data.append(`files[${index}]`, file, fileName)
+                rawData.push({
+                    'key': `files[${index}]`,
+                    'file': file,
+                    'fileName': fileName
+                })
 
                 // Keep track of important information for notifications
                 this.appendSubmittedFile(fileName, {
@@ -188,44 +218,55 @@ export default {
             })
 
             try {
-                const response = await this.$axios.post('/images/', data)
-
-                // Handling 0 file upload edge case
-                if (response.data !== 'No files uploaded.') {
-                    for (let file of response.data) {
-                        // update file's success value
-                        this.submittedFiles[file.filename].submissionSuccess = file.success
-                        this.submittedFiles[file.filename].message = (file.message) ? file.message : null
-
-                        clearNotification(file.filename)
+                const progressIncrement = Math.min(100 / (rawData.length / filesPerRequest), 100)
+                for (let i = 0; i < rawData.length; i += filesPerRequest) {
+                    const uploadBlock = rawData.slice(i, i + filesPerRequest)
+                    // image upload requires submittion via form data 
+                    const formData = new FormData
+                    for (const fileObj of uploadBlock) {
+                        formData.append(fileObj.key, fileObj.file, fileObj.fileName)
                     }
-                    this.imageManagerKey += 1
-                } else {
-                    console.log('No Files to Upload')
-                }
+                    if (i+filesPerRequest >= rawData.length) {
+                        uploadHeader['finalblock'] = true
+                    }
 
-            } catch (error) {
-                if ([401, 403].includes(error.response.status)) {
-                    console.log('Please login.')
-                    this.$router.push('/login')
-                } else {
-                    console.log("error")
-                    console.log(error)
-                    if (error.response.data) {
-                        for (const file of error.response.data) {
-                            console.log(file)
-                            // update failed status
-                            this.submittedFiles[file.filename].submissionSuccess = file.success || false
+                    const { response } = await api.POST('/images/', formData, null, uploadHeader)
+                    console.log(`upload part ${i} thru ${i+filesPerRequest} complete`)
+                    this.progress = Math.min(this.progress + progressIncrement, 100)
+
+
+                    if (response.value !== 'No files uploaded.') {
+                        for (let file of response.value) {
+                            // update file's success value
+                            this.submittedFiles[file.filename].submissionSuccess = file.success
+                            this.submittedFiles[file.filename].message = (file.message) ? file.message : null
+
                             clearNotification(file.filename)
                         }
                     } else {
-                        // Handle lost connection/server failure
-                        for (const filename in this.submittedFiles) {
-                            this.submittedFiles[filename].submissionSuccess = false
-                            this.submittedFiles[filename].message = 'Not Uploaded'
-                            clearNotification(filename)
-                        }
+                        console.log('No Files to Upload')
                     }
+                }
+                this.imageManagerKey += 1
+
+            } catch (error) {
+                // TODO: Determine when error.data exists
+                if (error.data) {
+                    for (const file of error.data) {
+                        // update failed status
+                        this.submittedFiles[file.filename].submissionSuccess = file.success || false
+                        clearNotification(file.filename)
+                    }
+                } else {
+                    // Handle lost connection/server failure
+                    for (const filename in this.submittedFiles) {
+                        this.submittedFiles[filename].submissionSuccess = false
+                        this.submittedFiles[filename].message = 'Not Uploaded'
+                        clearNotification(filename)
+                    }
+
+                    // Generic Error
+                    console.error(error)
                 }
             } finally {
                 // reset after submission
@@ -280,10 +321,20 @@ li.upload-active a:hover{
 .dropbox ul {
     margin: $block-margin;
 }
+.selected-files {
+    max-height: 220px;
+    overflow-y: auto;
+}
 /* For the prompt */
 .dropbox p {
     font-size: 1.2em;
     text-align: center;
     padding: 50px 0;
+}
+
+.notification-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-right: 3rem;
 }
 </style>

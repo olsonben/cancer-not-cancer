@@ -1,3 +1,4 @@
+import dataOps from '../dbOperations/dataOps.js'
 import taskOps from '../dbOperations/taskOps.js'
 import { virtualFileSystem as VFS } from '../lib/functions.js'
 
@@ -46,7 +47,11 @@ const taskController = {
         const taskId = req.body.id
         const short_name = req.body.short_name
         const prompt = req.body.prompt
-        await taskOps.updateTask(investigatorId, taskId, short_name, prompt)
+        const chip_size = req.body.chip_size || null
+        const fov_size = req.body.fov_size || null
+        const zoom_scale = req.body.zoom_scale || null
+        await taskOps.updateTask(investigatorId, taskId, short_name, prompt, chip_size, fov_size, zoom_scale)
+
         res.sendStatus(200)
     },
     /** Handle a post request to delete a task. */
@@ -145,6 +150,14 @@ const taskController = {
         const imageIds = JSON.parse(req.body.imageIds)
         await taskOps.setTaskImages(investigatorId, taskId, imageIds)
         res.sendStatus(200)
+    },
+    /** Export task as JSON */
+    async exportTaskById(req, res) {
+        let investigatorId = req.user.id
+        const taskId = req.query.id
+        console.log(`Gathering data for task ${taskId}, by user: ${investigatorId}`)
+        const results = await dataOps.getDataExportByTaskId(investigatorId, taskId)
+        res.send(results)
     }
 }
 

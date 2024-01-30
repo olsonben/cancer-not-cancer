@@ -1,14 +1,14 @@
 <template>
         <div class="is-flex">
-            <input v-if="!editable" type="checkbox" :value="inputName" v-model="value.selected">
-            <a class="file-link" v-draggable="draggableConfig" @drop.prevent @dragover.prevent @dragenter.prevent @dragleave.prevent>{{ value.name }}</a>
+            <input v-if="!editable & !deletable" type="checkbox" :value="inputName" v-model="modelValue.selected">
+            <a class="file-link" v-draggable="draggableConfig" @drop.prevent @dragover.prevent @dragenter.prevent @dragleave.prevent>{{ modelValue.name }}</a>
 
 
             <button v-if="editable & !changeName" class="button is-small is-info" type="button" @click="changeName = !changeName">
-                <span class="icon"><i class="cnc-pen-to-square"></i></span>
+                <span class="icon"><fa-icon :icon="['far', 'pen-to-square']" /></span>
             </button>
-            <button v-if="editable & !changeName" class="button is-small is-danger ml-1" type="button" @click="removeFile">
-                <span class="icon"><i class="cnc-xmark"></i></span>
+            <button v-if="deletable" class="button is-small is-danger ml-1" type="button" @click="removeFile">
+                <span class="icon"><fa-icon :icon="['fas', 'xmark']" /></span>
             </button>
 
 
@@ -19,7 +19,7 @@
                     </div>
                     <div class="control">
                         <button class="button is-small is-warning" type="button" @click="setNewName">save</button>
-                        <button class="button is-small is-danger" type="button" @click="changeName = !changeName"><span class="icon"><i class="cnc-xmark"></i></span></button>
+                        <button class="button is-small is-danger" type="button" @click="changeName = !changeName"><span class="icon"><fa-icon :icon="['fas', 'xmark']" /></span></button>
                     </div>
                 </div>
             </div>
@@ -37,8 +37,12 @@
 export default {
     name: 'file',
     props: {
-        value: Object,
+        modelValue: Object,
         editable: {
+            default: false,
+            type: Boolean
+        },
+        deletable: {
             default: false,
             type: Boolean
         },
@@ -47,6 +51,7 @@ export default {
             type: Number
         }
     },
+    emits: ['update:modelValue', 'change'],
     data() {
         return {
             changeName: false,
@@ -55,19 +60,19 @@ export default {
     },
     computed: {
         inputName() {
-            return `image-${this.value.id}`
+            return `image-${this.modelValue.id}`
         },
         draggableConfig() {
             return {
                 editable: this.editable,
-                data: this.value,
+                data: this.modelValue,
                 parentTagId: this.parentTagId
             }
         }
     },
     methods: {
         setNewName() {
-            const extension = this.value.name.substring(this.value.name.lastIndexOf('.'))
+            const extension = this.modelValue.name.substring(this.modelValue.name.lastIndexOf('.'))
 
             if (!this.newName.endsWith(extension)) {
                 // Keep the original file extension
@@ -76,18 +81,18 @@ export default {
 
             const changeData = {
                 eventType: 'fileName',
-                fileId: this.value.id,
+                fileId: this.modelValue.id,
                 newName: this.newName
             }
             this.$emit('change', changeData)
-            this.value.name = this.newName
+            this.modelValue.name = this.newName
             this.changeName = false
             this.newName = ''
         },
         removeFile() {
             const changeData = {
                 eventType: 'fileDelete',
-                fileId: this.value.id
+                fileId: this.modelValue.id
             }
             this.$emit('change', changeData)
         },

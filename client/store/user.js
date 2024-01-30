@@ -1,97 +1,77 @@
-/**
- * Store for the state of the user using Vuex
- * These are all automatically accessible to any Vue page thanks to nuxt
- * https://vuex.vuejs.org/
- * https://nuxtjs.org/docs/directory-structure/store/
- */
+import { defineStore } from "pinia"
 
-// State should be a function that returns an object of everything you want to keep track of in the state
-/**
- * Setter: see `mutations`
- * Getter: this.$store.state.user.value 
- *      (e.g. isLoggedIn is at this.$store.state.user.isLoggedIn)
- */
-const getDefaultState = () => {
-    return {
-       isLoggedIn: false,
-       permissions: {
-           admin: false,
-           uploader: false,
-           pathologist: false,
-           enabled: false
-       } 
-    }
-}
+export const useUserStore = defineStore('user', () => {
+    const api = useApi()
 
-export const state = getDefaultState
+    // STATE (not exported (private))
+    // =======
+    const loggedIn = ref(false)
+    const admin = ref(false)
+    const uploader = ref(false)
+    const pathologist = ref(false)
+    const enabled = ref(false)
+    const initLogin = ref(false)
 
-// For special types of getters (eg. a list without a certain item)
-export const getters = {
-    isLoggedIn: (state) => state.isLoggedIn,
-    isAdmin: (state) => state.permissions.admin && state.permissions.enabled,
-    isUploader: (state) => state.permissions.uploader && state.permissions.enabled,
-    isPathologist: (state) => state.permissions.pathologist && state.permissions.enabled
-}
+    // GETTERS
+    // =======
+    const isLoggedIn = computed(() => loggedIn.value)
+    const isAdmin = computed(() => admin.value && enabled.value)
+    const isUploader = computed(() => uploader.value && enabled.value)
+    const isPathologist = computed(() => pathologist.value && enabled.value)
+    const isLoaded = computed(() => initLogin.value)
 
-/**
- * Used to set the state
- * Accessisble with: `this.$store.commit('user/mutation'[, params...])
- *      e.g. Set the `isLoggedIn` state to `true` with 
- *              this.$store.commit('user/isLoggedIn', true)
- */
-export const mutations = {
-    setLoggedIn(state, value) {
-        state.isLoggedIn = value
-    },
-    // Permissions mutable either by key or as a whole
-    permissions(state, key, value) {
-        state.permissions[key] = value
-    },
-    permissions(state, value) {
-        state.permissions = value
-    },
-    resetState(state) {
-        // merge default state so we don't wipeout any observers: https://stackoverflow.com/questions/42295340/how-to-clear-state-in-vuex-store
-        Object.assign(state, getDefaultState())
-    }
-}
-
-// Actions do a thing and can make many changes to the state THROUGH MUTATIONS; accesible with this.$store.dispatch('myAction'[, params...])
-/**
- * Actions do a thing (more than just setting state). Think of them as wrappers for mutations.
- * Accessible with: this.$store.dispatch('user/action'[, params])
- *      e.g. To call `onload` use the following:
- *              this.$store.dispatch('user/onload')
- * Actions are automatically fed a `context` object
- * `context` includes all the normal store options (context.state, .getters, .commit, .dispatch)
- * We use deconstruction to reduce boilerplate code
- */
-export const actions = {
-    // Get permissions and isLoggedIn on loading the site (called in ~middleware/onload.js)
-    async login({commit}) {
+    // ACTIONS
+    // =======
+    // Check with the api if the user is logged in and update permissions accordingly.
+    async function login() {
         try {
-            const response = await this.$axios.get('/isLoggedIn')
-            if (response.data) {
-                commit('setLoggedIn', true)
-                commit('permissions', response.data.permissions)
+            const { response, status } = await api.GET('/isLoggedIn')
+
+            // response.value will be false if not logged in
+            if (response.value) {
+                console.log('Enabling User')
+                const user = response.value
+
+                loggedIn.value = true
+                admin.value = user.permissions.admin
+                uploader.value = user.permissions.uploader
+                pathologist.value = user.permissions.pathologist
+                enabled.value = user.permissions.enabled
             } else {
                 // Not logged in
-                commit('resetState')
+                resetUser()
             }
-        } catch (error) {
-            console.log('login:', 'FAILURE')
-            console.error(error)
-        }
-    },
 
-    // Register a logout
-    async logout({ commit }) {
-        try {
-            const response = await this.$axios.post('/auth/logout')
-            commit('resetState')
+            initLogin.value = true
         } catch (error) {
+            console.log('Error with user login')
             console.error(error)
-
         }
     }
-}
+
+    // Register a logout
+    async function logout() {
+        try {
+            const { response, status } = await api.POST('/auth/logout')
+
+            if (status.value === 'success') {
+                resetUser()
+            }
+        } catch (error) {
+            console.log('Error with user logout')
+            console.error(error)
+        }
+    }
+
+    // HELPER
+    function resetUser() {
+        loggedIn.value = false
+        admin.value = false
+        uploader.value = false
+        pathologist.value = false
+        enabled.value = false
+    }
+
+    return { isLoaded, isLoggedIn, isAdmin, isUploader, isPathologist, login, logout }
+})
+

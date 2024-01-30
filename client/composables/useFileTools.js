@@ -1,16 +1,5 @@
-export default ({ app }, inject) => {
-    const apiURL = app.$axios.defaults.baseURL.replace(/\/+$/, '')
-
-    const common = {
-        /** Create a login URL that has current page as a parameter for redirecting after logged in. */
-        getLoginURL() {
-            const isLogout = app.router.currentRoute.name == 'logout'
-            const loginParams = new URLSearchParams({
-                'ref_path': !isLogout ? app.router.currentRoute.fullPath : '/'
-            })
-            const loginURL = new URL(`${apiURL}/auth/google?${loginParams}`)
-            return loginURL.href
-        },
+export const useFileTools = () => {
+    return {
         /** Get all selected files from the a nested folder structure object. */
         getSelectedFiles(folderObject) {
             let allSelectedFiles = folderObject.contents.reduce(function recur(selected, child) {
@@ -21,10 +10,10 @@ export default ({ app }, inject) => {
                     childSelect.push(child.id)
                 }
                 selected.push(...childSelect)
-
+        
                 return selected
             }, [])
-
+        
             return allSelectedFiles
         },
         /** Get all nested files within a nested folder structure object. */
@@ -37,10 +26,10 @@ export default ({ app }, inject) => {
                     childSelect.push(child.id)
                 }
                 selected.push(...childSelect)
-
+        
                 return selected
             }, [])
-
+        
             return allFiles
         },
         /** Get a folder's selected state. 'all', 'partial', or 'none' decendant files selected. */
@@ -58,5 +47,5 @@ export default ({ app }, inject) => {
             }
         }
     }
-    inject('common', common)
 }
+

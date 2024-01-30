@@ -28,6 +28,21 @@ const imageOps = {
     },
 
     /**
+     * Get list of image paths.
+     * @param {Array} imageIds - Image ids to look up.
+     * @returns {Array<String>} - [imagePath] - list of image paths.
+     */
+    async getPaths(imageIds) {
+        if (imageIds.length === 0) {
+            return []
+        }
+        const imagePlaceholders = Array.from(Array(imageIds.length), () => '?').join(', ')
+        const query = `SELECT path FROM images WHERE images.id IN (${imagePlaceholders})`
+        const rows = await dbOps.select(query, imageIds)
+        return rows.map(x => x.path)
+    },
+
+    /**
      * Database call that returns a queue of next images to be graded.
      * @param {Number} userId - User's id to check against existing ratings
      * @param {Number} taskId - Task id for which to build the queue of image ids.
@@ -61,13 +76,17 @@ const imageOps = {
      * @returns {Object} - Object of all folders created with the folders path as the key
      * and { name, id, and parentFolderName}.
      */
-    async saveFolderStructure(folderStructure, user_id) {
+    async saveFolderStructure(folderStructure, user_id, folders = {}) {
         const createFolderTag = `INSERT INTO tags (name, user_id) VALUES (?, ?)`
         const createTagRelation = `INSERT INTO tag_relations (tag_id, parent_tag_id) VALUES (?, ?)`
 
-        let folders = {}
+        const newFolders = {}
         // first we iterate through and create all the folders/tags
         for (const folderPath of folderStructure) {
+            if (folderPath in folders) {
+                continue
+            }
+
             let folderArray = folderPath.split(path.sep)
             const folderName = folderArray.pop()
             const parentFolderName = folderArray.join(path.sep)
@@ -79,10 +98,16 @@ const imageOps = {
                 'id': results.insertId,
                 'parentFolderName': parentFolderName
             }
+
+            newFolders[folderPath] = {
+                'name': folderPath,
+                'id': results.insertId,
+                'parentFolderName': parentFolderName
+            }
         }
 
         // now we create a relation for each folder with a parent folder
-        for (const folder of Object.values(folders)) {
+        for (const folder of Object.values(newFolders)) {
             if (folder.parentFolderName !== '') {
                 // add parent relationship
                 const parentFolder = folders[folder.parentFolderName]
@@ -163,8 +188,32 @@ const imageOps = {
         // this is not obvious in the UI to the investigator and cause DAMAGE!
         const deleteImageFromTasks = `DELETE FROM task_images WHERE image_id = ?`
 
+        // TODO: Delete reference in image_tags too.
         await dbOps.execute(deleteImage, [imageId, user_id])
         await dbOps.execute(deleteImageFromTasks, [imageId])
+    },
+    /**
+     * Delete list of files
+     * @param {Number} imageIds - IDs of images to delete.
+     * @param {Number} user_id - User/owner's id of image.
+     */
+    async deleteImages(imageIds, user_id) {
+        console.log('deleteImages', imageIds)
+
+        if (imageIds.length === 0) {
+            console.log('no images to delete')
+            return
+        }
+
+        const imagePlaceholders = Array.from(Array(imageIds.length), () => '?').join(', ')
+        const deleteImage = `DELETE FROM images WHERE id IN (${imagePlaceholders}) AND user_id = ?`
+        // TODO: WARNING: deleting a photo will delete the photo from the task,
+        // this is not obvious in the UI to the investigator and cause DAMAGE!
+        const deleteImageFromTasks = `DELETE FROM task_images WHERE image_id IN (${imagePlaceholders})`
+
+        // TODO: Delete reference in image_tags too.
+        await dbOps.execute(deleteImage, [...imageIds, user_id])
+        await dbOps.execute(deleteImageFromTasks, imageIds)
     }
 }
 

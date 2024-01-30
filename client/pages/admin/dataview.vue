@@ -10,8 +10,14 @@
                             <select v-model="selectedTask">
                                 <option v-for="task in tasks" :value="task.id">{{ task.prompt }}</option>
                             </select>
-                    </div></div>
-                    <Userview class="level-right" v-if='this.$store.state.user.permissions.admin' :userId.sync="userId" :label="'Created by:'"/>
+                        </div>
+                        <div v-show="selectedTask" class="buttons is-center pl-5">
+                            <button class="button is-success" type="button" @click="exportTask">
+                                <span class="icon"><fa-icon :icon="['fas', 'download']" /></span>
+                            </button>
+                        </div>
+                    </div>
+                    <Userview class="level-right" v-if='isAdmin' v-model:userId="userId" :label="'Created by:'"/>
                 </div>
                 <div class="task-stats">
                     <ul>
@@ -33,10 +39,15 @@
                 </div>
             </div>
         </section>
+        <Export v-if="exportData != null" :task="exportData" @done="exportData = null" />
     </div>
 </template>
 
 <script>
+import { mapState } from 'pinia'
+import { useUserStore } from '~/store/user'
+const api = useApi()
+
 const percentage = (part, total) => {
     const percent = part/total*100
     return percent.toFixed(2)
@@ -62,10 +73,12 @@ export default {
             maybe: 0,
             userChart: [],
             imageChart: [],
-            userId: null
+            userId: null,
+            exportData: null
         }
     },
     computed: {
+        ...mapState(useUserStore, ['isAdmin']),
         userTableData() {
             const tableBodyData = []
             for (const user of this.userChart) {
@@ -144,66 +157,58 @@ export default {
         async lookupData() {
             // get general task data
             try {
-                const response = await this.$axios.get('/data/', {
-                    params: {
-                        task_id: this.selectedTask,
-                        user_id: this.userId
-                    }
+                const { response } = await api.GET('/data/', {
+                    task_id: this.selectedTask,
+                    user_id: this.userId
                 })
-                this.data = response.data
+                this.data = response.value
             } catch (err) {
                 console.error(err);
             }
 
             // get task data grouped by users
             try {
-                const response = await this.$axios.get('/data/perUsers', {
-                    params: {
-                        task_id: this.selectedTask,
-                        user_id: this.userId
-                    }
+                const { response } = await api.GET('/data/perUsers', {
+                    task_id: this.selectedTask,
+                    user_id: this.userId
                 })
-                this.userChart = response.data
+                this.userChart = response.value
             } catch (err) {
                 console.error(err);
             }
 
             // get task data grouped by images
             try {
-                const response = await this.$axios.get('/data/perImages', {
-                    params: {
-                        task_id: this.selectedTask,
-                        user_id: this.userId
-                    }
+                const { response } = await api.GET('/data/perImages', {
+                    task_id: this.selectedTask,
+                    user_id: this.userId
                 })
-                this.imageChart = response.data
+                this.imageChart = response.value
             } catch (err) {
                 console.error(err);
             }
         },
         async getTasks() {
             try {
-                const response = await this.$axios.$get('/tasks/owned', {
-                    params: {
-                        user_id: this.userId
-                    }
+                const { response } = await api.GET('/tasks/owned', {
+                    user_id: this.userId
                 })
-                const tasks = theAllTask().concat(response)
+                const tasks = theAllTask().concat(response.value)
                 this.tasks = tasks
             } catch (err) {
                 console.error(err);
             }
-        }
+        },
+        exportTask() {
+            const task = this.tasks.find((t) => t.id === this.selectedTask)
+            console.log(`Export Task ${task.id}`)
+            this.exportData = task
+        },
     }
 }
 </script>
 
 <style lang='scss'>
-// .dataview {
-//     display: flex;
-//     flex-direction: column;
-// }
-
 .box {
     padding: 0.5rem;
 }

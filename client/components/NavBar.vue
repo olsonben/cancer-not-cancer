@@ -3,14 +3,22 @@
     <nav class="navbar is-primary block" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
             <!-- Should include the logo, but it was acting weird -->
-            <nuxt-link to='/' class="navbar-item logo" href="https://client.milmed.ai">
+            <NuxtLink to='/' class="navbar-item logo">
                 <img src="~assets/logo.svg" alt="Milmed Logo">
-            </nuxt-link>
+            </NuxtLink>
+
+            <div class="navbar-item is-hidden-desktop is-hidden-widescreen is-hidden-fullhd ml-auto">
+                <!-- Logout/Login -->
+                <div class="buttons">
+                    <NuxtLink v-if='isLoggedIn' to='/logout' class='button is-light'>Log Out</NuxtLink>
+                    <a v-else :href='loginLink' class='button is-light'>Log In</a>
+                </div>
+            </div>
 
             <!-- Burger menu -->
             <a 
                 role="button" 
-                class="navbar-burger" 
+                class="navbar-burger ml-0" 
                 aria-label="menu" 
                 aria-expanded="false" 
                 data-target="navContent"
@@ -21,58 +29,60 @@
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
             </a>
-        </div>
+        </div>        
 
         <!-- Navbar body -->
         <div id="navContent" class="navbar-menu" v-bind:class="{ 'is-active' : showNav }"> <!-- Show when the burger is clicked on mobile -->
             <!-- Links to places -->
             <div class="navbar-start">
                 <!-- Home -->
-                <nuxt-link to='/' class="navbar-item">
+                <NuxtLink to='/' class="navbar-item">
                     Home
-                </nuxt-link>
+                </NuxtLink>
 
                 <!-- CancerNotCancer -->
-                <nuxt-link to='/pathapp' v-if='isPathologist' class="navbar-item">
+                <NuxtLink to='/pathapp' v-if='isPathologist' class="navbar-item">
                     CancerNotCancer
-                </nuxt-link>
+                </NuxtLink>
 
                 <!-- Admin -->
-                <nuxt-link 
+                <NuxtLink 
                     :to='`/admin/${isUploader ? "images" : "users" /* Location changes with permissions */}`' 
                     v-if='isUploader || isAdmin' 
                     class="navbar-item"
                 >
                     Admin
-                </nuxt-link>
+                </NuxtLink>
                 
                 <!-- Extra Links: About + Issues -->
                 <div class="navbar-item has-dropdown is-hoverable">
                     <a class="navbar-link">More</a>
 
                     <div class="navbar-dropdown">
-                        <nuxt-link to='/about' class="navbar-item">About</nuxt-link>
+                        <NuxtLink to='/about' class="navbar-item">About</NuxtLink>
                         <hr class="navbar-divider">
-                        <nuxt-link to='/issues' class="navbar-item">Report an issue</nuxt-link>
+                        <NuxtLink to='/issues' class="navbar-item">Report an issue</NuxtLink>
                     </div>
                 </div>
             </div>
 
-            <div class="navbar-end">
+            <div class="navbar-end is-hidden-touch">
                 <div class="navbar-item">
                     <!-- Logout/Login -->
                     <div class="buttons">
-                        <nuxt-link v-if='isLoggedIn' to='/logout' class='button is-light'>Log Out</nuxt-link>
+                        <NuxtLink v-if='isLoggedIn' to='/logout' class='button is-light'>Log Out</NuxtLink>
                         <a v-else :href='loginLink' class='button is-light'>Log In</a>
                     </div>
                 </div>
             </div>
         </div>
+        
     </nav>
 </template>
 
 <script>
-import { mapGetters } from "vuex";
+import { mapState } from "pinia";
+import { useUserStore } from "../store/user"
 
 export default {
     data() {
@@ -80,13 +90,13 @@ export default {
             // State for the burger menu
             showNav: false,
             showAnimation: false,
-            loginLink: this.$common.getLoginURL(),
+            loginLink: getLoginUrl(),
         }
     },
 
     // Shorthand to check permissions + isLoggedIn
     computed: {
-        ...mapGetters('user', ['isLoggedIn', 'isAdmin', 'isPathologist', 'isUploader'])
+        ...mapState(useUserStore, ['isLoggedIn', 'isAdmin', 'isPathologist', 'isUploader'])
     },
 
     created() {
@@ -96,7 +106,7 @@ export default {
     watch:{
         $route: {
             handler(to, from) {
-                this.loginLink = this.$common.getLoginURL()
+                this.loginLink = getLoginUrl(to.fullPath)
                 this.showAnimation = false
                 setTimeout(() => {
                     this.showNav = false

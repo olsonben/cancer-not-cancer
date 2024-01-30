@@ -20,6 +20,12 @@ const userController = {
             return
         }
 
+        if (req.body.email === '') {
+            // empty email
+            res.sendStatus(400)
+            return
+        }
+
         // Check string lengths
         let flag = false
         let message = []

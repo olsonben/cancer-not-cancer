@@ -14,13 +14,13 @@
                             <p class="control has-icons-left">
                                 <input class="input" type="text" :maxlength="100" placeholder="name" v-model="task.name">
                                 <span class="icon is-small is-left">
-                                <i class="cnc-label-tag"></i>
+                                <fa-icon :icon="['fas', 'tag']" />
                                 </span>
                             </p>
                             <p class="control is-expanded has-icons-left has-icons-right">
                                 <input class="input" type="text" placeholder="Prompt" v-model="task.prompt" />
                                 <span class="icon is-small is-left">
-                                <i class="cnc-question"></i>
+                                <fa-icon :icon="['fas', 'question']" />
                                 </span>
                             </p>
                             <p class="control">
@@ -45,45 +45,20 @@
                         </thead>
                         <tbody>
 
-                            <Row v-for="row in taskData" :key="row[indexProp]" :class="{ 'is-selected': false }"  :row="row" :order="order" @edit="editTask" @delete="deleteTask" />
+                            <Row v-for="row in taskData" :key="row[indexProp]" :class="{ 'is-selected': false }"  :row="row" :order="order" @edit="editTask" @delete="deleteTask" @export="exportTask" />
                         </tbody>
                     </table>
                 </div>
             </div>
         </section>
         <!-- Edit Task -->
-        <TaskEdit v-if="taskToEdit != null" class='login-modal' :task="taskToEdit" @save="finishTaskEdit" @cancel="taskToEdit = null"/>
+        <TaskEdit v-if="taskToEdit != null" :task="taskToEdit" @save="finishTaskEdit" @cancel="taskToEdit = null"/>
+        <Export v-if="exportData != null" :task="exportData" @done="exportData=null" />
     </div>
 </template>
 
 <script>
-// TODO: remove when finished initial task development.
-const dummyData = [
-    {
-        'id': 1,
-        'short_name': 'task 1',
-        'prompt': 'Is this my question?',
-        'image_count': 54,
-        'observer_count': 3,
-        'progress': 45
-    },
-    {
-        'id': 2,
-        'short_name': 'another_task_beta_check_240623',
-        'prompt': 'Does this have alpha 1 marker properties?',
-        'image_count': 212,
-        'observer_count': 6,
-        'progress': 72
-    },
-    {
-        'id': 4,
-        'short_name': 'task b',
-        'prompt': 'Is this a blood parasite?',
-        'image_count': 100,
-        'observer_count': 4,
-        'progress': 66
-    }
-]
+const api = useApi()
 
 export default {
     data() {
@@ -97,6 +72,7 @@ export default {
             indexProp: 'id',
             taskData: [],
             taskToEdit: null,
+            exportData: null,
         }
     },
     computed: {
@@ -110,14 +86,17 @@ export default {
     methods: {
         async createTask() {
             try {
-                const response = await this.$axios.$post('/tasks/', {
+                const { response } = await api.POST('/tasks/', {
                     short_name: this.task.name,
                     prompt: this.task.prompt,
                 })
                 this.taskData.push({
-                    id: response.newTaskId,
+                    id: response.value.newTaskId,
                     short_name: this.task.name,
                     prompt: this.task.prompt,
+                    chip_size: null,
+                    fov_size: null,
+                    zoom_scale: null,
                     image_count: 0,
                     observer_count: 0,
                     progress: 0
@@ -139,9 +118,8 @@ export default {
             this.taskToEdit = null
         },
         async deleteTask(task) {
-            console.log('deleteTask')
             try {
-                await this.$axios.$post('/tasks/delete', {
+                await api.POST('/tasks/delete', {
                     id: task.id
                 })
                 const index = this.taskData.findIndex(curTask => curTask.id === task.id)
@@ -150,22 +128,25 @@ export default {
                 console.log(err)
             }
         },
+        exportTask(task) {
+            console.log(`Export Task ${task.id}`)
+            this.exportData = task
+        },
         async getTasksTable() {
             try {
-                const response = await this.$axios.$get('/tasks/table')
-                this.taskData = response
+                const { response } = await api.GET('/tasks/table')
+                this.taskData = response.value
             } catch (err) {
                 console.error(err);
             }
         },
         async updateTaskProgress(taskIndex) {
             try {
-                const response = await this.$axios.$get('/tasks/progress', {
-                    params: {
-                        task_id: this.taskData[taskIndex].id
-                    }
+                const { response } = await api.GET('/tasks/progress', {
+                    task_id: this.taskData[taskIndex].id
                 })
-                this.taskData[taskIndex].progress = response.progress ? response.progress : 0
+                const progress = response.value.progress
+                this.taskData[taskIndex].progress = progress ? progress : 0
             } catch (err) {
                 console.log(err)
             }
