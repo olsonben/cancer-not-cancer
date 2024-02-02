@@ -9,25 +9,12 @@
                 <TaskPicker @taskSelected="(newTaskId) => { selectedTask = newTaskId }"></TaskPicker>
             </div>
             <div class="has-text-danger" v-if="!image.id">No more images available in this task.</div>
-            
-            <!-- OLD -->
-            <!-- <div v-if="image.id" class="image-container" @click="zoom=!zoom" :style="imageContainerStyle">
-                <Transition
-                    name="swap-img"
-                    @after-leave="afterLeave"
-                    @before-leave="beforeLeave"
-                    appear
-                >
-                    <ImageDisplay v-if="this.currentTask" :imageUrl="image.url" :chipSize="this.currentTask.chip_size" :fovSize="this.currentTask.fov_size" :zoomScale="this.currentTask.zoom_scale"/>
-                </Transition>
-            </div> -->
 
-            <!-- NEW -->
-            <ImageSwipe @swipeMove="" @swipe-move="updatePercent" @swipe-end="onClick" :disabled="!image.id">
-                <ImageDisplay v-if="this.currentTask" :imageUrl="image.url" :chipSize="this.currentTask.chip_size" :fovSize="this.currentTask.fov_size" :zoomScale="this.currentTask.zoom_scale"/>
+            <ImageSwipe @swipeMove="" @swipe-move="updatePercent" @swipe-end="swipeEnd" :disabled="!image.id">
+                <ImageDisplay v-if="this.currentTask && image.id" :imageUrl="image.url" :chipSize="this.currentTask.chip_size" :fovSize="this.currentTask.fov_size" :zoomScale="this.currentTask.zoom_scale"/>
             </ImageSwipe>  
 
-            <div class='controls level'>
+            <div v-if='image.id' class='controls level'>
                 <p class="help is-hidden-desktop">Tap to zoom.</p>
                 <p class="help is-hidden-touch">Click to zoom.</p>
             </div>
@@ -74,9 +61,6 @@ const IMAGE_TRANSITION_TIME = 250 // ms
 // const IMAGE_TRANSITION_TIME = 2000 // ms
 
 export default {
-    setup() {
-        // console.log('setup')
-    },
     data() {
         return {
             // Information to display and grade the current image
@@ -100,7 +84,6 @@ export default {
         }
     },
     async mounted() {
-        // console.log(this.$refs.test)
         if (this.isLoggedIn) {
             const { response } = await api.GET('/tasks/')
             this.tasks = response.value // because response is a ref object
@@ -161,25 +144,27 @@ export default {
                 this.moveRight = false
             }
         },
+
+        swipeEnd(direction) {
+            if (direction === 'right') {
+                this.onClick('yes')
+            } else if (direction === 'left') {
+                this.onClick('no')
+            } else if (direction === 'up') {
+                this.commenting = true
+            } else if (direction === 'down') {
+                this.commenting = false
+            }
+        },
         /**********************************************
         * App Control
         **********************************************/
         // when a button is clicked
         async onClick(source) {
-            console.log('onClick:', source, this.percent)
-            // TODO: break apart onclick logic
-            if (source === 'up') {
-                this.commenting = true
-                return
-            } else if (source === 'down') {
-                this.commenting = false
-                return
-            }
             // determine the message based on source
-            if (source === 'yes' || source === 'right' && Math.abs(this.percent) >= 1) {
-                console.log('click yes/right')
+            if (source === 'yes') {
                 this.rating = 1
-            } else if (source === 'no' || source === 'left' && Math.abs(this.percent) >= 1) {
+            } else if (source === 'no') {
                 this.rating = -1
             } else if (source === 'maybe') {
                 this.rating = 0

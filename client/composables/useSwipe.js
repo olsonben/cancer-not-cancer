@@ -87,9 +87,7 @@ export const useSwipe = (target, threshold, onSwipeEnd) => {
         if (!isEnabled.value) {
             return
         }
-        // -xDiff == left
-        // -yDiff == up
-        console.log(xDiff.value, yDiff.value)
+        
         if (isSwipe.value && typeof onSwipeEnd === 'function') {
             onSwipeEnd(direction.value)
         }

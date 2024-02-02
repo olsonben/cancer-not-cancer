@@ -4,18 +4,15 @@ const SWIPE_THRESHOLD = 100 // pixels
 const Y_TRANSFORM_DIVISOR = 6 // 1/x the rate of the X_transform
 const ROTATION_RATE = 12 // for every percent rotate x degrees
 
-
-
 export default {
     props: {
         disabled: Boolean
     },
     emits: ['swipeMove', 'swipeEnd'],
     setup(props, { emit }) {
-        const swipeEnd = (data) => {
-            emit('swipeEnd', data)
-        }
+        const swipeEnd = (data) => { emit('swipeEnd', data) }
 
+        // TODO: Simplify useSwipe export and explicitly declare import ie. const { xDistance } = ...
         const swipeData = useSwipe(document, SWIPE_THRESHOLD, swipeEnd)
 
         const xPercent = computed(() => swipeData.xDistance.value / SWIPE_THRESHOLD)
