@@ -16,20 +16,13 @@ export default {
             emit('swipeEnd', data)
         }
 
-        const {
-            xDistance,
-            yDistance,
-            direction,
-            isSwipe,
-            isEnabled,
-            toggleEnable
-        } = useSwipe(document, SWIPE_THRESHOLD, swipeEnd)
+        const swipeData = useSwipe(document, SWIPE_THRESHOLD, swipeEnd)
 
-        const xPercent = computed(() => xDistance.value / SWIPE_THRESHOLD)
+        const xPercent = computed(() => swipeData.xDistance.value / SWIPE_THRESHOLD)
 
         const imageContainerStyle = computed(() => {
-            const xDiff = xDistance.value
-            const yDiff = Math.abs(xDistance.value)
+            const xDiff = swipeData.xDistance.value
+            const yDiff = Math.abs(swipeData.xDistance.value)
 
             const yAmount = yDiff / Y_TRANSFORM_DIVISOR
             // const rotation = percent.value * ROTATION_RATE
@@ -41,13 +34,8 @@ export default {
         })
 
         return {
-            xDistance,
-            yDistance,
+            ...swipeData,
             xPercent,
-            direction,
-            isSwipe,
-            isEnabled,
-            toggleEnable,
             imageContainerStyle
         }
     },
