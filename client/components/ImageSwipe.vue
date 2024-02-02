@@ -1,36 +1,76 @@
-<script setup>
-const swipe = useSwipe(document)
+<script>
+// the numbers 6 and 12 are aesthetically chosen
+const SWIPE_THRESHOLD = 100 // pixels
+const Y_TRANSFORM_DIVISOR = 6 // 1/x the rate of the X_transform
+const ROTATION_RATE = 12 // for every percent rotate x degrees
 
-const imageContainerStyle = computed(() => {
-    // const xDiff = this.xMove !== null ? this.xMove - this.xDown : 0
-    // const yDiff = this.xMove !== null ? Math.abs(this.xMove - this.xDown) * -1 : 0
-    // // the numbers -6 and -12 are aesthetically chosen
-    // const yAmount = yDiff / -6
-    // const rotation = this.percent * -12
 
-    const xDiff = 0
-    const yDiff = 0
-    // the numbers -6 and -12 are aesthetically chosen
-    const yAmount = yDiff / -6
-    const rotation = 0 * -12
 
-    return {
-        transform: `translate(${xDiff}px, ${yAmount}px) rotate(${rotation}deg)`
+export default {
+    props: {
+        disabled: Boolean
+    },
+    emits: ['swipeMove', 'swipeEnd'],
+    setup(props, { emit }) {
+        const swipeEnd = (data) => {
+            emit('swipeEnd', data)
+        }
+
+        const {
+            xDistance,
+            yDistance,
+            direction,
+            isSwipe,
+            isEnabled,
+            toggleEnable
+        } = useSwipe(document, SWIPE_THRESHOLD, swipeEnd)
+
+        const xPercent = computed(() => xDistance.value / SWIPE_THRESHOLD)
+
+        const imageContainerStyle = computed(() => {
+            const xDiff = xDistance.value
+            const yDiff = Math.abs(xDistance.value)
+
+            const yAmount = yDiff / Y_TRANSFORM_DIVISOR
+            // const rotation = percent.value * ROTATION_RATE
+            const rotation = xPercent.value * ROTATION_RATE
+
+            return {
+                transform: `translate(${xDiff}px, ${yAmount}px) rotate(${rotation}deg)`
+            }
+        })
+
+        return {
+            xDistance,
+            yDistance,
+            xPercent,
+            direction,
+            isSwipe,
+            isEnabled,
+            toggleEnable,
+            imageContainerStyle
+        }
+    },
+    watch: {
+        xPercent(percent, oldPercent) {
+            this.$emit('swipeMove', percent)
+        },
+        disabled(isDisabled) {
+            if (isDisabled && this.isEnabled) {
+                this.toggleEnable()
+            } else if (!isDisabled && !this.isEnabled) {
+                this.toggleEnable()
+            }
+        }
+
     }
-})
+}
 
-onMounted(() => {
-    console.log('ImageSwipe mounted')
-    swipe.activate()
-})
-onUnmounted(() => {
-    swipe.deactivate()
-})
 </script>
 
 <template>
     <div class="image-container" :style="imageContainerStyle">
-        <slot></slot>
+        <slot />
     </div>
 </template>
 
@@ -50,6 +90,5 @@ onUnmounted(() => {
         height: calc(100vw - $block-margin - $block-margin);
     }
 
-} 
-
+}
 </style>

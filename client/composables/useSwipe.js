@@ -3,14 +3,8 @@
     * Modified from https://stackoverflow.com/a/23230280/16755079
     *************************************************************/
 
-export const useSwipe = (target, onSwipe, threshold) => {
-    console.log('useSwipe')
-    console.log(target)
-
-    onMounted(() => {
-        console.log('THis is the useSwipe onMounted')
-        console.log(document)
-    })
+export const useSwipe = (target, threshold, onSwipeEnd) => {
+    const targetRef = isRef(target) ? target : ref(target)
     
     const startPoint = reactive({ x: 0, y: 0})
     const endPoint = reactive({ x: 0, y: 0})
@@ -18,10 +12,40 @@ export const useSwipe = (target, onSwipe, threshold) => {
     const xDiff = computed(() => endPoint.x - startPoint.x)
     const yDiff = computed(() => endPoint.y - startPoint.y)
 
+    const isSwipe = ref(false)
+    const swipeActive = ref(false)
+    const isEnabled = ref(true)
+
+    const toggleEnable = () => { isEnabled.value = !isEnabled.value }
+
+    const thresholdExceeded = computed(() => {
+        return (Math.max(Math.abs(xDiff.value), Math.abs(yDiff.value)) >= threshold)
+    })
+
+    const direction = computed(() => {
+        if (!thresholdExceeded.value) {
+            return 'none'
+        }
+
+        if (Math.abs(xDiff.value) >= Math.abs(yDiff.value)) {
+            return xDiff.value > 0 ? 'right' : 'left'
+        } else {
+            return yDiff.value > 0 ? 'down' : 'up'
+        }
+    })
+
+
     const getTouchPoint = (evt) => {
         return {
             x: evt.touches[0].clientX,
             y: evt.touches[0].clientY
+        }
+    }
+
+    const getZeroPoint = (evt) => {
+        return {
+            x: 0,
+            y: 0
         }
     }
 
@@ -37,101 +61,88 @@ export const useSwipe = (target, onSwipe, threshold) => {
 
     const handleTouchStart = (evt) => {
         // skip multitouch
-        if (evt.touches.length !== 1) {
+        if (!isEnabled.value || evt.touches.length !== 1) {
             return
         }
         // evt.preventDefault();
         const point = getTouchPoint(evt)
         updateStartPoint(point)
         updateEndPoint(point)
+        swipeActive.value = true
     }
     
     const handleTouchMove = (evt) => {
-        if (evt.touches.length !== 1) {
+        if (!isEnabled.value || evt.touches.length !== 1) {
             return
         }
 
         const point = getTouchPoint(evt)
         updateEndPoint(point)
-
-
-        // this.touchMacro(event, 0, undefined,
-        //     () => {
-        //         // Swapping movement flags
-        //         // console.log("right")
-        //         if (this.percent <= -1) {
-        //             this.moveLeft = false
-        //             this.moveRight = true
-        //         } else {
-        //             this.moveLeft = false
-        //             this.moveRight = false
-        //         }
-        //     },
-        //     undefined,
-        //     () => {
-        //         // console.log("left")
-        //         if (this.percent >= 1) {
-        //             this.moveLeft = true
-        //             this.moveRight = false
-        //         } else {
-        //             this.moveLeft = false
-        //             this.moveRight = false
-        //         }
-        //     })
+        if (!isSwipe.value && thresholdExceeded.value) {
+            isSwipe.value = true
+        }
     }
+
     const handleTouchEnd = (evt) => {
+        if (!isEnabled.value) {
+            return
+        }
         // -xDiff == left
         // -yDiff == up
         console.log(xDiff.value, yDiff.value)
-        // if (touchEvent != null) {
-        //     const touchList = touchEvent.touches || touchEvent.originalEvent.touches
-        //     if (touchList.length == 1) {
-        //         // touchend event has an empty `touches` list, so we pass the touchmove event instead
-        //         // this.touchMacro(this.touchEvent, this.swipeDistance, () => {
-        //         //     this.commenting = true
-        //         // }, () => {
-        //         //     this.onClick('yes-cancer')
-        //         // }, () => {
-        //         //     // this.onClick('maybe-cancer')
-        //         //     this.commenting = false
-        //         // }, () => {
-        //         //     this.onClick('no-cancer')
-        //         // })
-        //     }
-        // }
+        if (isSwipe.value && typeof onSwipeEnd === 'function') {
+            onSwipeEnd(direction.value)
+        }
+        isSwipe.value = false
 
+        // reset swipe point
+        const point = getZeroPoint(evt)
+        updateStartPoint(point)
+        updateEndPoint(point)
+    }
+
+    const handleTouchCancel = (evt) => {
+        isSwipe.value = false
+        // reset swipe point
+        const point = getZeroPoint(evt)
+        updateStartPoint(point)
+        updateEndPoint(point)
 
     }
 
+    // Fixes a firefox swipe conflict. When swiping if the reload page
+    // swipe starts to engage, other animations freeze and hang. The
+    // following line deactivates swiping to reload page.
+    targetRef.value.documentElement.style.setProperty('--overscroll', 'none')
+    // Turn scrolling off
+    targetRef.value.documentElement.style.setProperty('--overflow', 'hidden')
+
+    // Required for touches
+    targetRef.value.addEventListener('touchstart', handleTouchStart, false)
+    targetRef.value.addEventListener('touchmove', handleTouchMove, false)
+    targetRef.value.addEventListener('touchend', handleTouchEnd, false)
+    targetRef.value.addEventListener('touchcancel', handleTouchCancel, false)
+
+    onUnmounted(() => {
+        // Reactivates swipe to reload (deactivated in the mount method)
+        targetRef.value.documentElement.style.setProperty('--overscroll', 'auto')
+        // Allowing scrolling
+        targetRef.value.documentElement.style.setProperty('--overflow', 'initial')
+
+        // We need to cleanup our event listeners. So we don't have duplicates when we return.
+        targetRef.value.removeEventListener('touchstart', handleTouchStart, false)
+        targetRef.value.removeEventListener('touchmove', handleTouchMove, false)
+        targetRef.value.removeEventListener('touchend', handleTouchEnd, false)
+        targetRef.value.removeEventListener('touchcancel', handleTouchCancel, false)
+    })
 
     return {
         xDistance: xDiff,
-        activate() {
-            // Fixes a firefox swipe conflict. When swiping if the reload page
-            // swipe starts to engage, other animations freeze and hang. The
-            // following line deactivates swiping to reload page.
-            document.documentElement.style.setProperty('--overscroll', 'none')
-            // Turn scrolling off
-            document.documentElement.style.setProperty('--overflow', 'hidden')
-
-            // Required for touches
-            document.addEventListener('touchstart', handleTouchStart, false)
-            document.addEventListener('touchmove', handleTouchMove, false)
-            document.addEventListener('touchend', handleTouchEnd, false)
-
-            console.log(target.value)
-        },
-        deactivate() {
-            // Reactivates swipe to reload (deactivated in the mount method)
-            document.documentElement.style.setProperty('--overscroll', 'auto')
-            // Allowing scrolling
-            document.documentElement.style.setProperty('--overflow', 'initial')
-
-            // We need to cleanup our event listeners. So we don't have duplicates when we return.
-            document.removeEventListener('touchstart', handleTouchStart, false)
-            document.removeEventListener('touchmove', handleTouchMove, false)
-            document.removeEventListener('touchend', handleTouchEnd, false)
-        }
+        yDistance: yDiff,
+        direction,
+        isSwipe,
+        isEnabled,
+        toggleEnable
     }
 
 }

@@ -8,7 +8,7 @@
             <div class='controls level'>
                 <TaskPicker @taskSelected="(newTaskId) => { selectedTask = newTaskId }"></TaskPicker>
             </div>
-            <div ref="test" class="has-text-danger" v-if="!image.id">No more images available in this task.</div>
+            <div class="has-text-danger" v-if="!image.id">No more images available in this task.</div>
             
             <!-- OLD -->
             <!-- <div v-if="image.id" class="image-container" @click="zoom=!zoom" :style="imageContainerStyle">
@@ -23,7 +23,7 @@
             </div> -->
 
             <!-- NEW -->
-            <ImageSwipe>
+            <ImageSwipe @swipeMove="" @swipe-move="updatePercent" @swipe-end="onClick" :disabled="!image.id">
                 <ImageDisplay v-if="this.currentTask" :imageUrl="image.url" :chipSize="this.currentTask.chip_size" :fovSize="this.currentTask.fov_size" :zoomScale="this.currentTask.zoom_scale"/>
             </ImageSwipe>  
 
@@ -46,9 +46,9 @@
 
             <!-- Grade buttons -->
             <div class='block grade-buttons'>
-                <button class='button no' :class="{ 'shown': moveLeft }" @click="onClick('no-cancer')">No</button>
-                <button class='button maybe' @click="onClick('maybe-cancer')">Maybe</button>
-                <button class='button yes' :class="{ 'shown': moveRight }" @click="onClick('yes-cancer')">Yes</button>
+                <button class='button no' :class="{ 'shown': moveLeft }" @click="onClick('no')">No</button>
+                <button class='button maybe' @click="onClick('maybe')">Maybe</button>
+                <button class='button yes' :class="{ 'shown': moveRight }" @click="onClick('yes')">Yes</button>
             </div>
 
             <!-- Comment -->
@@ -69,24 +69,13 @@
 import { mapState } from 'pinia'
 import { useUserStore } from '~/store/user'
 const api = useApi()
-// const swipe = useSwipe()
-// console.log(document.documentElement)
-// console.log(window)
-let swipe = null
 
 const IMAGE_TRANSITION_TIME = 250 // ms
 // const IMAGE_TRANSITION_TIME = 2000 // ms
 
 export default {
     setup() {
-        console.log('setup')
-        // console.log(this.$refs.test)
-        // const test = ref(null)
-        // swipe = useSwipe(test)
-        // return {
-        //     test,
-        //     xDistance: swipe.xDistance
-        // }
+        // console.log('setup')
     },
     data() {
         return {
@@ -102,21 +91,12 @@ export default {
             rating: '',
             comment: '',
             commenting: false,
-            zoom: false,
-            showImage: true,
             transitioningOut: false,
 
             // For swiping
-            xDown: null,
-            yDown: null,
-            xMove: null,
-            yMove: null,
-            touchEvent: null,
             moveRight: false,
             moveLeft: false,
             percent: 0.0,
-            innerWidth: window.innerWidth,
-            swipeDistance: 100
         }
     },
     async mounted() {
@@ -128,56 +108,19 @@ export default {
             this.currentTask = this.tasks[0]
         }
 
-        // Fixes a firefox swipe conflict. When swiping if the reload page
-        // swipe starts to engage, other animations freeze and hang. The
-        // following line deactivates swiping to reload page.
-        // document.documentElement.style.setProperty('--overscroll', 'none')
-        // // Turn scrolling off
-        // document.documentElement.style.setProperty('--overflow', 'hidden')
-
         this.nextImage()
         
-        // // Required for touches
-        // document.addEventListener('touchstart', this.handleTouchStart, false)
-        // document.addEventListener('touchmove', this.handleTouchMove, false)
-        // document.addEventListener('touchend', this.handleTouchEnd, false)
-        // swipe.activate()
     },
     
-    unmounted() {
-        // // Reactivates swipe to reload (deactivated in the mount method)
-        // document.documentElement.style.setProperty('--overscroll', 'auto')
-        // // Allowing scrolling
-        // document.documentElement.style.setProperty('--overflow', 'initial')
-
-        // // We need to cleanup our event listeners. So we don't have duplicates when we return.
-        // document.removeEventListener('touchstart', this.handleTouchStart, false)
-        // document.removeEventListener('touchmove', this.handleTouchMove, false)
-        // document.removeEventListener('touchend', this.handleTouchEnd, false)
-        // swipe.deactivate()
-    },
 
     computed: {
         ...mapState(useUserStore, ['isLoggedIn', 'isPathologist']),
         // give the attribute `:style='cssVars'` to anything that should have access to these variables
         cssVars() {
             return {
-                '--bg-no-opacity': (this.percent > 0 ? this.percent : 0),
-                '--bg-yes-opacity': (this.percent < 0 ? this.percent*-1.0 : 0),
+                '--bg-no-opacity': (this.percent < 0 ? this.percent*-1.0 : 0),
+                '--bg-yes-opacity': (this.percent > 0 ? this.percent*1.0 : 0),
                 '--img-trans': IMAGE_TRANSITION_TIME + 'ms'
-            }
-            // '--roi-ratio': this.roiRatio,
-            // '--zoom-scale': this.zoomScale
-        },
-        imageContainerStyle() {
-            const xDiff = this.xMove !== null ? this.xMove - this.xDown : 0
-            const yDiff = this.xMove !== null ? Math.abs(this.xMove - this.xDown) * -1 : 0
-            // the numbers -6 and -12 are aesthetically chosen
-            const yAmount = yDiff / -6
-            const rotation = this.percent * -12
-
-            return {
-                transform: `translate(${xDiff}px, ${yAmount}px) rotate(${rotation}deg)`
             }
         }
     },
@@ -201,59 +144,67 @@ export default {
                 this.currentTask = this.tasks.find((task) => task.id === newTaskId)
                 this.nextImage()
             }
-        },
-        // xDistance: {
-        //     handler(distance) {
-        //         // console.log('xDistance:', distance)
-        //     }
-        // }
+        }
     },
     methods: {
+        updatePercent(newPercent) {
+            this.percent = newPercent
+            
+            if (this.percent >= 1) {
+                this.moveLeft = false
+                this.moveRight = true
+            } else if (this.percent <= -1) {
+                this.moveLeft = true
+                this.moveRight = false
+            } else {
+                this.moveLeft = false
+                this.moveRight = false
+            }
+        },
         /**********************************************
         * App Control
         **********************************************/
         // when a button is clicked
-        onClick(source) {
+        async onClick(source) {
+            console.log('onClick:', source, this.percent)
+            // TODO: break apart onclick logic
+            if (source === 'up') {
+                this.commenting = true
+                return
+            } else if (source === 'down') {
+                this.commenting = false
+                return
+            }
             // determine the message based on source
-            if (source === 'yes-cancer') {
+            if (source === 'yes' || source === 'right' && Math.abs(this.percent) >= 1) {
+                console.log('click yes/right')
                 this.rating = 1
-            } else if (source === 'no-cancer') {
+            } else if (source === 'no' || source === 'left' && Math.abs(this.percent) >= 1) {
                 this.rating = -1
-            } else if (source === 'maybe-cancer') {
+            } else if (source === 'maybe') {
                 this.rating = 0
+            } else {
+                return
             }
 
-            // Begin Image swap
-            this.showImage = false
-
             // record the response
-            this.postData({
-                id: this.image.id,
-                rating: this.rating,
-                comment: this.comment,
-                taskId: this.selectedTask,
-            }).then((res) => {
-
+            try {
+                await api.POST('/hotornot', {
+                    id: this.image.id,
+                    rating: this.rating,
+                    comment: this.comment,
+                    taskId: this.selectedTask
+                })
                 // move on to the next image
                 this.nextImage()
-            }).catch((error) => {
+            } catch (error) {
                 console.error(error)
-            })
+            }
 
             /* reset */
             this.comment = ''
             this.commenting = false
 
-        },
-
-        async postData(bodyData) {
-            // POST with axios
-            try {
-                // api
-                await api.POST('/hotornot', bodyData)
-            } catch(error) {
-                console.error(error)
-            }
         },
 
         async getImageQueue() {
@@ -334,8 +285,6 @@ export default {
             if (!this.transitioningOut && this.onDeck) {
                 this.image = this.onDeck
                 this.onDeck = null
-                this.zoom = false
-                this.showImage = true
             }
         },
 
@@ -351,135 +300,6 @@ export default {
         beforeLeave() {
             console.log('before leave')
             this.transitioningOut = true
-        },
-
-        /*************************************************************
-        * Swipes
-        * Modified from https://stackoverflow.com/a/23230280/16755079
-        *************************************************************/
-
-        // Handler for touchstart event
-        handleTouchStart(event) {
-            const firstTouch = event.touches[0]
-            this.xDown = firstTouch.clientX
-            this.yDown = firstTouch.clientY
-            this.innerWidth = window.innerWidth
-        },
-
-        // Handler for touchmove event
-        handleTouchMove(event) {
-            this.touchEvent = event
-            const firstTouch = event.touches[0]
-
-            // Record xMove for grade-bar css (see computed: cssVars)
-            this.xMove = firstTouch.clientX
-            this.yMove = firstTouch.clientY
-
-            this.touchMacro(event, 0, undefined, 
-            () => {
-                // Swapping movement flags
-                // console.log("right")
-                if (this.percent <= -1) {
-                    this.moveLeft = false
-                    this.moveRight = true
-                } else {
-                    this.moveLeft = false
-                    this.moveRight = false
-                }
-            }, 
-            undefined, 
-            () => {
-                // console.log("left")
-                if (this.percent >= 1) {
-                    this.moveLeft = true
-                    this.moveRight = false
-                } else {
-                    this.moveLeft = false
-                    this.moveRight = false
-                }
-            })
-        },
-
-        resetImagePos() {
-            /* reset values */
-            this.moveLeft = false
-            this.moveRight = false
-            this.xDown = null
-            this.yDown = null
-            this.xMove = null
-            this.yMove = null
-            this.touchEvent = null // important to clear touchmove event to avoid tapping causing submissions
-            this.percent = 0.0
-        },
-
-        // Handler for touchend event
-        handleTouchEnd(event) {
-            if (this.touchEvent != null) {
-                const touchList = this.touchEvent.touches ||
-                                        this.touchEvent.originalEvent.touches
-                if (touchList.length == 1) {
-                    // touchend event has an empty `touches` list, so we pass the touchmove event instead
-                    this.touchMacro(this.touchEvent, this.swipeDistance, () => {
-                        this.commenting = true
-                    }, () => {
-                        this.onClick('yes-cancer')
-                    }, () => {
-                        // this.onClick('maybe-cancer')
-                        this.commenting = false
-                    }, () => {
-                        this.onClick('no-cancer')
-                    })
-                } 
-            }
-
-            if (this.showImage) {
-                this.resetImagePos()
-            }
-        },
-
-        touchMacro(event, margin = 0, top = undefined, right = undefined, bottom = undefined, left = undefined) {
-            // Escape if the mouse isn't down or null event
-            if ( !this.xDown || !this.yDown || event === null) {
-                return
-            }
-
-            // Get the movement difference
-            const touches = event.touches
-
-            const xDiff = this.xDown - touches[0].clientX
-            const yDiff = this.yDown - touches[0].clientY
-            
-            // this.percent = xDiff/(this.innerWidth*0.5)
-            this.percent = xDiff/(this.swipeDistance)
-            
-
-            // Interesting callbacks are not undefined and they are not empty functions
-            const interesting = {
-                top: top !== undefined && ''+top !== ''+(() => {}),
-                right: right !== undefined && ''+right !== ''+(() => {}),
-                bottom: bottom !== undefined && ''+bottom !== ''+(() => {}),
-                left: left !== undefined && ''+left !== ''+(() => {})
-            }
-            
-            // Basically, whichever axis is bigger, unless there is nothing to do on that axis
-            if (Math.abs(xDiff) > Math.abs(yDiff) && (interesting.right || interesting.left) || 
-                    !(interesting.top || interesting.bottom)) {                                      /*most significant*/
-                if ( xDiff > margin ) {
-                    /* right-to-left swipe */
-                    left()
-                } else if ( xDiff <= -margin ) {
-                    /* left-to-right swipe */
-                    right()
-                }
-            } else {
-                if ( yDiff > margin ) {
-                    /* bottom-to-top swipe */ 
-                    top()
-                } else if ( yDiff <= -margin ) { 
-                    /* top-to-bottom swipe */
-                    bottom()
-                }
-            }
         }
     }
 }
@@ -559,23 +379,7 @@ $no-cancer-color: #ff6184;
             display: inline-block;
         }
     }
-
-    // .image-container {
-    //     position: relative;
-    //     width: 100%;
-    //     // TODO: Figure out how to handle rectangular images and their ROIs
-    //     height: calc(50vh - $block-margin - $block-margin);
-    //     line-height: 0;
-    //     overflow: hidden;
-
-
-    //     // transform: translate(var(--x-diff), calc(var(--y-diff) / -6)) rotate(calc( var(--rot-diff) * -12deg));
-
-    //     @include for-size(mobile) {
-    //         height: calc(100vw - $block-margin - $block-margin);
-    //     }
-
-    // }    
+ 
 }
 /* stuck to the bottom of the screen */
 .response-area {
