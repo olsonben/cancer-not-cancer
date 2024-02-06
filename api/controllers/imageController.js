@@ -41,6 +41,16 @@ const imageController = {
         const data = await imageOps.getNextImageIds(userId, taskId)
         res.send(data)
     },
+
+    async getImageQueue(req, res, next) {
+        let taskId = req.params.taskId
+        let groupId = req.params.groupId
+        let userId = req.user.id
+        const data = await imageOps.getImageQueue(userId, taskId)
+        const imageQueue = data.map(row => { return {...row, imageUrl: new URL(row.imageUrl, imageBaseURL).href}})
+
+        res.send(imageQueue)
+    },
     
     /** Save successfull image uploads with the uploaders ip */
     async saveUploadsToDb(req, res, next) {

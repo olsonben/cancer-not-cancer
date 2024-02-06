@@ -1,9 +1,11 @@
 /**
  * @typedef {Object} BaseImageObject 
  * @property {string} imageUrl - the source url of the image
- * @property {number} chipSize - size of the roi
- * @property {number} fovSize - size of the chip and surrounding context
- * @property {number} zoomScale - the amount to zoom when clicked
+ * @property {?number} chipSize - size of the roi
+ * @property {?number} fovSize - size of the chip and surrounding context
+ * @property {?number} zoomScale - the amount to zoom when clicked
+ * @property {string} name - image name
+ * @property {number} image_id - image id
  */
 
 /**
@@ -30,7 +32,7 @@ export const useImageQueue = (maxPreload) => {
      */
     const queue = ref([])
     const index = ref(0)
-    const processing = false
+    let processing = false
 
     /**
      * 
@@ -46,7 +48,7 @@ export const useImageQueue = (maxPreload) => {
      */
     const addImages = (arrayOfImageObjects) => {
         for (const imageObject of arrayOfImageObjects) {
-            addImageToQueue(imageObject)
+            addImage(imageObject)
         }
     }
 
@@ -59,6 +61,7 @@ export const useImageQueue = (maxPreload) => {
         queueObject.loaded = true
         imageTag.onload = () => {
             // do stuff on load
+            // TODO: Consider initiating processImages here to make them load sequentially.
         }
         imageTag.src = queueObject.imageUrl
         imageTag.alt = queueObject.imageUrl
@@ -67,7 +70,7 @@ export const useImageQueue = (maxPreload) => {
 
     const processImages = () => {
         if (processing) return
-
+        
         processing = true
         for (let i = index.value; i < queue.value.length; i++) {
             if (i - index.value >= maxPreload) break
@@ -100,11 +103,18 @@ export const useImageQueue = (maxPreload) => {
         return nextImage
     }
 
+    const reset = () => {
+        queue.value = []
+        index.value = 0
+        processing = false
+    }
+
 
     return {
         addImage,
         addImages,
-        getNextImage
+        getNextImage,
+        reset
     }
 
 }

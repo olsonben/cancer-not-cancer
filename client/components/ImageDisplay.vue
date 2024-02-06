@@ -40,7 +40,7 @@ const cssVars = computed(() => {
 })
 
 watch(imageUrl, (newUrl, oldUrl) => {
-    console.log('new image url:', newUrl)
+    // console.log('new image url:', newUrl)
 })
 
 </script>

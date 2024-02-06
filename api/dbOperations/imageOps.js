@@ -65,6 +65,30 @@ const imageOps = {
         return rows.map(row => row.image_id)
     },
 
+    async getImageQueue(userId, taskId, page) {
+        const query = `
+            WITH
+                HotOrNotQuick AS (
+                    SELECT hotornot.image_id as image_id
+                    FROM hotornot
+                    WHERE
+                    user_id = ?
+                    AND task_id = ?
+                )
+                SELECT
+                    images.id as image_id,
+                    images.path as imageUrl,
+                    images.original_name as name
+                FROM task_images
+                LEFT JOIN images ON task_images.image_id = images.id
+                WHERE
+                    task_images.task_id = ?
+                    AND task_images.image_id NOT IN(SELECT image_id FROM HotOrNotQuick);`
+
+        const rows = await dbOps.select(query, [userId, taskId, taskId])
+        return rows
+    },
+
     /**
      * Translates an array or set of folder paths into tag and creates tag relations accordingly.
      * 

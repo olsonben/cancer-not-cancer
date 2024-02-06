@@ -8,20 +8,20 @@
             <div class='controls level'>
                 <TaskPicker @taskSelected="(newTaskId) => { selectedTask = newTaskId }"></TaskPicker>
             </div>
-            <div class="has-text-danger" v-if="!image.id">No more images available in this task.</div>
+            <div class="has-text-danger" v-if="!onDeck">No more images available in this task.</div>
 
-            <ImageSwipe @swipeMove="" @swipe-move="updatePercent" @swipe-end="swipeEnd" :disabled="!image.id">
-                <ImageDisplay v-if="this.currentTask && image.id" :imageUrl="image.url" :chipSize="this.currentTask.chip_size" :fovSize="this.currentTask.fov_size" :zoomScale="this.currentTask.zoom_scale"/>
+            <ImageSwipe @swipeMove="" @swipe-move="updatePercent" @swipe-end="swipeEnd" :disabled="!onDeck">
+                <ImageDisplay v-if="onDeck" :imageUrl="onDeck.imageUrl" :chipSize="onDeck.chipSize" :fovSize="onDeck.fovSize" :zoomScale="onDeck.zoomScale"/>
             </ImageSwipe>  
 
-            <div v-if='image.id' class='controls level'>
-                <p class="help is-hidden-desktop">Tap to zoom.</p>
+            <div v-if='onDeck' class='controls level'>
+                <p class="help is-hidden-desktop" @click="getNewQueue">Tap to zoom.</p>
                 <p class="help is-hidden-touch">Click to zoom.</p>
             </div>
         </div>
         
         <!-- Response section: grade + comment --> 
-        <div v-if="image.id" class='response-area'>
+        <div v-if="onDeck" class='response-area'>
             <div class="has-text-centered swipe-pad" :class="{ 'shown': !commenting }">
                 <span class='icon swipe left'>
                     <img src="~assets/icons/arrow-set.svg" alt="swipe left">
@@ -65,9 +65,8 @@ export default {
     data() {
         return {
             // Information to display and grade the current image
-            image: { url: '' },
             onDeck: null,
-            queue: null,
+            queue: imageQueue,
             selectedTask: null,
             currentTask: null,
             tasks: [],
@@ -120,13 +119,32 @@ export default {
         },
         selectedTask: {
             handler(newTaskId) {
-                this.queue = null
+                this.queue.reset()
                 this.currentTask = this.tasks.find((task) => task.id === newTaskId)
-                this.nextImage()
+                this.getNewQueue()
             }
         }
     },
     methods: {
+        async getNewQueue() {
+            let group = 0
+            try {
+                const { response } = await api.GET(`/images/task/${this.selectedTask}/${group}`)
+                const imageArray = response.value.map(imgData => {
+                    return {
+                        ...imgData,
+                        'chipSize': this.currentTask.chip_size,
+                        'fovSize': this.currentTask.fov_size,
+                        'zoomScale': this.currentTask.zoom_scale,
+                    }
+                })
+
+                this.queue.addImages(imageArray)
+                this.onDeck = this.queue.getNextImage()
+            } catch (error) {
+                console.error(error)
+            }
+        },
         updatePercent(newPercent) {
             this.percent = newPercent
             
@@ -169,18 +187,19 @@ export default {
                 return
             }
 
+            this.onDeck.rating = this.rating
+
             // record the response
             try {
-                this.image.url = ''
                 await api.POST('/hotornot', {
-                    id: this.image.id,
+                    id: this.onDeck.image_id,
                     rating: this.rating,
                     comment: this.comment,
                     taskId: this.selectedTask
                 })
-                console.log('change')
+
                 // move on to the next image
-                this.nextImage()
+                this.onDeck = this.queue.getNextImage()
             } catch (error) {
                 console.error(error)
             }
@@ -191,18 +210,27 @@ export default {
 
         },
 
+        // TODO: Remove
         async getImageQueue() {
             try {
                 const { response } = await api.GET('/images/queue', {
                     taskId: this.selectedTask
                 })
-                console.log(JSON.parse(JSON.stringify(response.value)))
                 this.queue = response.value
             } catch (error) {
                 console.error(error)
             }
         },
 
+        // https://stackoverflow.com/a/12646864/3068136
+        shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1))
+                [array[i], array[j]] = [array[j], array[i]]
+            }
+        },
+
+        // TODO: Remove
         getNextImageId() {
             const nextImageIndex = Math.floor(Math.random() * this.queue.length)
             const nextImageId = this.queue[nextImageIndex]
@@ -211,6 +239,7 @@ export default {
             return nextImageId
         },
 
+        // TODO: Remove
         async nextImage() { 
             if (this.selectedTask == null) {
                 return
@@ -225,7 +254,7 @@ export default {
                     // if the image queue is empty, do not proceed
                     if (this.queue && !this.queue.length) {
                         // TODO: handle the last image more gracefully with transitions.
-                        this.image = { url: '' } // reset main image
+                        // this.image = { url: '' } // reset main image
                         return
                     }
                     // console.log('nextImage')
@@ -266,10 +295,12 @@ export default {
         // Called at the end of image transition out and upon completion of 
         // image preloading. If both are complete we can move ahead with
         // updating the image element.
+        // TODO: Remove or update
         updateImage() {
+            console.log('updateImage')
             if (!this.transitioningOut && this.onDeck) {
-                this.image = this.onDeck
-                this.onDeck = null
+                // this.image = this.onDeck
+                // this.onDeck = null
             }
         },
 
