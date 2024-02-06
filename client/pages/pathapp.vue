@@ -56,6 +56,7 @@
 import { mapState } from 'pinia'
 import { useUserStore } from '~/store/user'
 const api = useApi()
+const imageQueue = useImageQueue(3)
 
 const IMAGE_TRANSITION_TIME = 250 // ms
 // const IMAGE_TRANSITION_TIME = 2000 // ms
@@ -90,9 +91,6 @@ export default {
             this.selectedTask = this.tasks[0].id
             this.currentTask = this.tasks[0]
         }
-
-        this.nextImage()
-        
     },
     
 
@@ -116,7 +114,6 @@ export default {
                     this.tasks = response.value // because response is a ref object
                     this.selectedTask = this.tasks[0].id
                     this.currentTask = this.tasks[0]
-                    this.nextImage()
 
                 }
             }
@@ -174,12 +171,14 @@ export default {
 
             // record the response
             try {
+                this.image.url = ''
                 await api.POST('/hotornot', {
                     id: this.image.id,
                     rating: this.rating,
                     comment: this.comment,
                     taskId: this.selectedTask
                 })
+                console.log('change')
                 // move on to the next image
                 this.nextImage()
             } catch (error) {
@@ -197,6 +196,7 @@ export default {
                 const { response } = await api.GET('/images/queue', {
                     taskId: this.selectedTask
                 })
+                console.log(JSON.parse(JSON.stringify(response.value)))
                 this.queue = response.value
             } catch (error) {
                 console.error(error)
@@ -241,18 +241,18 @@ export default {
                     // actually image load.
                     // if (Object.keys(this.image).length === 0) {
                         // don't preload
-                        // console.log("Don't Preload")
+                        console.log("Don't Preload")
                         this.onDeck = response.value
                         this.updateImage()
                     // } else {
                     //     // preload
                     //     console.log("Preloading")
-                    //     var preloadImage = new Image()
-                    //     preloadImage.onload = () => {
-                    //         this.onDeck = response.value
-                    //         this.updateImage()
-                    //     }
-                    //     preloadImage.src = response.value.url
+                        // var preloadImage = new Image()
+                        // preloadImage.onload = () => {
+                        //     this.onDeck = response.value
+                        //     this.updateImage()
+                        // }
+                        // preloadImage.src = response.value.url
                     // }
                     
                 } catch (error) {
@@ -345,15 +345,13 @@ $no-cancer-color: #ff6184;
     width: 100%;
 
     @include for-size(mobile) {
-        padding: 0 $block-margin $block-margin;
+        padding: 0 $block-margin 0;
         max-width: 100%;
     }
 
     .controls {
         color: hsl(0deg, 0%, 29%);
         width: 100%;
-        padding: 0 $block-margin;
-
 
         @include for-size(mobile) {
             padding: 0 0;
@@ -442,7 +440,7 @@ $no-cancer-color: #ff6184;
             transition-timing-function: ease-out;
     
             &.shown {
-                height: 99px;
+                height: 70px;
                 opacity: 1;
             }
         }
@@ -464,6 +462,7 @@ $no-cancer-color: #ff6184;
     justify-content: space-around;
     flex-wrap: nowrap;
     width: 100%;
+    // margin-bottom: 0.75rem;
 
     .button {
         /* coloration for "yes" and "no" buttons to match grade bars */

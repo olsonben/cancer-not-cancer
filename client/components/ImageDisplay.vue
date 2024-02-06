@@ -39,12 +39,20 @@ const cssVars = computed(() => {
     }
 })
 
+watch(imageUrl, (newUrl, oldUrl) => {
+    console.log('new image url:', newUrl)
+})
+
 </script>
 
 <template>
     <div v-if="showImage" class="zoom-box" :class="{'zoom': zoom }" @click="zoom = !zoom" :style="cssVars">
-        <div class='roi' :class="{ 'is-hidden': showRoiBox }"></div>
-        <img :src='imageUrl' :alt='imageUrl'/>
+        
+        <div v-if="imageUrl === ''" class="loading"></div>
+        <template v-else>
+            <div class='roi' :class="{ 'is-hidden': showRoiBox }"></div>
+            <img :key="imageUrl" :src='imageUrl' :alt='imageUrl'/>
+        </template>
     </div>
 </template>
 
@@ -53,6 +61,7 @@ const cssVars = computed(() => {
     width: 100%;
     height: 100%;
     position: relative;
+    background-color: #cea3c5;
 
     /** Image zooming */
     transition-property: transform;
@@ -67,6 +76,34 @@ const cssVars = computed(() => {
         object-fit: contain;
         width: 100%;
         height: 100%;
+    }
+
+    /**
+    * Loading Animation
+    */
+    $circle-size: 0.25;
+    $center-trans: calc((1 - $circle-size) / (2 * $circle-size));
+    $center-trans-p: calc(100% * $center-trans);
+    .loading {
+        /* Border size and color */
+        border: 8px solid #ffffff;
+        /* Creates a circle */
+        border-radius: 50%;
+        /* Circle size */
+        height: calc(100% * $circle-size);
+        width: calc(100% * $circle-size);
+        /* Use transparent borders to define opening (more transparent = larger opening) */
+        // border-top-color: transparent;
+        border-left-color: transparent;
+        opacity: 75%;
+        /* Use transform to rotate to adjust where opening appears */
+        // transform: translate($center-trans-p, $center-trans-p)  rotate(90deg) 
+        animation: rotate 1.5s infinite linear;
+    }
+
+    @keyframes rotate {
+        0% { transform: translate($center-trans-p, $center-trans-p) rotate(0deg);}
+        100% { transform: translate($center-trans-p, $center-trans-p) rotate(360deg);}
     }
 
     /**

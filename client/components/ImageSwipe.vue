@@ -63,8 +63,7 @@ export default {
 .image-container {
     position: relative;
     width: 100%;
-    // TODO: Figure out how to handle rectangular images and their ROIs
-    height: calc(50vh - $block-margin - $block-margin);
+    height: 50vh; // If you need padding, don't do it here!
     line-height: 0;
     overflow: hidden;
 
