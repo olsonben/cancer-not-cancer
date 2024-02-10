@@ -66,6 +66,9 @@ const imageOps = {
     },
 
     async getImageQueue(userId, taskId, page) {
+        // TODO: increase this limit
+        const limit = 5
+        const offset = page * limit
         const query = `
             WITH
                 HotOrNotQuick AS (
@@ -83,9 +86,10 @@ const imageOps = {
                 LEFT JOIN images ON task_images.image_id = images.id
                 WHERE
                     task_images.task_id = ?
-                    AND task_images.image_id NOT IN(SELECT image_id FROM HotOrNotQuick);`
+                    AND task_images.image_id NOT IN(SELECT image_id FROM HotOrNotQuick)
+                LIMIT ? OFFSET ?`
 
-        const rows = await dbOps.select(query, [userId, taskId, taskId])
+        const rows = await dbOps.select(query, [userId, taskId, taskId, limit, offset])
         return rows
     },
 

@@ -32,7 +32,8 @@ export const useImageQueue = (maxPreload) => {
      */
     const queue = ref([])
     const index = ref(0)
-    let processing = false
+    let chained = true // chain multiple loads together
+
 
     /**
      * 
@@ -44,77 +45,92 @@ export const useImageQueue = (maxPreload) => {
 
     /**
      * 
-     * @param {Array<BaseImageObject} arrayOfImageObjects 
+     * @param {Array<BaseImageObject>} arrayOfImageObjects 
      */
     const addImages = (arrayOfImageObjects) => {
         for (const imageObject of arrayOfImageObjects) {
             addImage(imageObject)
         }
-    }
+    }    
 
     /**
-     * Create the HTMLImageElement for an image.
-     * @param {QueueObject} queueObject 
+     * Is this image object loaded?
+     * @param {QueueObject} imgObj 
+     * @returns {boolean}
      */
-    const loadImage = async (queueObject) => {
-        var imageTag = new Image()
-        queueObject.loaded = true
-        imageTag.onload = () => {
-            // do stuff on load
-            // TODO: Consider initiating processImages here to make them load sequentially.
+    const isLoaded = (imgObj) => imgObj.loaded || imgObj.imgHtml     
+
+    /**
+     * Loads an image in the background with a HTMLImageElement. Also depending on
+     * maxPreload and chained, it will load the following image sequentially.
+     * @param {Number} indx The next image to load
+     * @param {Number} preLoadCount - number of images currently preloaded
+     */
+    const loadImage = (indx, preLoadCount = 0) => {
+        // no more images to load
+        if (indx >= queue.value.length) return
+
+        // image data object to be loaded
+        const item = queue.value[indx]
+
+        // Already loaded
+        if (isLoaded(item)) return
+
+        const img = new Image()
+        item.imgHtml = img
+        img.loading = 'eager' // prevent lazy loading
+        img.src = item.imageUrl
+        img.onload = () => {
+            item.loaded = true
+            delete item.imgHtml // remove HTMLImageElement to save memory
+
+            // chain together to queue up multiple preloaded images
+            if (preLoadCount < maxPreload && chained) {
+                loadImage(indx + 1, preLoadCount + 1)
+            } else {
+                chained = false
+            }
         }
-        imageTag.src = queueObject.imageUrl
-        imageTag.alt = queueObject.imageUrl
-        queueObject.imgHtml = imageTag
     }
-
-    const processImages = () => {
-        if (processing) return
-        
-        processing = true
-        for (let i = index.value; i < queue.value.length; i++) {
-            if (i - index.value >= maxPreload) break
-            if (queue.value[i].loaded) continue
-
-            loadImage(queue.value[i])
-        }
-        processing = false
-    }
-
-    watch(queue, () => {
-        processImages()
-    })
 
     /**
      * Returns the next image for rating/grading.
      * @returns {QueueObject}
      */
     const getNextImage = () => {
-        if (index.value > queue.value.length) {
-            index.value = 0
-            console.log('Back to the beginning')
+        if (index.value >= queue.value.length) {
+            // TODO: Consider looping to the beginning
+            console.log('No more photos')
+            return null
         }
 
-        const nextImage = queue.value[index.value]
+        const currentItem = queue.value[index.value]
+
+        if (!isLoaded(currentItem)) {
+            // first or newly added images
+            chained = true
+            loadImage(index.value, 0)
+        } else if (!chained) {
+            // load 1 image to keep the preloaded queue full
+            loadImage(index.value + maxPreload, maxPreload - 1)
+        }
         index.value += 1
-
-        processImages()
-
-        return nextImage
+        return currentItem
     }
 
+    /**
+     * Reset/Empty the image queue for a new set of images
+     */
     const reset = () => {
         queue.value = []
         index.value = 0
-        processing = false
     }
-
 
     return {
         addImage,
         addImages,
         getNextImage,
-        reset
+        reset,
     }
 
 }

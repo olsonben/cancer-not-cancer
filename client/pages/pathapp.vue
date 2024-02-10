@@ -15,7 +15,7 @@
             </ImageSwipe>  
 
             <div v-if='onDeck' class='controls level'>
-                <p class="help is-hidden-desktop" @click="getNewQueue">Tap to zoom.</p>
+                <p class="help is-hidden-desktop">Tap to zoom.</p>
                 <p class="help is-hidden-touch">Click to zoom.</p>
             </div>
         </div>
@@ -56,11 +56,11 @@
 import { mapState } from 'pinia'
 import { useUserStore } from '~/store/user'
 const api = useApi()
-const imageQueue = useImageQueue(3)
+const imageQueue = useImageQueue(1)
 
 const IMAGE_TRANSITION_TIME = 250 // ms
 // const IMAGE_TRANSITION_TIME = 2000 // ms
-
+let count = 1
 export default {
     data() {
         return {
@@ -70,6 +70,7 @@ export default {
             selectedTask: null,
             currentTask: null,
             tasks: [],
+            group: 0,
 
             // State information
             rating: '',
@@ -120,6 +121,7 @@ export default {
         selectedTask: {
             handler(newTaskId) {
                 this.queue.reset()
+                this.group = 0
                 this.currentTask = this.tasks.find((task) => task.id === newTaskId)
                 this.getNewQueue()
             }
@@ -127,9 +129,9 @@ export default {
     },
     methods: {
         async getNewQueue() {
-            let group = 0
             try {
-                const { response } = await api.GET(`/images/task/${this.selectedTask}/${group}`)
+                // TODO: write actual logic for pagination
+                const { response } = await api.GET(`/images/task/${this.selectedTask}/${this.group}`)
                 const imageArray = response.value.map(imgData => {
                     return {
                         ...imgData,
@@ -140,7 +142,10 @@ export default {
                 })
 
                 this.queue.addImages(imageArray)
-                this.onDeck = this.queue.getNextImage()
+                if (this.group === 0) {
+                    this.onDeck = this.queue.getNextImage()
+                }
+                this.group += 1
             } catch (error) {
                 console.error(error)
             }
@@ -200,6 +205,10 @@ export default {
 
                 // move on to the next image
                 this.onDeck = this.queue.getNextImage()
+                count++
+                if (count == 5) {
+                    this.getNewQueue()
+                }
             } catch (error) {
                 console.error(error)
             }
