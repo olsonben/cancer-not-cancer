@@ -5,7 +5,7 @@ const FOVSIZE = 911
 const ZOOMSCALE = 4
 
 const props = defineProps({
-    imageUrl: { type: String, required: true },
+    imageUrl: { type: String, required: false },
     altText: { type: String },
     chipSize: { type: Number, default: 128 },
     fovSize: { type: Number },
@@ -42,7 +42,7 @@ const cssVars = computed(() => {
 })
 
 watch(imageUrl, (newUrl, oldUrl) => {
-    console.log('new image url:', newUrl)
+    // console.log('new image url:', newUrl)
 })
 
 </script>
@@ -63,7 +63,9 @@ watch(imageUrl, (newUrl, oldUrl) => {
     width: 100%;
     height: 100%;
     position: relative;
-    background-color: #cea3c5;
+    // background-color: #cea3c5;
+    // background-color: #BF73B3;
+    background-color: #D9A7D0;
 
     /** Image zooming */
     transition-property: transform;

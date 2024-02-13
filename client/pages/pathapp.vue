@@ -8,11 +8,11 @@
             <div class='controls level'>
                 <TaskPicker @taskSelected="(newTaskId) => { currentTaskId = newTaskId }"></TaskPicker>
             </div>
-            <div class="has-text-danger" v-if="!onDeck">No more images available in this task.</div>
+            <div class="has-text-danger" v-if="noMoreImages">No more images available in this task.</div>
 
-            <ImageSwipe @swipeMove="" @swipe-move="updatePercent" @swipe-end="swipeEnd" :disabled="!onDeck">
+            <ImageSwipe @swipe-move="updatePercent" @swipe-end="swipeEnd" :disabled="!onDeck">
                 <ImageDisplay
-                    v-if="onDeck"
+                    v-if="!noMoreImages"
                     :imageUrl="onDeck?.imageUrl"
                     :altText="onDeck?.name"
                     :chipSize="onDeck?.chipSize"
@@ -28,7 +28,7 @@
         </div>
         
         <!-- Response section: grade + comment --> 
-        <div v-if="onDeck" class='response-area'>
+        <div v-if="!noMoreImages" class='response-area'>
             <div class="has-text-centered swipe-pad" :class="{ 'shown': !commenting }">
                 <span class='icon swipe left'>
                     <img src="~assets/icons/arrow-set.svg" alt="swipe left">
@@ -155,6 +155,9 @@ export default {
                             'zoomScale': this.currentTask.zoom_scale,
                         }
                     })
+
+                    // shuffle the images
+                    shuffleArray(imageArray)
                     this.queue.addImages(imageArray)
                     this.onDeck = this.queue.getNextImage()
                 }
@@ -205,36 +208,32 @@ export default {
             }
 
             this.onDeck.rating = this.rating
-
+            
             // record the response
             try {
-                await api.POST('/hotornot', {
-                    id: this.onDeck.image_id,
+                // save important data
+                const ratingImageId = this.onDeck.image_id
+                const comment = this.comment
+
+                // move on to the next image, and reset comment box
+                this.onDeck = this.queue.getNextImage()
+                this.comment = ''
+                this.commenting = false
+
+                // record important data, this POST is async, but making the
+                // request happen after the image swapping after seeing weird
+                // hiccups with image loading during development
+                api.POST('/hotornot', {
+                    id: ratingImageId,
                     rating: this.rating,
                     comment: this.comment,
                     taskId: this.currentTaskId
                 })
-
-                // move on to the next image
-                this.onDeck = this.queue.getNextImage()
+                
             } catch (error) {
                 console.error(error)
             }
 
-            /* reset */
-            this.comment = ''
-            this.commenting = false
-
-        },
-
-
-        // TODO: Use
-        // https://stackoverflow.com/a/12646864/3068136
-        shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1))
-                [array[i], array[j]] = [array[j], array[i]]
-            }
         },
 
         // After the image fully transitions out. 
@@ -249,6 +248,17 @@ export default {
             console.log('before leave')
             this.transitioningOut = true
         }
+    }
+}
+
+// Helper - Durstenfeld Shuffle
+// https://stackoverflow.com/a/12646864/3068136
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        const temp = array[i]
+        array[i] = array[j]
+        array[j] = temp
     }
 }
 </script>
