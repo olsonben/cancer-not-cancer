@@ -6,6 +6,7 @@ const ZOOMSCALE = 4
 
 const props = defineProps({
     imageUrl: { type: String, required: true },
+    altText: { type: String },
     chipSize: { type: Number, default: 128 },
     fovSize: { type: Number },
     zoomScale: { type: Number }
@@ -23,6 +24,7 @@ const chipSize = computed(() => numberValidator(props.chipSize, CHIPSIZE))
 const fovSize = computed(() => numberValidator(props.fovSize, FOVSIZE))
 const zoomScale = computed(() => numberValidator(props.zoomScale, ZOOMSCALE))
 const imageUrl = computed(() => props.imageUrl)
+const altText = computed(() => props.altText ?? props.imageUrl)
 
 const showImage = ref(true)
 const zoom = ref(false)
@@ -40,7 +42,7 @@ const cssVars = computed(() => {
 })
 
 watch(imageUrl, (newUrl, oldUrl) => {
-    // console.log('new image url:', newUrl)
+    console.log('new image url:', newUrl)
 })
 
 </script>
@@ -48,10 +50,10 @@ watch(imageUrl, (newUrl, oldUrl) => {
 <template>
     <div v-if="showImage" class="zoom-box" :class="{'zoom': zoom }" @click="zoom = !zoom" :style="cssVars">
         
-        <div v-if="imageUrl === ''" class="loading"></div>
+        <div v-if="!imageUrl" class="loading"></div>
         <template v-else>
             <div class='roi' :class="{ 'is-hidden': showRoiBox }"></div>
-            <img :key="imageUrl" :src='imageUrl' :alt='imageUrl'/>
+            <img :key="imageUrl" :src='imageUrl' :alt='altText'/>
         </template>
     </div>
 </template>

@@ -13,7 +13,7 @@ router.get('/', isObserver, asyncHandler(imageController.nextImage))
 // TODO: deprecate this endpoint
 router.get('/queue', isObserver, asyncHandler(imageController.getNextImageIds))
 
-router.get('/task/:taskId/:groupId', isObserver, asyncHandler(imageController.getImageQueue))
+router.get('/task/:taskId', isObserver, asyncHandler(imageController.getImageQueue))
 router.post('/', isInvestigator, imageController.uploadAndSaveImages) // asyncHandler already applied
 router.post('/tag', isInvestigator, asyncHandler(imageController.createTag))
 router.post('/renameTag', isInvestigator, asyncHandler(imageController.updateTag))

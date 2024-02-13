@@ -6,12 +6,19 @@
         <!-- Image to grade -->
         <div class='prompt'>
             <div class='controls level'>
-                <TaskPicker @taskSelected="(newTaskId) => { selectedTask = newTaskId }"></TaskPicker>
+                <TaskPicker @taskSelected="(newTaskId) => { currentTaskId = newTaskId }"></TaskPicker>
             </div>
             <div class="has-text-danger" v-if="!onDeck">No more images available in this task.</div>
 
             <ImageSwipe @swipeMove="" @swipe-move="updatePercent" @swipe-end="swipeEnd" :disabled="!onDeck">
-                <ImageDisplay v-if="onDeck" :imageUrl="onDeck.imageUrl" :chipSize="onDeck.chipSize" :fovSize="onDeck.fovSize" :zoomScale="onDeck.zoomScale"/>
+                <ImageDisplay
+                    v-if="onDeck"
+                    :imageUrl="onDeck?.imageUrl"
+                    :altText="onDeck?.name"
+                    :chipSize="onDeck?.chipSize"
+                    :fovSize="onDeck?.fovSize"
+                    :zoomScale="onDeck?.zoomScale"
+                />
             </ImageSwipe>  
 
             <div v-if='onDeck' class='controls level'>
@@ -60,17 +67,15 @@ const imageQueue = useImageQueue(1)
 
 const IMAGE_TRANSITION_TIME = 250 // ms
 // const IMAGE_TRANSITION_TIME = 2000 // ms
-let count = 1
 export default {
     data() {
         return {
             // Information to display and grade the current image
             onDeck: null,
             queue: imageQueue,
-            selectedTask: null,
-            currentTask: null,
+            currentTaskId: null,
             tasks: [],
-            group: 0,
+            noMoreImages: false,
 
             // State information
             rating: '',
@@ -87,9 +92,8 @@ export default {
     async mounted() {
         if (this.isLoggedIn) {
             const { response } = await api.GET('/tasks/')
-            this.tasks = response.value // because response is a ref object
-            this.selectedTask = this.tasks[0].id
-            this.currentTask = this.tasks[0]
+            this.tasks = response.value
+            this.currentTaskId = this.tasks[0].id
         }
     },
     
@@ -97,6 +101,9 @@ export default {
     computed: {
         ...mapState(useUserStore, ['isLoggedIn', 'isPathologist']),
         // give the attribute `:style='cssVars'` to anything that should have access to these variables
+        currentTask() {
+            return this.tasks.find((task) => task.id === this.currentTaskId)
+        },
         cssVars() {
             return {
                 '--bg-no-opacity': (this.percent < 0 ? this.percent*-1.0 : 0),
@@ -112,40 +119,45 @@ export default {
                     // Previously not logged in, and now logged in.
                     const { response } = await api.GET('/tasks/')
                     this.tasks = response.value // because response is a ref object
-                    this.selectedTask = this.tasks[0].id
-                    this.currentTask = this.tasks[0]
+                    this.currentTaskId = this.tasks[0].id
 
                 }
             }
         },
-        selectedTask: {
+        currentTaskId: {
             handler(newTaskId) {
                 this.queue.reset()
-                this.group = 0
-                this.currentTask = this.tasks.find((task) => task.id === newTaskId)
+                this.noMoreImages = false
                 this.getNewQueue()
+            }
+        },
+        onDeck: {
+            async handler(newValue, oldValue) {
+                if (newValue === null && oldValue !== null) {
+                    // end of queue... get more images if possible
+                    this.getNewQueue()
+                }
             }
         }
     },
     methods: {
         async getNewQueue() {
             try {
-                // TODO: write actual logic for pagination
-                const { response } = await api.GET(`/images/task/${this.selectedTask}/${this.group}`)
-                const imageArray = response.value.map(imgData => {
-                    return {
-                        ...imgData,
-                        'chipSize': this.currentTask.chip_size,
-                        'fovSize': this.currentTask.fov_size,
-                        'zoomScale': this.currentTask.zoom_scale,
-                    }
-                })
-
-                this.queue.addImages(imageArray)
-                if (this.group === 0) {
+                const { response } = await api.GET(`/images/task/${this.currentTaskId}`)
+                if (response.value.length === 0) {
+                    this.noMoreImages = true
+                } else {
+                    const imageArray = response.value.map(imgData => {
+                        return {
+                            ...imgData,
+                            'chipSize': this.currentTask.chip_size,
+                            'fovSize': this.currentTask.fov_size,
+                            'zoomScale': this.currentTask.zoom_scale,
+                        }
+                    })
+                    this.queue.addImages(imageArray)
                     this.onDeck = this.queue.getNextImage()
                 }
-                this.group += 1
             } catch (error) {
                 console.error(error)
             }
@@ -200,15 +212,11 @@ export default {
                     id: this.onDeck.image_id,
                     rating: this.rating,
                     comment: this.comment,
-                    taskId: this.selectedTask
+                    taskId: this.currentTaskId
                 })
 
                 // move on to the next image
                 this.onDeck = this.queue.getNextImage()
-                count++
-                if (count == 5) {
-                    this.getNewQueue()
-                }
             } catch (error) {
                 console.error(error)
             }
@@ -219,97 +227,13 @@ export default {
 
         },
 
-        // TODO: Remove
-        async getImageQueue() {
-            try {
-                const { response } = await api.GET('/images/queue', {
-                    taskId: this.selectedTask
-                })
-                this.queue = response.value
-            } catch (error) {
-                console.error(error)
-            }
-        },
 
+        // TODO: Use
         // https://stackoverflow.com/a/12646864/3068136
         shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1))
                 [array[i], array[j]] = [array[j], array[i]]
-            }
-        },
-
-        // TODO: Remove
-        getNextImageId() {
-            const nextImageIndex = Math.floor(Math.random() * this.queue.length)
-            const nextImageId = this.queue[nextImageIndex]
-            this.queue.splice(nextImageIndex, 1)
-
-            return nextImageId
-        },
-
-        // TODO: Remove
-        async nextImage() { 
-            if (this.selectedTask == null) {
-                return
-            }
-
-            if (this.isPathologist) {
-                try {
-                    if (this.queue == null) {
-                        await this.getImageQueue()
-                    }
-                    
-                    // if the image queue is empty, do not proceed
-                    if (this.queue && !this.queue.length) {
-                        // TODO: handle the last image more gracefully with transitions.
-                        // this.image = { url: '' } // reset main image
-                        return
-                    }
-                    // console.log('nextImage')
-                    const nextImageId = this.getNextImageId()
-
-                    const { response } = await api.GET('/images/', {
-                        imageId: nextImageId,
-                    })
-                    // console.log(response.value)
-                    // We preload the image asynchronously allowing for smooth
-                    // fade in and out between images. The image is loaded
-                    // outside the DOM, but that data will be cached for the
-                    // actually image load.
-                    // if (Object.keys(this.image).length === 0) {
-                        // don't preload
-                        console.log("Don't Preload")
-                        this.onDeck = response.value
-                        this.updateImage()
-                    // } else {
-                    //     // preload
-                    //     console.log("Preloading")
-                        // var preloadImage = new Image()
-                        // preloadImage.onload = () => {
-                        //     this.onDeck = response.value
-                        //     this.updateImage()
-                        // }
-                        // preloadImage.src = response.value.url
-                    // }
-                    
-                } catch (error) {
-                    console.error(error);
-                }
-            } else {
-                console.log('Not a pathologist or not logged in.')
-            }
-        },
-
-        // Called at the end of image transition out and upon completion of 
-        // image preloading. If both are complete we can move ahead with
-        // updating the image element.
-        // TODO: Remove or update
-        updateImage() {
-            console.log('updateImage')
-            if (!this.transitioningOut && this.onDeck) {
-                // this.image = this.onDeck
-                // this.onDeck = null
             }
         },
 
@@ -319,7 +243,6 @@ export default {
             // reset img props here
             this.resetImagePos()
             this.transitioningOut = false
-            this.updateImage()
         },
         // Before the image starts transitioning out.
         beforeLeave() {

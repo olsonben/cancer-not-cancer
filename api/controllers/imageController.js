@@ -44,9 +44,8 @@ const imageController = {
 
     async getImageQueue(req, res, next) {
         let taskId = req.params.taskId
-        let groupId = req.params.groupId
         let userId = req.user.id
-        const data = await imageOps.getImageQueue(userId, taskId, groupId)
+        const data = await imageOps.getImageQueue(userId, taskId)
         const imageQueue = data.map(row => { return {...row, imageUrl: new URL(row.imageUrl, imageBaseURL).href}})
 
         res.send(imageQueue)
