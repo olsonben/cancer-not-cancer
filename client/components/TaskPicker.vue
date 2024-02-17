@@ -24,7 +24,7 @@ watch(selectedTask, async (newTask, oldTask) => {
 </script>
 
 <template>
-    <div class='task-picker level-left'>
+    <div class='task-picker'>
         <strong v-if="props.label">{{props.label}}: </strong>
         <div class="select" :class="[sizeClass, {'is-normal' : !sizeClass} ]">
             <select v-model="selectedTask">
