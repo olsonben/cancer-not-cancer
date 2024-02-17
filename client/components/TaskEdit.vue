@@ -64,6 +64,7 @@ const fileTools = useFileTools()
 const Adder = resolveComponent('Adder')
 const ImagePicker = resolveComponent('ImagePicker')
 const RoiSettings = resolveComponent('RoiSettings')
+const ContentEditor = resolveComponent('ContentEditor')
 
 export default {
     props: ['task'],
@@ -112,6 +113,15 @@ export default {
                     component: RoiSettings,
                     props: { chipSize, fovSize, zoomScale },
                     events: { update: this.updateRoi }
+
+                },
+                {
+                    name: 'guide',
+                    label: "Annotation Guide",
+                    component: ContentEditor,
+                    // TODO: link into data from DB, task.guideContent
+                    props: { initialContent: "Hello Annotation Guide" },
+                    events: { update: this.updateGuide }
 
                 }
             ]
@@ -193,6 +203,9 @@ export default {
             this.localTask.chip_size = roiData.chipSize
             this.localTask.fov_size = roiData.fovSize
             this.localTask.zoom_scale = roiData.zoomScale
+        },
+        updateGuide(guideContent) {
+            this.localTask.guideContent = guideContent
         },
         report() {
             console.log('Files selected')
