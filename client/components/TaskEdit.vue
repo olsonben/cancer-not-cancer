@@ -84,6 +84,7 @@ export default {
                 type: 'tag',
                 selected: [],
             },
+            annotationGuide: ''
         }
     },
     computed: {
@@ -119,8 +120,7 @@ export default {
                     name: 'guide',
                     label: "Annotation Guide",
                     component: ContentEditor,
-                    // TODO: link into data from DB, task.guideContent
-                    props: { initialContent: "Hello Annotation Guide" },
+                    props: { initialContent: this.annotationGuide },
                     events: { update: this.updateGuide }
 
                 }
@@ -129,16 +129,19 @@ export default {
     },
     async mounted() {
         try {
-            const [observersData, imagesData] = await Promise.all([
+            const [observersData, imagesData, guideData] = await Promise.all([
                 api.GET('/tasks/observers', {
                     task_id: this.task.id
                 }),
                 api.GET('/tasks/images', {
                     task_id: this.task.id
-                })
+                }),
+                api.GET(`/tasks/${this.task.id}/guide`)
             ])
             const observers = observersData.response.value
             const images = imagesData.response.value
+            const guideContent = guideData.response.value
+
             for (const user of observers) {
                 if (user.applied) {
                     this.observers.applied.push(user)
@@ -147,7 +150,9 @@ export default {
                 }
             }
             
+            // TODO: this can be done above
             this.root.contents = images
+            this.annotationGuide = guideContent
         } catch (error) {
             console.error(error)
         }
@@ -173,6 +178,9 @@ export default {
                     api.POST('/tasks/images', {
                         task_id: this.localTask.id,
                         imageIds: JSON.stringify(selectedImages),
+                    }),
+                    api.POST(`/tasks/${this.localTask.id}/guide`, {
+                        content: this.annotationGuide
                     })
                 ])
 
@@ -205,7 +213,7 @@ export default {
             this.localTask.zoom_scale = roiData.zoomScale
         },
         updateGuide(guideContent) {
-            this.localTask.guideContent = guideContent
+            this.annotationGuide = guideContent
         },
         report() {
             console.log('Files selected')

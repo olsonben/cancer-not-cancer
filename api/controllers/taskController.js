@@ -158,6 +158,19 @@ const taskController = {
         console.log(`Gathering data for task ${taskId}, by user: ${investigatorId}`)
         const results = await dataOps.getDataExportByTaskId(investigatorId, taskId)
         res.send(results)
+    },
+
+    async getTaskGuide(req, res) {
+        const taskId = req.params.taskId
+        const guideContent = await taskOps.getTaskGuide(taskId)
+        res.send(guideContent)
+    },
+    async saveTaskGuide(req, res) {
+        let investigatorId = req.user.id
+        const taskId = req.params.taskId
+        const content = req.body.content
+        taskOps.setTaskGuide(taskId, content)
+        res.sendStatus(200)
     }
 }
 
