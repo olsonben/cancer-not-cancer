@@ -62,7 +62,7 @@
 
         </div>
 
-        <AnnotationGuide v-if="showGuide" @exit="showGuide = !showGuide"/>
+        <AnnotationGuide v-if="showGuide" @exit="showGuide = !showGuide" :task-id="currentTaskId"/>
     </div>
 </template>
 
@@ -247,8 +247,8 @@ export default {
 
         },
 
-        showAnnotationGuide() {
-            // console.log('Annotation Guide Coming Soon!')
+        async showAnnotationGuide() {
+            
             this.showGuide = true
         },
 
