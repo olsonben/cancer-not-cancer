@@ -285,13 +285,22 @@ const taskOps = {
     },
 
     async getTaskGuide(taskId) {
-        console.log('taskOps: getTaskGuide')
-        return "<p>Hello Task Guide</p>"
+        const query = `SELECT
+              id as guideId, task_id as taskId, content
+            FROM guides
+            WHERE guides.task_id = ?`
+
+        const rows = await dbOps.select(query, [taskId])
+        return rows[0]
     },
 
     async setTaskGuide(taskId, HTMLContent) {
-        console.log(HTMLContent)
-        console.log(`taskOps: setting task guide for ${taskId}`)
+        const deleteContent = `DELETE FROM guides WHERE task_id = ?`
+        const saveContent = `INSERT INTO guides (task_id, content) VALUES (?, ?)`
+        const transaction = await dbOps.startTransaction()
+        await transaction.query(deleteContent, [taskId])
+        await transaction.query(saveContent, [taskId, HTMLContent])
+        await transaction.commit()
     }
 }
 

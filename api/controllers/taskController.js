@@ -162,8 +162,10 @@ const taskController = {
 
     async getTaskGuide(req, res) {
         const taskId = req.params.taskId
-        const guideContent = await taskOps.getTaskGuide(taskId)
-        res.send(guideContent)
+        const guide = await taskOps.getTaskGuide(taskId)
+        let content = ''
+        if (guide) content = guide.content
+        res.send(content)
     },
     async saveTaskGuide(req, res) {
         let investigatorId = req.user.id
