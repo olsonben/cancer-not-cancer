@@ -162,7 +162,7 @@ export default {
             try {
                 const selectedImages = fileTools.getSelectedFiles(this.root)
 
-                await Promise.all([
+                const results = await Promise.allSettled([
                     api.POST('/tasks/update', {
                         id: this.localTask.id,
                         short_name: this.localTask.short_name,
@@ -183,18 +183,30 @@ export default {
                         content: this.annotationGuide
                     })
                 ])
+                // TODO: clean up results logic
+                if (results[0].status === "fulfilled") {
+                    this.task.short_name = this.localTask.short_name
+                    this.task.prompt = this.localTask.prompt
+                    this.task.chip_size = this.localTask.chip_size
+                    this.task.fov_size = this.localTask.fov_size
+                    this.task.zoom_scale = this.localTask.zoom_scale
+                } else {
+                    console.error("There was an error saving the task data.")
+                }
 
-                this.task.short_name = this.localTask.short_name
-                this.task.prompt = this.localTask.prompt
-                this.task.chip_size = this.localTask.chip_size
-                this.task.fov_size = this.localTask.fov_size
-                this.task.zoom_scale = this.localTask.zoom_scale
+                const closeIfNoErrors = results.every((res) => (res.status === "fulfilled"))
 
                 // Emit save event to update stats in task table.
                 this.$emit('save', {
-                    observers: this.observers.applied.length,
-                    images: selectedImages.length
-                })
+                    observers: results[1].status === "fulfilled" ? this.observers.applied.length : null,
+                    images: results[2].status === "fulfilled" ? selectedImages.length : null
+                }, closeIfNoErrors)
+
+                if (!closeIfNoErrors) {
+                    // TODO: turn this into a notification
+                    console.warn("Not all content was saved. To preserve current unsaved changes, the task editor has not been closed.")
+                }
+
             } catch (err) {
                 console.error(err)
             }

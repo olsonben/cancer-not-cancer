@@ -1,11 +1,7 @@
 <script setup>
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
-// import Document from '@tiptap/extension-document'
-// import Paragraph from '@tiptap/extension-paragraph'
-// import Text from '@tiptap/extension-text'
-// import Heading from '@tiptap/extension-heading'
-// import Bol
+// import Image from '@tiptap/extension-image'
 
 
 const props = defineProps({
@@ -13,7 +9,6 @@ const props = defineProps({
 })
 
 const changeFormat = ref(false)
-// const content = ref(props.initialContent)
 
 const emit = defineEmits(['update'])
 const editor = useEditor({
@@ -26,33 +21,15 @@ const editor = useEditor({
                 }
             }
         }),
-        // Document,
-        // Paragraph,
-        // Text,
-        // Heading.configure({
-        //   HTMLAttributes: {
-        //     class: 'title'
-        //   }
+        // Image.configure({
+        //     allowBase64: true,
+        //     inline: true
         // })
     ],
     onUpdate: () => {
         emit('update', editor.value.getHTML())
     }
 })
-
-// onBeforeUnmount(() => {
-//   editor.destroy()
-// })
-
-
-// watch(content, async (newContent, oldContent) => {
-//     emit('update', newContent)
-// })
-// watch(editor, async (newContent, oldContent) => {
-//   console.log('editor change')
-//   console.log(newContent)
-//     // emit('update', newContent)
-// })
 
 /**
  * Editor methods
@@ -89,6 +66,39 @@ const handleFocusOut = (event) => {
         changeFormat.value = false
     }
 }
+
+// TODO: implement image upload
+// for (let i = 0; i < rawData.length; i += filesPerRequest) {
+//     const uploadBlock = rawData.slice(i, i + filesPerRequest)
+//     // image upload requires submittion via form data 
+//     const formData = new FormData
+//     for (const fileObj of uploadBlock) {
+//         formData.append(fileObj.key, fileObj.file, fileObj.fileName)
+//     }
+//     if (i + filesPerRequest >= rawData.length) {
+//         uploadHeader['finalblock'] = true
+//     }
+
+//     const { response } = await api.POST('/images/', formData, null, uploadHeader)
+
+// const insertImage = (event) => {
+//     event.preventDefault()
+//     const items = event.dataTransfer.items;
+
+//     for (let i = 0; i < items.length; i++) {
+//         if (items[i].type.indexOf("image") !== -1) {
+//             //image
+//             const file = items[i].getAsFile();
+
+//             let reader = new FileReader()
+//             reader.readAsDataURL(file)
+//             reader.onloadend = function () {
+//                 editor.value.chain().focus().setImage({ src: reader.result }).run()
+//             }
+
+//         }
+//     }
+// }
 
 </script>
 
@@ -164,7 +174,7 @@ const handleFocusOut = (event) => {
             <div class="box">
 
                 <div class="control content">
-                    <!-- <textarea v-model="content" class="textarea" placeholder="Textarea"></textarea> -->
+                    <!-- Add @drop="insertImage" for image handling -->
                     <EditorContent :editor="editor" />
                 </div>
             </div>
@@ -186,4 +196,11 @@ const handleFocusOut = (event) => {
         }
     }
 }
+// Scoped styles do not affect v-html content! Use ::v-deep
+// note: I don't think we are using vue-loader, but the same applies.
+// https://vue-loader.vuejs.org/guide/scoped-css.html#deep-selectors
+:deep(img.ProseMirror-selectednode) {
+    outline: 3px solid $info;
+}
+
 </style>
