@@ -5,12 +5,17 @@
 
         <!-- Image to grade -->
         <div class='prompt'>
-            <div class='controls level'>
-                <TaskPicker @taskSelected="(newTaskId) => { currentTaskId = newTaskId }"></TaskPicker>
+            <div class='controls is-flex mb-5'>
+                <TaskPicker class="is-flex-grow-1" @taskSelected="(newTaskId) => { currentTaskId = newTaskId }"></TaskPicker>
+                <button class="button is-flex-shrink-1 is-warning is-light" type="button" @click="showAnnotationGuide">
+                    <span class="icon">
+                        <fa-icon :icon="['fa', 'question']" />
+                    </span>
+                </button>
             </div>
             <div class="has-text-danger" v-if="noMoreImages">No more images available in this task.</div>
 
-            <ImageSwipe @swipe-move="updatePercent" @swipe-end="swipeEnd" :disabled="!onDeck">
+            <ImageSwipe @swipe-move="updatePercent" @swipe-end="swipeEnd" :disabled="disableSwipe">
                 <ImageDisplay
                     v-if="!noMoreImages"
                     :imageUrl="onDeck?.imageUrl"
@@ -56,6 +61,8 @@
             </div>
 
         </div>
+
+        <AnnotationGuide v-if="showGuide" @exit="showGuide = !showGuide" :task-id="currentTaskId"/>
     </div>
 </template>
 
@@ -76,6 +83,7 @@ export default {
             currentTaskId: null,
             tasks: [],
             noMoreImages: false,
+            showGuide: false,
 
             // State information
             rating: '',
@@ -110,6 +118,9 @@ export default {
                 '--bg-yes-opacity': (this.percent > 0 ? this.percent*1.0 : 0),
                 '--img-trans': IMAGE_TRANSITION_TIME + 'ms'
             }
+        },
+        disableSwipe() {
+            return !this.onDeck || this.showGuide
         }
     },
     watch: {
@@ -236,6 +247,11 @@ export default {
 
         },
 
+        async showAnnotationGuide() {
+            
+            this.showGuide = true
+        },
+
         // After the image fully transitions out. 
         afterLeave() {
             console.log('after leave')
@@ -324,7 +340,7 @@ $no-cancer-color: #ff6184;
 
     .controls {
         color: hsl(0deg, 0%, 29%);
-        width: 100%;
+        // width: 100%;
 
         @include for-size(mobile) {
             padding: 0 0;
