@@ -9,7 +9,7 @@ const HTMLcontent = ref('No guide was found for this task.')
 
 if (taskId) {
     const { response } = await api.GET(`/tasks/${taskId}/guide`)
-    HTMLcontent.value = response.value
+    HTMLcontent.value = response.value || "<p>No guide provided.</p>"
 }
 
 const exit = () => {
