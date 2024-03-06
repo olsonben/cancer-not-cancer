@@ -15,6 +15,7 @@ router.get('/queue', isObserver, asyncHandler(imageController.getNextImageIds))
 
 router.get('/task/:taskId', isObserver, asyncHandler(imageController.getImageQueue))
 router.post('/', isInvestigator, imageController.uploadAndSaveImages) // asyncHandler already applied
+router.post('/annotations/', isInvestigator, imageController.uploadAndSaveAnnotationImages) // asyncHandler already applied
 router.post('/tag', isInvestigator, asyncHandler(imageController.createTag))
 router.post('/renameTag', isInvestigator, asyncHandler(imageController.updateTag))
 router.post('/moveTag', isInvestigator, asyncHandler(imageController.moveTag))
