@@ -2,13 +2,35 @@
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
-const api = useApi()
+const { uploadImageFilesForAnnotations } = useImageUpload()
 
 const props = defineProps({
         initialContent: { type: String, default: '' },
 })
 
-const changeFormat = ref(false)
+/**
+ * Handle image drag and drops
+ */
+
+const handleDragOver = (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    // Style the drag-and-drop with a (+)
+    event.dataTransfer.dropEffect = 'copy';
+
+}
+
+const imageLoading = ref(false)
+
+const insertImage = async (event) => {
+    addImage.value = false
+    imageLoading.value = true
+    const imageFiles = await uploadImageFilesForAnnotations(event)
+    imageFiles.forEach(file => {
+        editor.value.chain().focus().setImage({ src: file.imageUrl, alt: file.filename }).run()
+    })
+    imageLoading.value = false
+}
 
 const emit = defineEmits(['update'])
 const editor = useEditor({
@@ -27,6 +49,36 @@ const editor = useEditor({
     ],
     onUpdate: () => {
         emit('update', editor.value.getHTML())
+    },
+    editorProps: {
+        // Good Example: https://www.codemzy.com/blog/tiptap-drag-drop-image
+        // Prosemirror binding: https://prosemirror.net/docs/ref/#view.EditorProps.handleDrop
+        handleDrop: (view, event, slice, moved) => {
+            addImage.value = false
+            if (!moved) {
+                imageLoading.value = true
+                uploadImageFilesForAnnotations(event).then((images) => {
+                        const { schema } = view.state
+                        const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY })
+                        for (const file of images) {
+                            const node = schema.nodes.image.create({ src: file.imageUrl, alt: file.filename })
+                            const transaction = view.state.tr.insert(coordinates.pos, node)
+                            view.dispatch(transaction)
+                            // a more generic insert that works would be
+                            // editor.value.chain().focus().setImage({ src: file.imageUrl, alt: file.filename }).run()
+                        }
+                        imageLoading.value = false
+                    }).catch(error => {
+                        console.error(error)
+                    })
+    
+                // event handled
+                return true
+            }
+
+            // allow default behaviors to continue
+            return false
+        }
     }
 })
 
@@ -60,90 +112,17 @@ const clearFormatting = () => {
     editor.value.chain().focus().unsetAllMarks().run()
 }
 
+/**
+ * Editor controls visual state handling
+ */
+
+const changeFormat = ref(false)
+const addImage = ref(false)
+
 const handleFocusOut = (event) => {
     if (!event.currentTarget.contains(event.explicitOriginalTarget)) {
         changeFormat.value = false
-    }
-}
-const acceptableFormats = ['image/png', 'image/jpeg']
-
-
-const insertImage = async (event) => {
-    event.preventDefault()
-    const items = event.dataTransfer.items;
-    const imageFiles = []
-
-    if (items) {
-        Array.from(items).forEach(item => {
-            if (item.kind === 'file' && acceptableFormats.includes(item.type)) {
-                const file = item.getAsFile()
-                imageFiles.push(file)
-            }
-        })
-    }
-
-    if (!imageFiles.length) return
-
-    const savedFiles = await saveImages(imageFiles)
-
-    for (const file of savedFiles) {
-        editor.value.chain().focus().setImage({ src: file.imageUrl, alt: file.filename }).run()
-    }
-}
-const config = useRuntimeConfig()
-// Save the image
-const saveImages = async (files) => {
-    const uploadHeader = {
-        'uploadtime': new Date().toISOString()
-    }
-
-    const rawData = []
-
-    // Add the files array object
-    files.forEach((file, index) => {
-        if (file.size > config.public.uploadSizeLimit) {
-            console.error(`${file.name} is too large. MAX_BYTES: ${config.public.uploadSizeLimit}`)
-            return
-        }
-
-        const fileName = file.webkitRelativePath === '' ? file.name : file.webkitRelativePath
-        rawData.push({
-            'key': `files[${index}]`,
-            'file': file,
-            'fileName': fileName
-        })
-    })
-
-    try {
-        // image upload requires submittion via form data 
-        const formData = new FormData
-        for (const fileObj of rawData) {
-            formData.append(fileObj.key, fileObj.file, fileObj.fileName)
-        }
-
-        uploadHeader['finalblock'] = true
-
-        const { response } = await api.POST('/images/annotations/', formData, null, uploadHeader)
-
-        if (response.value !== 'No files uploaded.') {
-            // success
-            console.log(response.value)
-            return response.value
-        } else {
-            console.log('No Files to Upload')
-        }
-
-    } catch (error) {
-        // TODO: Determine when error.data exists
-        if (error.data) {
-            for (const file of error.data) {
-                // update failed status
-                console.warn(`${file.filename} failed to upload.`)
-            }
-        } else {
-            // Generic Error
-            console.error(error)
-        }
+        addImage.value = false
     }
 }
 
@@ -231,8 +210,33 @@ const saveImages = async (files) => {
                 <span class="icon"><fa-icon :icon="['fas', 'remove-format']" /></span>
             </button>
             <button class="button is-small" type="button" @click="editor.chain().focus().setHorizontalRule().run()">
-                <span class="has-text-weight-bold">—</span>
+                <span class="icon">
+                    <svg class="svg-inline--fa fa-code" aria-hidden="true" focusable="false" data-prefix="fas"
+                        data-icon="code" role="img" width="200" height="160" viewBox="0 0 200 160"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect y="70" width="200" height="20" rx="10" fill="currentColor" />
+                    </svg>
+                </span>
             </button>
+            <div class="dropdown is-right" :class="{ 'is-active': addImage }" @click="addImage = !addImage"
+                @focusout="handleFocusOut">
+                <div class="dropdown-trigger">
+                    <button class="button is-small" aria-haspopup="true" aria-controls="dropdown-menu" type="button">
+                        <span class="icon"><fa-icon :icon="['fas', 'image']" /></span>
+                    </button>
+                </div>
+                <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                    <div class="dropdown-content">
+                        <div class="dropdown-item content m-0">
+                            <div class="box dropbox-mini has-background-info-light has-text-centered"
+                                @dragover="handleDragOver" @drop.prevent="insertImage">
+                                <p class="title is-6">Drop Image Here</p>
+                                <p class="subtitle is-size-7 pt-4">Images can be dropped on the editor too.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -240,7 +244,7 @@ const saveImages = async (files) => {
         <div class="box">
 
             <div class="control content">
-                <EditorContent :editor="editor" @drop="insertImage" />
+                <EditorContent :editor="editor" />
             </div>
         </div>
     </div>
@@ -260,6 +264,23 @@ const saveImages = async (files) => {
             color: #fff;
         }
     }
+}
+.dropbox-mini {
+    outline: 2px dashed $primary;
+    /* the dash box */
+    // outline-offset: -10px;
+    /* outline on the inside */
+
+    // background: lightcyan;
+    color: $primary;
+
+    padding: 10px 10px;
+    min-height: 100px;
+    min-width: 160px;
+    /* minimum height */
+    position: relative;
+
+    cursor: pointer;
 }
 // Scoped styles do not affect v-html content! Use ::v-deep
 // note: I don't think we are using vue-loader, but the same applies.
