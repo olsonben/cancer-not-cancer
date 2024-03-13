@@ -91,6 +91,61 @@ const imageOps = {
         return rows
     },
 
+    async retrieveExistingFolders(user_id, parentFolderName) {
+        const getFolderStructureChildToParent = `
+            WITH RECURSIVE rel as (
+                SELECT tags.id, tags.name, tags.user_id, tag_relations.parent_tag_id as parent_id
+                FROM tags
+                LEFT JOIN tag_relations on tags.id = tag_relations.tag_id
+                WHERE tags.name = ? AND tags.user_id = ?
+                    UNION ALL
+                SELECT t.id, t.name, t.user_id, tr.parent_tag_id as parent_id
+                FROM tags t
+                LEFT JOIN tag_relations tr ON tr.tag_id = t.id
+                INNER JOIN rel ON tr.parent_tag_id = rel.id
+            )
+            SELECT * from rel`
+
+        // raw tag/folder structure [{id, name, user_id, parent_id}]
+        const rows = await dbOps.select(getFolderStructureChildToParent, [parentFolderName, user_id])
+
+        // map for direct access to each tag/folder
+        const folderMap = rows.reduce((fMap, row) => {
+            fMap[row.id] = { ...row, children: [] }
+            return fMap
+        }, {})
+
+        // organize folders into a tree
+        let root = null
+        rows.forEach(row => {
+            if (row.parent_id !== null) {
+                folderMap[row.parent_id].children.push(folderMap[row.id])
+            } else {
+                // root found
+                root = folderMap[row.id]
+            }
+        })
+
+        // recusive builds the paths for all the decending nodes
+        function buildPaths(node, currentPath = '') {
+            if (!node) return
+            const path = `${currentPath}/${node.name}`.replace(/^\//, '') // remove leading slash
+            foundFolders[path] = {
+                name: path,
+                id: node.id,
+                parentFolderName: currentPath
+            }
+            node.children.forEach(child => buildPaths(child, path))
+        }
+
+        const foundFolders = {}
+        if (root) {
+            buildPaths(root)
+        }
+
+        return foundFolders
+
+    },
     /**
      * Translates an array or set of folder paths into tag and creates tag relations accordingly.
      * 
