@@ -28,31 +28,19 @@ const altText = computed(() => props.altText ?? props.imageUrl)
 
 const showImage = ref(true)
 const zoom = ref(false)
-const translate = ref('translate(0px, 0px)')
+const origin = ref('0px 0px')
 
 const zoomHandler = (event) => {
     if (zoom.value) {
-        translate.value = 'translate(0px, 0px)'
         zoom.value = false
         return
     }
+    
     const rect = event.target.getBoundingClientRect()
-    const { width: imgWidth, height: imgHeight } = rect
     const x = event.clientX - rect.left
     const y = event.clientY - rect.top
-    console.log(x, y)
-    const maxLimit = (imgWidth / zoomScale.value) * 1.5
-    const minLimit = maxLimit * -1
-    const imgOrigin = { x: imgWidth/2, y: imgHeight/2 }
-    let transX = imgOrigin.x - x
-    transX = Math.max(minLimit, transX)
-    transX = Math.min(maxLimit, transX)
-    let transY = imgOrigin.y - y
-    transY = Math.max(minLimit, transY)
-    transY = Math.min(maxLimit, transY)
-
-    console.log(`translate(${transX}px, ${transY}px)`)
-    translate.value = `translate(${transX}px, ${transY}px)`
+    
+    origin.value = `${x}px ${y}px`
     zoom.value = true
 }
 
@@ -65,7 +53,7 @@ const cssVars = computed(() => {
     return {
         '--roi-ratio': roiRatio.value,
         '--zoom-scale': zoomScale.value,
-        '--translate': translate.value
+        '--origin': origin.value
     }
 })
 
@@ -100,8 +88,9 @@ watch(imageUrl, (newUrl, oldUrl) => {
     transition-duration: 0.5s;
     transition-timing-function: ease-out;
 
+    transform-origin: var(--origin);
     &.zoom {
-        transform: scale(var(--zoom-scale)) var(--translate);
+        transform: scale(var(--zoom-scale));
     }    
 
     img {
