@@ -28,6 +28,21 @@ const altText = computed(() => props.altText ?? props.imageUrl)
 
 const showImage = ref(true)
 const zoom = ref(false)
+const origin = ref('0px 0px')
+
+const zoomHandler = (event) => {
+    if (zoom.value) {
+        zoom.value = false
+        return
+    }
+    
+    const rect = event.target.getBoundingClientRect()
+    const x = event.clientX - rect.left
+    const y = event.clientY - rect.top
+    
+    origin.value = `${x}px ${y}px`
+    zoom.value = true
+}
 
 const roiRatio = computed(() => {
     return chipSize.value / fovSize.value
@@ -37,7 +52,8 @@ const showRoiBox = computed(() => !(chipSize.value > 0))
 const cssVars = computed(() => {
     return {
         '--roi-ratio': roiRatio.value,
-        '--zoom-scale': zoomScale.value
+        '--zoom-scale': zoomScale.value,
+        '--origin': origin.value
     }
 })
 
@@ -48,7 +64,7 @@ watch(imageUrl, (newUrl, oldUrl) => {
 </script>
 
 <template>
-    <div v-if="showImage" class="zoom-box" :class="{'zoom': zoom }" @click="zoom = !zoom" :style="cssVars">
+    <div v-if="showImage" class="zoom-box" :class="{'zoom': zoom }" @click="zoomHandler" :style="cssVars">
         
         <div v-if="!imageUrl" class="loading"></div>
         <template v-else>
@@ -72,6 +88,7 @@ watch(imageUrl, (newUrl, oldUrl) => {
     transition-duration: 0.5s;
     transition-timing-function: ease-out;
 
+    transform-origin: var(--origin);
     &.zoom {
         transform: scale(var(--zoom-scale));
     }    
