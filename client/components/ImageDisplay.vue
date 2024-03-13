@@ -28,6 +28,33 @@ const altText = computed(() => props.altText ?? props.imageUrl)
 
 const showImage = ref(true)
 const zoom = ref(false)
+const translate = ref('translate(0px, 0px)')
+
+const zoomHandler = (event) => {
+    if (zoom.value) {
+        translate.value = 'translate(0px, 0px)'
+        zoom.value = false
+        return
+    }
+    const rect = event.target.getBoundingClientRect()
+    const { width: imgWidth, height: imgHeight } = rect
+    const x = event.clientX - rect.left
+    const y = event.clientY - rect.top
+    console.log(x, y)
+    const maxLimit = (imgWidth / zoomScale.value) * 1.5
+    const minLimit = maxLimit * -1
+    const imgOrigin = { x: imgWidth/2, y: imgHeight/2 }
+    let transX = imgOrigin.x - x
+    transX = Math.max(minLimit, transX)
+    transX = Math.min(maxLimit, transX)
+    let transY = imgOrigin.y - y
+    transY = Math.max(minLimit, transY)
+    transY = Math.min(maxLimit, transY)
+
+    console.log(`translate(${transX}px, ${transY}px)`)
+    translate.value = `translate(${transX}px, ${transY}px)`
+    zoom.value = true
+}
 
 const roiRatio = computed(() => {
     return chipSize.value / fovSize.value
@@ -37,7 +64,8 @@ const showRoiBox = computed(() => !(chipSize.value > 0))
 const cssVars = computed(() => {
     return {
         '--roi-ratio': roiRatio.value,
-        '--zoom-scale': zoomScale.value
+        '--zoom-scale': zoomScale.value,
+        '--translate': translate.value
     }
 })
 
@@ -48,7 +76,7 @@ watch(imageUrl, (newUrl, oldUrl) => {
 </script>
 
 <template>
-    <div v-if="showImage" class="zoom-box" :class="{'zoom': zoom }" @click="zoom = !zoom" :style="cssVars">
+    <div v-if="showImage" class="zoom-box" :class="{'zoom': zoom }" @click="zoomHandler" :style="cssVars">
         
         <div v-if="!imageUrl" class="loading"></div>
         <template v-else>
@@ -73,7 +101,7 @@ watch(imageUrl, (newUrl, oldUrl) => {
     transition-timing-function: ease-out;
 
     &.zoom {
-        transform: scale(var(--zoom-scale));
+        transform: scale(var(--zoom-scale)) var(--translate);
     }    
 
     img {
