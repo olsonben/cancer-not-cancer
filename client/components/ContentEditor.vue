@@ -25,11 +25,25 @@ const imageLoading = ref(false)
 const insertImage = async (event) => {
     addImage.value = false
     imageLoading.value = true
-    const imageFiles = await uploadImageFilesForAnnotations(event)
-    imageFiles.forEach(file => {
-        editor.value.chain().focus().setImage({ src: file.imageUrl, alt: file.filename }).run()
-    })
-    imageLoading.value = false
+    // TODO: imageLoading doesn't account for multiple files.
+    const onFileUpdate = (file) => {
+        if (file.success === true) {
+            editor.value.chain().focus().setImage({ src: file.imageUrl, alt: file.filename }).run()
+            imageLoading.value = false
+        } else if (file.success === false) {
+            console.log(`Image failed to upload. Message: ${file.message}`)
+            imageLoading.value = false
+        } else {
+            // pending
+        }
+    }
+    uploadImageFilesForAnnotations(event, onFileUpdate)
+
+    // const imageFiles = await uploadImageFilesForAnnotations(event)
+    // imageFiles.forEach(file => {
+    //     editor.value.chain().focus().setImage({ src: file.imageUrl, alt: file.filename }).run()
+    // })
+    // imageLoading.value = false
 }
 
 const emit = defineEmits(['update'])
@@ -57,20 +71,35 @@ const editor = useEditor({
             addImage.value = false
             if (!moved) {
                 imageLoading.value = true
-                uploadImageFilesForAnnotations(event).then((images) => {
-                        const { schema } = view.state
-                        const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY })
-                        for (const file of images) {
-                            const node = schema.nodes.image.create({ src: file.imageUrl, alt: file.filename })
-                            const transaction = view.state.tr.insert(coordinates.pos, node)
-                            view.dispatch(transaction)
-                            // a more generic insert that works would be
-                            // editor.value.chain().focus().setImage({ src: file.imageUrl, alt: file.filename }).run()
-                        }
+                // TODO: imageLoading doesn't account for multiple files.
+                const { schema } = view.state
+                const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY })
+                const onFileUpdate = (file) => {
+                    if (file.success === true) {
+                        const node = schema.nodes.image.create({ src: file.imageUrl, alt: file.filename })
+                        const transaction = view.state.tr.insert(coordinates.pos, node)
+                        view.dispatch(transaction)
                         imageLoading.value = false
-                    }).catch(error => {
-                        console.error(error)
-                    })
+                    } else if (file.success === false) {
+                        console.log(`Image failed to upload. Message: ${file.message}`)
+                        imageLoading.value = false
+                    } else {
+                        // pending
+                    }
+                }
+                uploadImageFilesForAnnotations(event, onFileUpdate)
+                // uploadImageFilesForAnnotations(event).then((images) => {
+                //         const { schema } = view.state
+                //         const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY })
+                //         for (const file of images) {
+                //             const node = schema.nodes.image.create({ src: file.imageUrl, alt: file.filename })
+                //             const transaction = view.state.tr.insert(coordinates.pos, node)
+                //             view.dispatch(transaction)
+                //         }
+                //         imageLoading.value = false
+                //     }).catch(error => {
+                //         console.error(error)
+                //     })
     
                 // event handled
                 return true
