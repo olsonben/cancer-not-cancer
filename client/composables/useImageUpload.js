@@ -51,7 +51,7 @@ export const useImageUpload = () => {
             for (let i = 0; i < rawData.length; i += filesPerUploadRequest) {
                 const uploadBlock = rawData.slice(i, i + filesPerUploadRequest)
                 // image upload requires submittion via form data 
-                const formData = new FormData
+                const formData = new FormData()
                 for (const fileObj of uploadBlock) {
                     formData.append(fileObj.key, fileObj.file, fileObj.filename)
                     const submittedFile = getBaseFileObject(fileObj.filename)

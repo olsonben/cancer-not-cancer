@@ -60,6 +60,7 @@ export default defineNuxtConfig({
     
     public: {
       uploadSizeLimit: process.env.UPLOAD_SIZE_LIMIT,
+      filesPerUploadRequest: process.env.FILES_PER_UPLOAD_REQUEST,
       apiUrl: process.env.API_URL,
       matomoUrl: process.env.ANALYTICS_URL,
     }
