@@ -38,12 +38,6 @@ const insertImage = async (event) => {
         }
     }
     uploadImageFilesForAnnotations(event, onFileUpdate)
-
-    // const imageFiles = await uploadImageFilesForAnnotations(event)
-    // imageFiles.forEach(file => {
-    //     editor.value.chain().focus().setImage({ src: file.imageUrl, alt: file.filename }).run()
-    // })
-    // imageLoading.value = false
 }
 
 const emit = defineEmits(['update'])
@@ -88,18 +82,6 @@ const editor = useEditor({
                     }
                 }
                 uploadImageFilesForAnnotations(event, onFileUpdate)
-                // uploadImageFilesForAnnotations(event).then((images) => {
-                //         const { schema } = view.state
-                //         const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY })
-                //         for (const file of images) {
-                //             const node = schema.nodes.image.create({ src: file.imageUrl, alt: file.filename })
-                //             const transaction = view.state.tr.insert(coordinates.pos, node)
-                //             view.dispatch(transaction)
-                //         }
-                //         imageLoading.value = false
-                //     }).catch(error => {
-                //         console.error(error)
-                //     })
     
                 // event handled
                 return true
