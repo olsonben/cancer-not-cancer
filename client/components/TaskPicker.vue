@@ -35,7 +35,16 @@ watch(selectedTask, async (newTask, oldTask) => {
 </template>
 
 <style lang="scss" scoped>
-.task-picker select {
-    font-weight: 600;
-}
+.task-picker {
+    select {
+        font-weight: 600;
+        width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+
+        option {
+            white-space: normal;
+        }
+
+}}
 </style>
