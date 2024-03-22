@@ -6,35 +6,36 @@
         <!-- Image to grade -->
         <div class='prompt'>
             <div class='controls is-flex mb-5'>
-                <TaskPicker class="is-flex-grow-1" @taskSelected="(newTaskId) => { currentTaskId = newTaskId }"></TaskPicker>
-                <button class="button is-flex-shrink-1 is-warning is-light" type="button" @click="showAnnotationGuide">
-                    <span class="icon">
-                        <fa-icon :icon="['fa', 'question']" />
-                    </span>
-                </button>
+                <TaskPicker class="is-flex-grow-1" @taskSelected="(newTaskId) => { currentTaskId = newTaskId }">
+                </TaskPicker>
             </div>
             <div class="has-text-danger" v-if="noMoreImages">No more images available in this task.</div>
 
             <ImageSwipe @swipe-move="updatePercent" @swipe-end="swipeEnd" :disabled="disableSwipe">
-                <ImageDisplay
-                    v-if="!noMoreImages"
-                    :imageUrl="onDeck?.imageUrl"
-                    :altText="onDeck?.name"
-                    :chipSize="onDeck?.chipSize"
-                    :fovSize="onDeck?.fovSize"
-                    :zoomScale="onDeck?.zoomScale"
-                    :resetTrigger="resetTrigger"
-                />
-            </ImageSwipe>  
+                <ImageDisplay v-if="!noMoreImages" :imageUrl="onDeck?.imageUrl" :altText="onDeck?.name"
+                    :chipSize="onDeck?.chipSize" :fovSize="onDeck?.fovSize" :zoomScale="onDeck?.zoomScale"
+                    :resetTrigger="resetTrigger" />
+            </ImageSwipe>
 
-            <div v-if='onDeck' class='controls level'>
-                <p class="help is-hidden-desktop">Tap to zoom.</p>
-                <p class="help is-hidden-touch">Click to zoom.</p>
+            <div v-if="!noMoreImages" class='level is-flex'>
+                <div class="level-left is-flex">
+                    <div class="level-item">
+                        <p class="help is-hidden-desktop">Tap to zoom.</p>
+                        <p class="help is-hidden-touch">Click to zoom.</p>
+                    </div>
+                </div>
+                <div class="level-right is-flex mt-0">
+                    <div class="level-item">
+                        <p class="help annotation-link" @click="showAnnotationGuide">
+                            Annotation Guide
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <!-- Response section: grade + comment --> 
-        <div v-if="!noMoreImages" class='response-area'>
+
+        <!-- Response section: grade + comment -->
+        <div v-if=" !noMoreImages" class='response-area'>
             <div class="has-text-centered swipe-pad" :class="{ 'shown': !commenting }">
                 <span class='icon swipe left'>
                     <img src="~assets/icons/arrow-set.svg" alt="swipe left">
@@ -58,12 +59,13 @@
                 </span>
             </button>
             <div class="container">
-                <textarea class='textarea block' :class="{ 'shown': commenting }" placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
+                <textarea class='textarea block' :class="{ 'shown': commenting }"
+                    placeholder="Add a comment to this image or leave blank." v-model="comment"></textarea>
             </div>
 
         </div>
 
-        <AnnotationGuide v-if="showGuide" @exit="showGuide = !showGuide" :task-id="currentTaskId"/>
+        <AnnotationGuide v-if="showGuide" @exit="showGuide = !showGuide" :task-id="currentTaskId" />
     </div>
 </template>
 
@@ -357,6 +359,12 @@ $no-cancer-color: #ff6184;
     }
  
 }
+
+.annotation-link {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 /* stuck to the bottom of the screen */
 .response-area {
     margin: 0 auto;
