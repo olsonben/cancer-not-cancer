@@ -23,6 +23,7 @@
                     :chipSize="onDeck?.chipSize"
                     :fovSize="onDeck?.fovSize"
                     :zoomScale="onDeck?.zoomScale"
+                    :resetTrigger="resetTrigger"
                 />
             </ImageSwipe>  
 
@@ -95,6 +96,8 @@ export default {
             moveRight: false,
             moveLeft: false,
             percent: 0.0,
+
+            resetTrigger: false
         }
     },
     async mounted() {
@@ -230,6 +233,7 @@ export default {
                 this.onDeck = this.queue.getNextImage()
                 this.comment = ''
                 this.commenting = false
+                this.resetTrigger = !this.resetTrigger
 
                 // record important data, this POST is async, but making the
                 // request happen after the image swapping after seeing weird

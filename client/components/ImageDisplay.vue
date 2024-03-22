@@ -9,7 +9,8 @@ const props = defineProps({
     altText: { type: String },
     chipSize: { type: Number, default: 128 },
     fovSize: { type: Number },
-    zoomScale: { type: Number }
+    zoomScale: { type: Number },
+    resetTrigger: { type: Boolean }
 })
 
 const numberValidator = (value, defaultValue) => {
@@ -43,6 +44,12 @@ const zoomHandler = (event) => {
     origin.value = `${x}px ${y}px`
     zoom.value = true
 }
+
+// on resetTrigger change, reset zoom
+watch(() => props.resetTrigger, () => {
+    console.log('props.resetTrigger')
+    zoom.value = false
+})
 
 const roiRatio = computed(() => {
     return chipSize.value / fovSize.value
