@@ -5,7 +5,6 @@
         <div class="nav-bumper">
             <NuxtPage  />
         </div>
-        <Login class='login-modal' />
     </div>
 </template>
 

@@ -1,5 +1,5 @@
 <template>
-    <div class="modal" v-bind:class="{ 'is-active' : loginPath && !isLoggedIn }">
+    <div v-if="loginPath && !isLoggedIn" class="modal is-active">
         <div class="modal-background"></div>
         <div class="modal-content">
             <div class="section">
@@ -10,7 +10,7 @@
                         </p>
                     </div>
                     <div class="block">
-                        <a class="button" :href='loginLink'>Login with Google</a>
+                        <NuxtLink class="button" :to='loginLink'>Login with Google</NuxtLink>
                     </div>
                 </div>
             </div>

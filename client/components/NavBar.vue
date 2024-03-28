@@ -11,7 +11,7 @@
                 <!-- Logout/Login -->
                 <div class="buttons">
                     <NuxtLink v-if='isLoggedIn' to='/logout' class='button is-light'>Log Out</NuxtLink>
-                    <a v-else :href='loginLink' class='button is-light'>Log In</a>
+                    <NuxtLink v-else :to='loginLink' class='button is-light'>Log In</NuxtLink>
                 </div>
             </div>
 
@@ -71,7 +71,7 @@
                     <!-- Logout/Login -->
                     <div class="buttons">
                         <NuxtLink v-if='isLoggedIn' to='/logout' class='button is-light'>Log Out</NuxtLink>
-                        <a v-else :href='loginLink' class='button is-light'>Log In</a>
+                        <NuxtLink v-else :to='loginLink' class='button is-light'>Log In</NuxtLink>
                     </div>
                 </div>
             </div>
