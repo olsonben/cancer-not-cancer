@@ -2,6 +2,7 @@
     <div class='app' :style='cssVars'>
         <div class="bg no" :class="{'fade-out': transitioningOut}"></div>
         <div class="bg yes" :class="{'fade-out': transitioningOut}"></div>
+        <div class="button" @click="changeUrl">Test</div>
 
         <!-- Image to grade -->
         <div class='prompt'>
@@ -72,11 +73,19 @@
 <script>
 import { mapState } from 'pinia'
 import { useUserStore } from '~/store/user'
+import { useLoginUrl } from '~/store/loginUrl'
 const api = useApi()
 const imageQueue = useImageQueue(1)
 
+definePageMeta({
+    key: 'pathapp-view'
+})
+
+const route = useRoute()
+console.log("route.params")
+console.log(route.params)
+
 const IMAGE_TRANSITION_TIME = 250 // ms
-// const IMAGE_TRANSITION_TIME = 2000 // ms
 export default {
     data() {
         return {
@@ -103,6 +112,9 @@ export default {
         }
     },
     async mounted() {
+        const loginState = useLoginUrl()
+        console.log(loginState.loginUrl)
+        console.log('mounted')
         if (this.isLoggedIn) {
             const { response } = await api.GET('/tasks/')
             this.tasks = response.value
@@ -157,6 +169,14 @@ export default {
         }
     },
     methods: {
+        changeUrl() {
+            console.log('changeUrl')
+            const router = useRouter()
+            // console.log(router)
+            router.push({ path: `/pathapp/task-1/20` })
+            // history.pushState({}, "", `/pathapp/task-3/20`)
+            // this.$nuxt.$router.push({ path: `/pathapp/task-3/20` })
+        },
         async getNewQueue() {
             try {
                 const { response } = await api.GET(`/images/task/${this.currentTaskId}`)
