@@ -26,16 +26,19 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     if (pathologistPages.includes(to.name)) {
         if (userStore.isLoggedIn && !userStore.isPathologist) {
             return navigateTo('/')
+        } else if (!userStore.isLoggedIn) {
+            return navigateTo(getLoginUrl(to.fullPath), { external: true })
         }
     } else if (investigatorPages.includes(to.name)) {
         if (userStore.isLoggedIn && !userStore.isUploader) {
             return navigateTo('/')
+        } else if (!userStore.isLoggedIn) {
+            return navigateTo(getLoginUrl(to.fullPath), { external: true })
         }
     } else if (adminPages.includes(to.name)) {
         if (userStore.isLoggedIn && !userStore.isAdmin) {
             return navigateTo('/')
         } else if (!userStore.isLoggedIn) {
-            // TODO: do this for all the routes
             return navigateTo(getLoginUrl(to.fullPath), { external: true })
         }
     }

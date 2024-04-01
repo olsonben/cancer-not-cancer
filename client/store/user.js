@@ -1,5 +1,6 @@
 import { defineStore } from "pinia"
 
+// https://pinia.vuejs.org/core-concepts/#Setup-Stores
 export const useUserStore = defineStore('user', () => {
     const api = useApi()
 

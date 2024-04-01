@@ -1,0 +1,493 @@
+
+
+<script setup>
+// import { mapState } from 'pinia'
+import { computed, onMounted, reactive, watch } from 'vue';
+import { useUserStore } from '~/store/user'
+const userStore = useUserStore()
+const IMAGE_TRANSITION_TIME = 250 // ms
+
+
+const api = useApi()
+const queue = useImageQueue(1)
+
+definePageMeta({
+    key: 'pathapp-view'
+})
+
+// STATE
+const curTask = reactive({
+    onDeck: null,
+    id: null,
+    allTasks: [],
+    noMoreImages: false,
+    showGuide: false
+})
+
+// Grading Information
+const curImage = reactive({
+    rating: '',
+    comment: '',
+    commenting: false,
+})
+
+// For swiping
+const swipe = reactive({
+    moveRight: false,
+    moveLeft: false,
+    percent: 0.0
+})
+
+const resetTrigger = ref(false)
+
+// const route = useRoute()
+// console.log("route.params")
+// console.log(route.params)
+    
+const currentTask = computed(() => {
+    return curTask.allTasks.find((task) => task.id === curTask.id)
+})
+
+const noBgOpacity = computed(() => swipe.percent < 0 ? swipe.percent*-1.0 : 0)
+const yesBgOpacity = computed(() => swipe.percent > 0 ? swipe.percent*1.0 : 0)
+const imgTransitionTime = IMAGE_TRANSITION_TIME + 'ms'
+
+const disableSwipe = computed(() => !curTask.onDeck || curTask.showGuide)
+
+watch(() => userStore.isLoggedIn, async (loggedIn) => {
+    if (loggedIn) {
+        // Previously not logged in, and now logged in.
+        const { response } = await api.GET('/tasks/')
+        curTask.allTasks = response.value // because response is a ref object
+        curTask.id = curTask.allTasks[0].id
+    }
+})
+
+watch(() => curTask.id, (newTaskId) => {
+    // TODO: check this out further
+    queue.reset()
+    curTask.noMoreImages = false
+    getNewQueue()
+})
+
+watch(() => curTask.onDeck, async (newValue, oldValue) => {
+    if (newValue === null && oldValue !== null) {
+        // end of queue... get more images if possible
+        getNewQueue()
+    }
+})
+ 
+const changeUrl = () => {
+    console.log('changeUrl')
+    const router = useRouter()
+    // console.log(router)
+    router.push({ path: `/pathapp/task-1/20` })
+    // history.pushState({}, "", `/pathapp/task-3/20`)
+    // this.$nuxt.$router.push({ path: `/pathapp/task-3/20` })
+}
+
+const getNewQueue = async () => {
+    console.log('getNewQueue')
+    try {
+        const { response } = await api.GET(`/images/task/${curTask.id}`)
+        if (response.value.length === 0) {
+            curTask.noMoreImages = true
+        } else {
+            const imageArray = response.value.map(imgData => {
+                return {
+                    ...imgData,
+                    'chipSize': currentTask.value.chip_size,
+                    'fovSize': currentTask.value.fov_size,
+                    'zoomScale': currentTask.value.zoom_scale,
+                }
+            })
+
+            // shuffle the images
+            shuffleArray(imageArray)
+            queue.addImages(imageArray)
+            curTask.onDeck = queue.getNextImage()
+        }
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+
+const updatePercent = (newPercent) => {
+    swipe.percent = newPercent
+    
+    if (swipe.percent >= 1) {
+        swipe.moveLeft = false
+        swipe.moveRight = true
+    } else if (swipe.percent <= -1) {
+        swipe.moveLeft = true
+        swipe.moveRight = false
+    } else {
+        swipe.moveLeft = false
+        swipe.moveRight = false
+    }
+}
+
+const swipeEnd = (direction) => {
+    if (direction === 'right') {
+        onClick('yes')
+    } else if (direction === 'left') {
+        onClick('no')
+    } else if (direction === 'up') {
+        curImage.commenting = true
+    } else if (direction === 'down') {
+        curImage.commenting = false
+    }
+}
+/**********************************************
+* App Control
+**********************************************/
+// when a button is clicked
+const onClick = async (source) => {
+    // determine the message based on source
+    if (source === 'yes') {
+        curImage.rating = 1
+    } else if (source === 'no') {
+        curImage.rating = -1
+    } else if (source === 'maybe') {
+        curImage.rating = 0
+    } else {
+        return
+    }
+
+    curTask.onDeck.rating = curImage.rating
+    
+    // record the response
+    try {
+        // save important data
+        const ratingImageId = curTask.onDeck.image_id
+        const comment = curImage.comment
+
+        // move on to the next image, and reset comment box
+        curTask.onDeck = queue.getNextImage()
+        curImage.comment = ''
+        curImage.commenting = false
+        resetTrigger.value = !resetTrigger.value
+
+        // record important data, this POST is async, but making the
+        // request happen after the image swapping after seeing weird
+        // hiccups with image loading during development
+        api.POST('/hotornot', {
+            id: ratingImageId,
+            rating: curImage.rating,
+            comment: curImage.comment,
+            taskId: curTask.id
+        })
+        
+    } catch (error) {
+        console.error(error)
+    }
+
+}
+
+const showAnnotationGuide = () => { curTask.showGuide = true }
+
+
+onMounted(async () => {
+    console.log('mounted pathapp')
+    if (userStore.isLoggedIn) {
+        console.log('isLoggedIn')
+        const { response } = await api.GET('/tasks/')
+        curTask.allTasks = response.value
+        curTask.id = curTask.allTasks[0].id
+        console.log('currentTaskId:', currentTask.value.id)
+    }
+})
+
+
+// Helper - Durstenfeld Shuffle
+// https://stackoverflow.com/a/12646864/3068136
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        const temp = array[i]
+        array[i] = array[j]
+        array[j] = temp
+    }
+}
+</script>
+
+<template>
+    <div class='app'>
+        <div class="bg no"></div>
+        <div class="bg yes"></div>
+        <div class="button" @click="changeUrl">Test</div>
+
+        <!-- Image to grade -->
+        <div class='prompt'>
+            <div class='controls is-flex mb-5'>
+                <TaskPicker class="is-flex-grow-1" @taskSelected="(newTaskId) => { curTask.id = newTaskId }">
+                </TaskPicker>
+            </div>
+            <div class="has-text-danger" v-if="curTask.noMoreImages">No more images available in this task.</div>
+
+            <ImageSwipe @swipe-move="updatePercent" @swipe-end="swipeEnd" :disabled="disableSwipe">
+                <ImageDisplay v-if="!curTask.noMoreImages" :imageUrl="curTask.onDeck?.imageUrl" :altText="curTask.onDeck?.name"
+                    :chipSize="curTask.onDeck?.chipSize" :fovSize="curTask.onDeck?.fovSize" :zoomScale="curTask.onDeck?.zoomScale"
+                    :resetTrigger="resetTrigger" />
+            </ImageSwipe>
+
+            <div v-if="!curTask.noMoreImages" class='level is-flex'>
+                <div class="level-left is-flex">
+                    <div class="level-item">
+                        <p class="help is-hidden-desktop">Tap to zoom.</p>
+                        <p class="help is-hidden-touch">Click to zoom.</p>
+                    </div>
+                </div>
+                <div class="level-right is-flex mt-0">
+                    <div class="level-item">
+                        <p class="help annotation-link" @click="showAnnotationGuide">
+                            Annotation Guide
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Response section: grade + comment -->
+        <div v-if="!curTask.noMoreImages" class='response-area'>
+            <div class="has-text-centered swipe-pad" :class="{ 'shown': !curImage.commenting }">
+                <span class='icon swipe left'>
+                    <img src="~assets/icons/arrow-set.svg" alt="swipe left">
+                </span>
+                <span class='icon swipe right'>
+                    <img src="~assets/icons/arrow-set.svg" alt="swipe right">
+                </span>
+            </div>
+
+            <!-- Grade buttons -->
+            <div class='block grade-buttons'>
+                <button class='button no' :class="{ 'shown': swipe.moveLeft }" @click="onClick('no')">No</button>
+                <button class='button maybe' @click="onClick('maybe')">Maybe</button>
+                <button class='button yes' :class="{ 'shown': swipe.moveRight }" @click="onClick('yes')">Yes</button>
+            </div>
+
+            <!-- Comment -->
+            <button class='button icon-button comment' @click='curImage.commenting = !curImage.commenting'>
+                <span class='icon'>
+                    <fa-icon :icon="['fas', 'pencil']" class="fa-xl" />
+                </span>
+            </button>
+            <div class="container">
+                <textarea class='textarea block' :class="{ 'shown': curImage.commenting }"
+                    placeholder="Add a comment to this image or leave blank." v-model="curImage.comment"></textarea>
+            </div>
+
+        </div>
+
+        <AnnotationGuide v-if="curTask.showGuide" @exit="curTask.showGuide = !curTask.showGuide" :task-id="curTask.id" />
+    </div>
+</template>
+
+<style lang='scss' scoped>
+.app {
+    /* To prevent scrolling */
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding-top: $block-margin;
+}
+
+$yes-cancer-color: #5A46B9;
+$no-cancer-color: #ff6184;
+
+@mixin bg-fade-out {
+    transition: opacity v-bind(imgTransitionTime) ease-out;
+    opacity: 0;
+}
+
+.bg {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.0;
+    transition: opacity 50ms;
+    // display: none;
+
+
+    &.no {
+        background-color: lighten($no-cancer-color, 10%);
+        opacity: v-bind(noBgOpacity);
+
+        // override existing transtion for transitioning image
+        &.fade-out {
+            @include bg-fade-out;
+        }
+    }
+    
+    &.yes {
+        background-color: lighten($yes-cancer-color, 10%);
+        opacity: v-bind(yesBgOpacity);
+
+        // override existing transtion for transitioning image
+        &.fade-out {
+            @include bg-fade-out;
+        }
+    }
+}
+
+/* Control image size + overlay */
+.prompt {
+    margin: auto;
+    position: relative;
+    max-width: 50vh;
+    padding-bottom: $block-margin;
+    width: 100%;
+
+    @include for-size(mobile) {
+        padding: 0 $block-margin 0;
+        max-width: 100%;
+    }
+
+    .controls {
+        color: hsl(0deg, 0%, 29%);
+        // width: 100%;
+
+        @include for-size(mobile) {
+            padding: 0 0;
+        }
+
+        strong {
+            padding-top: 0.8rem;
+            display: inline-block;
+        }
+    }
+ 
+}
+
+.annotation-link {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* stuck to the bottom of the screen */
+.response-area {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 50vh;
+    
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+
+    @include for-size(mobile) {
+        padding: 0 $block-margin $block-margin;
+        max-width: 100%;
+    }
+
+    /* special for extra-small mobile */
+    @include for-size(small_mobile) {
+        margin: 0 9px;
+        max-width: 100%;
+    }
+
+    & .swipe-pad {
+        width: 100%;
+        padding-bottom: 1.25rem;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+
+        // Don't show the swipe arrows on none touch devices
+        // https://stackoverflow.com/a/11387852
+        @media (hover: hover) {
+            display: none;
+        }
+
+        .icon.swipe {
+            width: 6.625rem;
+            height: 0rem;
+            pointer-events: none;
+            opacity: 0;
+
+            transition-property: height, opacity;
+            transition-duration: 0.25s;
+            transition-timing-function: ease-out;
+            
+
+            &.left {
+                align-self: flex-start;
+            }
+
+            &.right {
+                align-self: flex-end;
+                transform: rotate(180deg);
+            }
+        }
+
+        &.shown {
+            .icon.swipe {
+                height: 3.125rem;
+                opacity: 0.4;
+            }
+        }
+    }
+
+    .container {
+        margin: 0;
+
+        textarea {
+            min-height: 0;
+            height: 0px;
+            opacity: 0;
+            // transition: height 0.25s ease-out;
+            transition-property: height, opacity;
+            transition-duration: 0.25s;
+            transition-timing-function: ease-out;
+    
+            &.shown {
+                height: 70px;
+                opacity: 1;
+            }
+        }
+    }
+}
+
+.icon-button {
+    /* centered circle */
+    border-radius: 50%;
+    margin: 0 auto $button-margin auto;
+
+    &.comment {
+        background-color: rgba(0,0,0,0);
+    }
+}
+.grade-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    flex-wrap: nowrap;
+    width: 100%;
+    // margin-bottom: 0.75rem;
+
+    .button {
+        /* coloration for "yes" and "no" buttons to match grade bars */
+        border-color: #00000033;
+        padding: 0.75rem 0.875rem;
+        width: 5.5rem;
+
+        &.no {
+                        /* lighten is a native sass function */
+            background-color: lighten($no-cancer-color, 20%);
+            &.shown {
+                background-color: $no-cancer-color;
+            }
+        }
+        &.yes {
+            background-color: lighten($yes-cancer-color, 30%);
+            &.shown {
+                background-color: $yes-cancer-color;
+            }
+        }
+    }
+
+}
+
+</style>
