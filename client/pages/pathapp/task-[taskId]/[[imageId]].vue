@@ -1,7 +1,4 @@
-
-
 <script setup>
-// import { mapState } from 'pinia'
 import { computed, onMounted, reactive, watch } from 'vue';
 import { useUserStore } from '~/store/user'
 const userStore = useUserStore()
@@ -15,7 +12,10 @@ definePageMeta({
     key: 'pathapp-view'
 })
 
-// STATE
+/*******************************
+ * TASK/RATING DATA AND CONTROLS
+ *******************************/
+/** Current Task Data */
 const curTask = reactive({
     onDeck: null,
     id: null,
@@ -24,68 +24,68 @@ const curTask = reactive({
     showGuide: false
 })
 
-// Grading Information
+// TODO: this is probably not needed
+const currentTask = computed(() => {
+    return curTask.allTasks.find((task) => task.id === curTask.id)
+})
+
+/** Rating Data for the Current Image */
 const curImage = reactive({
     rating: '',
     comment: '',
     commenting: false,
 })
 
-// For swiping
-const swipe = reactive({
-    moveRight: false,
-    moveLeft: false,
-    percent: 0.0
-})
-
+/** Helper for resetting the image some after rating. */
 const resetTrigger = ref(false)
 
-// const route = useRoute()
-// console.log("route.params")
-// console.log(route.params)
-    
-const currentTask = computed(() => {
-    return curTask.allTasks.find((task) => task.id === curTask.id)
-})
+/** Turns on the annotation modal. */
+const showAnnotationGuide = () => { curTask.showGuide = true }
 
-const noBgOpacity = computed(() => swipe.percent < 0 ? swipe.percent*-1.0 : 0)
-const yesBgOpacity = computed(() => swipe.percent > 0 ? swipe.percent*1.0 : 0)
-const imgTransitionTime = IMAGE_TRANSITION_TIME + 'ms'
-
-const disableSwipe = computed(() => !curTask.onDeck || curTask.showGuide)
-
-watch(() => userStore.isLoggedIn, async (loggedIn) => {
-    if (loggedIn) {
-        // Previously not logged in, and now logged in.
-        const { response } = await api.GET('/tasks/')
-        curTask.allTasks = response.value // because response is a ref object
-        curTask.id = curTask.allTasks[0].id
+/** On rating either by click or swipe. */
+const onClick = async (source) => {
+    // determine the message based on source
+    if (source === 'yes') {
+        curImage.rating = 1
+    } else if (source === 'no') {
+        curImage.rating = -1
+    } else if (source === 'maybe') {
+        curImage.rating = 0
+    } else {
+        return
     }
-})
 
-watch(() => curTask.id, (newTaskId) => {
-    // TODO: check this out further
-    queue.reset()
-    curTask.noMoreImages = false
-    getNewQueue()
-})
+    curTask.onDeck.rating = curImage.rating
 
-watch(() => curTask.onDeck, async (newValue, oldValue) => {
-    if (newValue === null && oldValue !== null) {
-        // end of queue... get more images if possible
-        getNewQueue()
+    // record the response
+    try {
+        // save important data
+        const ratingImageId = curTask.onDeck.image_id
+        const comment = curImage.comment
+
+        // move on to the next image, and reset comment box
+        curTask.onDeck = queue.getNextImage()
+        curImage.comment = ''
+        curImage.commenting = false
+        resetTrigger.value = !resetTrigger.value
+
+        // record important data, this POST is async, but making the
+        // request happen after the image swapping after seeing weird
+        // hiccups with image loading during development
+        api.POST('/hotornot', {
+            id: ratingImageId,
+            rating: curImage.rating,
+            comment: curImage.comment,
+            taskId: curTask.id
+        })
+
+    } catch (error) {
+        console.error(error)
     }
-})
- 
-const changeUrl = () => {
-    console.log('changeUrl')
-    const router = useRouter()
-    // console.log(router)
-    router.push({ path: `/pathapp/task-1/20` })
-    // history.pushState({}, "", `/pathapp/task-3/20`)
-    // this.$nuxt.$router.push({ path: `/pathapp/task-3/20` })
+
 }
 
+/** Populates the queue with images from the current task. */
 const getNewQueue = async () => {
     console.log('getNewQueue')
     try {
@@ -112,8 +112,37 @@ const getNewQueue = async () => {
     }
 }
 
+/** If current task changes, update queue */
+watch(() => curTask.id, (newTaskId) => {
+    // TODO: check this out further
+    queue.reset()
+    curTask.noMoreImages = false
+    getNewQueue()
+})
+/** If the next image is null, we need to pull more images from the database. */
+watch(() => curTask.onDeck, async (newValue, oldValue) => {
+    if (newValue === null && oldValue !== null) {
+        // end of queue... get more images if possible
+        getNewQueue()
+    }
+})
 
-const updatePercent = (newPercent) => {
+/*************************
+ * SWIPE DATA AND CONTROLS
+ *************************/
+const swipe = reactive({
+    moveRight: false,
+    moveLeft: false,
+    percent: 0.0
+})
+
+const noBgOpacity = computed(() => swipe.percent < 0 ? swipe.percent * -1.0 : 0)
+const yesBgOpacity = computed(() => swipe.percent > 0 ? swipe.percent * 1.0 : 0)
+const imgTransitionTime = IMAGE_TRANSITION_TIME + 'ms'
+
+const disableSwipe = computed(() => !curTask.onDeck || curTask.showGuide)
+
+const onSwipeMove = (newPercent) => {
     swipe.percent = newPercent
     
     if (swipe.percent >= 1) {
@@ -128,7 +157,7 @@ const updatePercent = (newPercent) => {
     }
 }
 
-const swipeEnd = (direction) => {
+const onSwipeEnd = (direction) => {
     if (direction === 'right') {
         onClick('yes')
     } else if (direction === 'left') {
@@ -139,55 +168,13 @@ const swipeEnd = (direction) => {
         curImage.commenting = false
     }
 }
-/**********************************************
-* App Control
-**********************************************/
-// when a button is clicked
-const onClick = async (source) => {
-    // determine the message based on source
-    if (source === 'yes') {
-        curImage.rating = 1
-    } else if (source === 'no') {
-        curImage.rating = -1
-    } else if (source === 'maybe') {
-        curImage.rating = 0
-    } else {
-        return
-    }
 
-    curTask.onDeck.rating = curImage.rating
-    
-    // record the response
-    try {
-        // save important data
-        const ratingImageId = curTask.onDeck.image_id
-        const comment = curImage.comment
+/*************************
+ * DATA FETCHING
+ *************************/
 
-        // move on to the next image, and reset comment box
-        curTask.onDeck = queue.getNextImage()
-        curImage.comment = ''
-        curImage.commenting = false
-        resetTrigger.value = !resetTrigger.value
-
-        // record important data, this POST is async, but making the
-        // request happen after the image swapping after seeing weird
-        // hiccups with image loading during development
-        api.POST('/hotornot', {
-            id: ratingImageId,
-            rating: curImage.rating,
-            comment: curImage.comment,
-            taskId: curTask.id
-        })
-        
-    } catch (error) {
-        console.error(error)
-    }
-
-}
-
-const showAnnotationGuide = () => { curTask.showGuide = true }
-
-
+// TODO: this should probably happen outside the onMounted function.
+/** Fetch data on mount. */
 onMounted(async () => {
     console.log('mounted pathapp')
     if (userStore.isLoggedIn) {
@@ -199,9 +186,30 @@ onMounted(async () => {
     }
 })
 
+/** If loggin state was slow, attempt to pull data again. */
+watch(() => userStore.isLoggedIn, async (loggedIn) => {
+    if (loggedIn) {
+        // Previously not logged in, and now logged in.
+        const { response } = await api.GET('/tasks/')
+        curTask.allTasks = response.value // because response is a ref object
+        curTask.id = curTask.allTasks[0].id
+    }
+})
 
-// Helper - Durstenfeld Shuffle
-// https://stackoverflow.com/a/12646864/3068136
+// WIP
+const changeUrl = () => {
+    console.log('changeUrl')
+    const router = useRouter()
+    // console.log(router)
+    router.push({ path: `/pathapp/task-1/20` })
+    // history.pushState({}, "", `/pathapp/task-3/20`)
+    // this.$nuxt.$router.push({ path: `/pathapp/task-3/20` })
+}
+
+/**
+ * Helper - Durstenfeld Shuffle
+ * https://stackoverflow.com/a/12646864/3068136
+ */
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1))
@@ -226,7 +234,7 @@ function shuffleArray(array) {
             </div>
             <div class="has-text-danger" v-if="curTask.noMoreImages">No more images available in this task.</div>
 
-            <ImageSwipe @swipe-move="updatePercent" @swipe-end="swipeEnd" :disabled="disableSwipe">
+            <ImageSwipe @swipe-move="onSwipeMove" @swipe-end="onSwipeEnd" :disabled="disableSwipe">
                 <ImageDisplay v-if="!curTask.noMoreImages" :imageUrl="curTask.onDeck?.imageUrl" :altText="curTask.onDeck?.name"
                     :chipSize="curTask.onDeck?.chipSize" :fovSize="curTask.onDeck?.fovSize" :zoomScale="curTask.onDeck?.zoomScale"
                     :resetTrigger="resetTrigger" />
