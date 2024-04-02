@@ -4,17 +4,23 @@ const api = useApi()
 const props = defineProps({
     label: String,
     sizeClass: String,
+    initialTaskId: {
+        type: Number,
+        default() { return null }
+    }
 })
 
 const emit = defineEmits(['taskSelected'])
 
 // get tasks assigned to user
 const { response: tasks } = await api.GET('/tasks/')
-const selectedTask = ref(null)
+const selectedTask = ref(props.initialTaskId)
 
-if (tasks.value[0]) {
+if (selectedTask.value === null && tasks.value[0]) {
     selectedTask.value = tasks.value[0].id
-} else {
+}
+
+if (!tasks.value[0]) {
     console.log('You have no assigned tasks.')
 }
 

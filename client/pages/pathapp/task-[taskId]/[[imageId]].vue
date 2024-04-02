@@ -1,16 +1,17 @@
 <script setup>
-import { computed, onMounted, reactive, watch } from 'vue';
-import { useUserStore } from '~/store/user'
-const userStore = useUserStore()
-const IMAGE_TRANSITION_TIME = 250 // ms
-
-
-const api = useApi()
-const queue = useImageQueue(1)
+import { useUserStore } from '@/store/user'
 
 definePageMeta({
     key: 'pathapp-view'
 })
+
+const userStore = useUserStore()
+const api = useApi()
+const queue = useImageQueue(1)
+
+const route = useRoute()
+const taskId = Number(route.params.taskId) || null
+const imageId = Number(route.params.imageId) || null
 
 /*******************************
  * TASK/RATING DATA AND CONTROLS
@@ -18,13 +19,14 @@ definePageMeta({
 /** Current Task Data */
 const curTask = reactive({
     onDeck: null,
-    id: null,
+    id: taskId,
     allTasks: [],
     noMoreImages: false,
     showGuide: false
 })
 
-// TODO: this is probably not needed
+// TODO: I would be good to update the structure above to be the actual current task.
+// Then this can be removed.
 const currentTask = computed(() => {
     return curTask.allTasks.find((task) => task.id === curTask.id)
 })
@@ -75,7 +77,7 @@ const onClick = async (source) => {
         api.POST('/hotornot', {
             id: ratingImageId,
             rating: curImage.rating,
-            comment: curImage.comment,
+            comment: comment,
             taskId: curTask.id
         })
 
@@ -87,18 +89,20 @@ const onClick = async (source) => {
 
 /** Populates the queue with images from the current task. */
 const getNewQueue = async () => {
-    console.log('getNewQueue')
     try {
         const { response } = await api.GET(`/images/task/${curTask.id}`)
         if (response.value.length === 0) {
             curTask.noMoreImages = true
+            // TODO: this probably shouldn't live here
+            const router = useRouter()
+            router.push({ path: `/pathapp/task-${curTask.id}/` })
         } else {
             const imageArray = response.value.map(imgData => {
                 return {
                     ...imgData,
-                    'chipSize': currentTask.value.chip_size,
-                    'fovSize': currentTask.value.fov_size,
-                    'zoomScale': currentTask.value.zoom_scale,
+                    'chipSize': currentTask.chip_size,
+                    'fovSize': currentTask.fov_size,
+                    'zoomScale': currentTask.zoom_scale,
                 }
             })
 
@@ -125,6 +129,10 @@ watch(() => curTask.onDeck, async (newValue, oldValue) => {
         // end of queue... get more images if possible
         getNewQueue()
     }
+    if (newValue) {
+        const router = useRouter()
+        router.push({ path: `/pathapp/task-${curTask.id}/${curTask.onDeck.image_id}` })
+    }
 })
 
 /*************************
@@ -138,7 +146,6 @@ const swipe = reactive({
 
 const noBgOpacity = computed(() => swipe.percent < 0 ? swipe.percent * -1.0 : 0)
 const yesBgOpacity = computed(() => swipe.percent > 0 ? swipe.percent * 1.0 : 0)
-const imgTransitionTime = IMAGE_TRANSITION_TIME + 'ms'
 
 const disableSwipe = computed(() => !curTask.onDeck || curTask.showGuide)
 
@@ -172,39 +179,22 @@ const onSwipeEnd = (direction) => {
 /*************************
  * DATA FETCHING
  *************************/
+const loadTaskData = async () => {
+    const { response } = await api.GET('/tasks/')
+    curTask.allTasks = response.value
+    getNewQueue()
+}
 
-// TODO: this should probably happen outside the onMounted function.
-/** Fetch data on mount. */
-onMounted(async () => {
-    console.log('mounted pathapp')
-    if (userStore.isLoggedIn) {
-        console.log('isLoggedIn')
-        const { response } = await api.GET('/tasks/')
-        curTask.allTasks = response.value
-        curTask.id = curTask.allTasks[0].id
-        console.log('currentTaskId:', currentTask.value.id)
-    }
-})
+/** Fetch data. */
+if (userStore.isLoggedIn) loadTaskData()
 
 /** If loggin state was slow, attempt to pull data again. */
 watch(() => userStore.isLoggedIn, async (loggedIn) => {
     if (loggedIn) {
         // Previously not logged in, and now logged in.
-        const { response } = await api.GET('/tasks/')
-        curTask.allTasks = response.value // because response is a ref object
-        curTask.id = curTask.allTasks[0].id
+        loadTaskData()
     }
 })
-
-// WIP
-const changeUrl = () => {
-    console.log('changeUrl')
-    const router = useRouter()
-    // console.log(router)
-    router.push({ path: `/pathapp/task-1/20` })
-    // history.pushState({}, "", `/pathapp/task-3/20`)
-    // this.$nuxt.$router.push({ path: `/pathapp/task-3/20` })
-}
 
 /**
  * Helper - Durstenfeld Shuffle
@@ -224,19 +214,20 @@ function shuffleArray(array) {
     <div class='app'>
         <div class="bg no"></div>
         <div class="bg yes"></div>
-        <div class="button" @click="changeUrl">Test</div>
 
         <!-- Image to grade -->
         <div class='prompt'>
             <div class='controls is-flex mb-5'>
-                <TaskPicker class="is-flex-grow-1" @taskSelected="(newTaskId) => { curTask.id = newTaskId }">
+                <TaskPicker class="is-flex-grow-1" :initialTaskId="taskId"
+                    @taskSelected="(newTaskId) => { curTask.id = newTaskId }">
                 </TaskPicker>
             </div>
             <div class="has-text-danger" v-if="curTask.noMoreImages">No more images available in this task.</div>
 
             <ImageSwipe @swipe-move="onSwipeMove" @swipe-end="onSwipeEnd" :disabled="disableSwipe">
-                <ImageDisplay v-if="!curTask.noMoreImages" :imageUrl="curTask.onDeck?.imageUrl" :altText="curTask.onDeck?.name"
-                    :chipSize="curTask.onDeck?.chipSize" :fovSize="curTask.onDeck?.fovSize" :zoomScale="curTask.onDeck?.zoomScale"
+                <ImageDisplay v-if="!curTask.noMoreImages" :imageUrl="curTask.onDeck?.imageUrl"
+                    :altText="curTask.onDeck?.name" :chipSize="curTask.onDeck?.chipSize"
+                    :fovSize="curTask.onDeck?.fovSize" :zoomScale="curTask.onDeck?.zoomScale"
                     :resetTrigger="resetTrigger" />
             </ImageSwipe>
 
@@ -288,7 +279,8 @@ function shuffleArray(array) {
 
         </div>
 
-        <AnnotationGuide v-if="curTask.showGuide" @exit="curTask.showGuide = !curTask.showGuide" :task-id="curTask.id" />
+        <AnnotationGuide v-if="curTask.showGuide" @exit="curTask.showGuide = !curTask.showGuide"
+            :task-id="curTask.id" />
     </div>
 </template>
 
@@ -306,7 +298,7 @@ $yes-cancer-color: #5A46B9;
 $no-cancer-color: #ff6184;
 
 @mixin bg-fade-out {
-    transition: opacity v-bind(imgTransitionTime) ease-out;
+    transition: opacity 250ms ease-out;
     opacity: 0;
 }
 
