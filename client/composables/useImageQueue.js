@@ -25,7 +25,7 @@ let maxPreload = null
 
 export const useImageQueue = (iMaxPreload = 1) => {
     if (maxPreload === null) {
-        // console.log('First instance of image queue')
+        // First instance of image queue
         maxPreload = iMaxPreload
     }
 

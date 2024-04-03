@@ -22,7 +22,7 @@ const imageOps = {
      * @returns {ImageObject} - ImageObject which contains `path` and `original_name`.
      */
     async getNextImage(imageId) {
-        const query = `SELECT id, path FROM images WHERE images.id = ?`
+        const query = `SELECT id, path, original_name FROM images WHERE images.id = ?`
         const rows = await dbOps.select(query, [imageId])
         return rows[0]
     },

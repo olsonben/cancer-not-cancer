@@ -1,5 +1,6 @@
 <script setup>
 import { useUserStore } from '@/store/user'
+import { computed } from 'vue';
 
 definePageMeta({
     key: 'pathapp-view'
@@ -12,6 +13,20 @@ const queue = useImageQueue(1)
 const route = useRoute()
 const taskId = Number(route.params.taskId) || null
 const imageId = Number(route.params.imageId) || null
+
+let firstImage = null
+if (imageId) {
+    try {
+        const { response } = await api.GET('/images/', { imageId: imageId})
+        firstImage = response.value
+    } catch (error) {
+        if (error.statusCode === 404) {
+            console.warn(`Image ${imageId} was not found.`)
+        } else {
+            throw error
+        }
+    }
+}
 
 /*******************************
  * TASK/RATING DATA AND CONTROLS
@@ -87,6 +102,15 @@ const onClick = async (source) => {
 
 }
 
+const buildImageObject = (imgData) => {
+    return {
+        ...imgData,
+        'chipSize': currentTask.chip_size,
+        'fovSize': currentTask.fov_size,
+        'zoomScale': currentTask.zoom_scale,
+    }
+}
+
 /** Populates the queue with images from the current task. */
 const getNewQueue = async () => {
     try {
@@ -97,17 +121,21 @@ const getNewQueue = async () => {
             const router = useRouter()
             router.push({ path: `/pathapp/task-${curTask.id}/` })
         } else {
-            const imageArray = response.value.map(imgData => {
-                return {
-                    ...imgData,
-                    'chipSize': currentTask.chip_size,
-                    'fovSize': currentTask.fov_size,
-                    'zoomScale': currentTask.zoom_scale,
+            const check = new Set()
+            if (firstImage) check.add(firstImage.image_id)
+            const imageArray = response.value.reduce((acc, imgData) => {
+                if (check.has(imgData.image_id)) {
+                    return acc
+                } else {
+                    check.add(imgData.image_id)
+                    return acc.concat([buildImageObject(imgData)])
                 }
-            })
+            }, [])
 
             // shuffle the images
             shuffleArray(imageArray)
+            if (firstImage) imageArray.unshift(buildImageObject(firstImage))
+            firstImage = null
             queue.addImages(imageArray)
             curTask.onDeck = queue.getNextImage()
         }
@@ -144,8 +172,12 @@ const swipe = reactive({
     percent: 0.0
 })
 
-const noBgOpacity = computed(() => swipe.percent < 0 ? swipe.percent * -1.0 : 0)
-const yesBgOpacity = computed(() => swipe.percent > 0 ? swipe.percent * 1.0 : 0)
+const cssVars = computed(() => {
+    return {
+        '--bg-no-opacity': (swipe.percent < 0 ? swipe.percent * -1.0 : 0),
+        '--bg-yes-opacity': (swipe.percent > 0 ? swipe.percent * 1.0 : 0),
+    }
+})
 
 const disableSwipe = computed(() => !curTask.onDeck || curTask.showGuide)
 
@@ -211,7 +243,7 @@ function shuffleArray(array) {
 </script>
 
 <template>
-    <div class='app'>
+    <div class='app' :style="cssVars" >
         <div class="bg no"></div>
         <div class="bg yes"></div>
 
@@ -314,7 +346,7 @@ $no-cancer-color: #ff6184;
 
     &.no {
         background-color: lighten($no-cancer-color, 10%);
-        opacity: v-bind(noBgOpacity);
+        opacity: var(--bg-no-opacity);
 
         // override existing transtion for transitioning image
         &.fade-out {
@@ -324,7 +356,7 @@ $no-cancer-color: #ff6184;
     
     &.yes {
         background-color: lighten($yes-cancer-color, 10%);
-        opacity: v-bind(yesBgOpacity);
+        opacity: var(--bg-yes-opacity);
 
         // override existing transtion for transitioning image
         &.fade-out {

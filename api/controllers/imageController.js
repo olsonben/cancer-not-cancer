@@ -27,12 +27,18 @@ const imageController = {
         console.log("GET: nextImage", imageId);
 
         const img = await imageOps.getNextImage(imageId)
-                const pathUrl = new URL(img.path, imageBaseURL)
-        
-        res.send({
-            id: img.id, // imageID
-            url: pathUrl.href
-        })
+
+        if (img === undefined) {
+            res.status(404).send({ message: 'Image not found' })
+        } else {
+            const pathUrl = new URL(img.path, imageBaseURL)
+    
+            res.send({
+                image_id: img.id, // imageID
+                imageUrl: pathUrl.href,
+                name: img.original_name
+            })
+        }
     },
     
     /** Retrieve a queue of next image ids for grading based on taskId. */

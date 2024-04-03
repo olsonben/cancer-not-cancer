@@ -16,6 +16,17 @@ const emit = defineEmits(['taskSelected'])
 const { response: tasks } = await api.GET('/tasks/')
 const selectedTask = ref(props.initialTaskId)
 
+watch(selectedTask, async (newTask, oldTask) => {
+    emit('taskSelected', newTask)
+})
+
+if (selectedTask.value) {
+    const isInTasks = tasks.value.some(task => task.id == selectedTask.value)
+    if (!isInTasks) {
+        selectedTask.value = null
+    }
+}
+
 if (selectedTask.value === null && tasks.value[0]) {
     selectedTask.value = tasks.value[0].id
 }
@@ -24,9 +35,7 @@ if (!tasks.value[0]) {
     console.log('You have no assigned tasks.')
 }
 
-watch(selectedTask, async (newTask, oldTask) => {
-    emit('taskSelected', newTask)
-})
+
 </script>
 
 <template>

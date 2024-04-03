@@ -42,5 +42,4 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
             return navigateTo(getLoginUrl(to.fullPath), { external: true })
         }
     }
-    console.log('middleWare pass')
 })
