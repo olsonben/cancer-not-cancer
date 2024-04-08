@@ -160,6 +160,9 @@ watch(() => curTask.onDeck, async (newValue, oldValue) => {
     if (newValue) {
         const router = useRouter()
         router.push({ path: `/pathapp/task-${curTask.id}/${curTask.onDeck.image_id}` })
+        useHead({
+            title: `Task: ${curTask.id} - Image: ${curTask.onDeck.image_id}`
+        })
     }
 })
 

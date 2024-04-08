@@ -75,7 +75,7 @@ export default defineNuxtConfig({
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: '@import "@/assets/scss/variables.scss"; @import "@/assets/scss/colors.scss";',
+          additionalData: '@use "@/assets/scss/variables.scss" as *; @use "@/assets/scss/colors.scss" as *;',
         }
       },
     }
@@ -120,8 +120,12 @@ export default defineNuxtConfig({
    * Sourcemap and devtools are on by default in dev mode. To use them in
    * staging or production you should uncomment them.
    */
-  // sourcemap: true,
-  devtools: { enabled: false }
+  sourcemap: true,
+  devtools: { enabled: true,
+    timeline: {
+      enabled: true
+    }
+  }
   // debug: true
 
 })

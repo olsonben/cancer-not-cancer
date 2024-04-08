@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "scripts": {
+    "devDebug": "nuxi dev --dotenv .env.development --inspect",
     "dev": "nuxt dev --dotenv .env.development",
     "staging": "NODE_OPTIONS=--openssl-legacy-provider nuxt start --dotenv .env.staging --port $PORT",
     "gen-dev": "nuxt generate --dotenv .env.development",
@@ -17,17 +18,17 @@
     "@nuxt/devtools": "latest",
     "@pinia/nuxt": "^0.5.1",
     "@tiptap/extension-image": "^2.2.4",
-    "@tiptap/pm": "^2.2.3",
-    "@tiptap/starter-kit": "^2.2.3",
-    "@tiptap/vue-3": "^2.2.3",
-    "bulma": "^0.9.4",
+    "@tiptap/pm": "^2.2.4",
+    "@tiptap/starter-kit": "^2.2.4",
+    "@tiptap/vue-3": "^2.2.4",
+    "bulma": "0.9.4",
     "form-data": "^4.0.0",
     "kill-port": "^2.0.0",
-    "nuxt": "^3.8.0",
+    "nuxt": "^3.11.1",
     "pinia": "^2.1.7",
-    "sass": "^1.52.1",
-    "vue": "^3.3.7",
+    "sass": "^1.72.0",
+    "vue": "^3.4.21",
     "vue-matomo": "^4.2.0",
-    "vue-router": "^4.2.5"
+    "vue-router": "^4.3.0"
   }
 }
