@@ -7,39 +7,43 @@
             <div class="field-body pl-4 pb-2">
                 <div class="field is-grouped">
                     <div class="control">
-                        <input ref="folderName" class="input is-small" :class="{ 'blink': attention }" type="text" placeholder="Folder Name" v-model="createTagName">
+                        <input ref="folderName" class="input is-small" :class="{ 'blink': attention }" type="text"
+                            placeholder="Folder Name" v-model="createTagName">
                     </div>
                     <div class="control">
-                        <button class="button is-small is-success has-text-weight-bold" type="button" @click="createTag">+</button>
+                        <button class="button is-small is-success has-text-weight-bold has-text-white" type="button"
+                            @click="createTag">+</button>
                     </div>
                 </div>
             </div>
             <span v-if="!deleteMode">In Edit </span><span v-else>In Delete </span>Mode
             <div class="field-body pl-4 pb-2">
-                    <div class="field is-grouped">
-                        <div class="control">
-                            <button class="button is-small is-info has-text-weight-bold" type="button" @click="toggleMode" :disabled="!deleteMode">Edit Mode</button>
-                        </div>
-                        <div class="control">
-                            <button class="button is-small is-danger has-text-weight-bold" type="button" @click="toggleMode" :disabled="deleteMode">Delete Mode</button>
-                        </div>
+                <div class="field is-grouped">
+                    <div class="control">
+                        <button class="button is-small is-info has-text-weight-bold has-text-white" type="button"
+                            @click="toggleMode" :disabled="!deleteMode">Edit Mode</button>
+                    </div>
+                    <div class="control">
+                        <button class="button is-small is-danger has-text-weight-bold" type="button" @click="toggleMode"
+                            :disabled="deleteMode">Delete Mode</button>
                     </div>
                 </div>
+            </div>
             <!-- TODO: This is essentially the ImagePicker can that component be used here? -->
             <div class="menu">
-                <p v-if="!deleteMode" class="menu-label">Images Folders: Drag files and folder where you want to move them.</p>
-                <p v-else class="menu-label"><span class="has-text-danger">WARNING:</span> Deleting folders and images will permanently remove files, including images associated with existing tasks.</p>
+                <p v-if="!deleteMode" class="menu-label">Images Folders: Drag files and folder where you want to move
+                    them.</p>
+                <p v-else class="menu-label"><span class="has-text-danger">WARNING:</span> Deleting folders and images
+                    will permanently remove files, including images associated with existing tasks.</p>
                 <!-- TODO: Should probably be replaced with a app wide loading animation. -->
                 <button v-if="loading" class="button is-loading is-medium is-info">loading</button>
                 <ul class="menu-list">
                     <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
                     <li v-for="(file, index) in files" :key="fileKey(file)">
-                        <folder v-if="isFolder(file)"
-                        v-model="files[index]"
-                        @change="masterChangeHandler"
-                        :editable="!deleteMode"
-                        :deletable="deleteMode"/>
-                        <File v-else v-model="files[index]" :editable="!deleteMode" :deletable="deleteMode" @change="masterChangeHandler"></File>
+                        <folder v-if="isFolder(file)" v-model="files[index]" @change="masterChangeHandler"
+                            :editable="!deleteMode" :deletable="deleteMode" />
+                        <File v-else v-model="files[index]" :editable="!deleteMode" :deletable="deleteMode"
+                            @change="masterChangeHandler"></File>
                     </li>
 
                 </ul>

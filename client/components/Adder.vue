@@ -4,12 +4,8 @@
             <div class="column" @drop="onDrop($event, 'applied')" @dragover.prevent @dragenter.prevent>
                 <h2 class="has-text-weight-semibold">Active</h2>
                 <ul>
-                    <li
-                        v-for="tag in localTags.applied"
-                        :key="tag.id"
-                        v-draggable="{ tag, type: 'applied', editable: true }"
-                        class="tag is-info"
-                    >
+                    <li v-for="tag in localTags.applied" :key="tag.id"
+                        v-draggable="{ tag, type: 'applied', editable: true }" class="tag is-info has-text-white">
                         {{ tag.name }}
                     </li>
                 </ul>
@@ -17,12 +13,8 @@
             <div class="column" @drop="onDrop($event, 'available')" @dragover.prevent @dragenter.prevent>
                 <h2 class="has-text-weight-semibold">Available</h2>
                 <ul>
-                    <li
-                        v-for="tag in localTags.available"
-                        :key="tag.id"
-                        v-draggable="{ tag, type: 'available', editable: true }"
-                        class="tag is-success"
-                    >
+                    <li v-for="tag in localTags.available" :key="tag.id"
+                        v-draggable="{ tag, type: 'available', editable: true }" class="tag is-success has-text-white">
                         {{ tag.name }}
                     </li>
                 </ul>

@@ -4,14 +4,16 @@
  */
 
 // DEV: Make sure new scss files are added to nuxt.config.js under styleResources.scss to make them globally available
-@import 'colors.scss';
-@import 'variables.scss';
+@use 'colors.scss' as *;
 
-// Make bulma a layer so it is easier to overwrite 
-// https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity#precedence_over_third-party_css
-@layer bulma {
-    @import '../../node_modules/bulma/bulma.sass';
-}
+@use '../../node_modules/bulma/sass' as bulma with(
+        $primary: $primary,
+        $link: $link,
+        $info: $info,
+        $success: $success,
+        $warning: $warning,
+        $danger: $danger
+);
 
 :root {
     --overscroll: auto;

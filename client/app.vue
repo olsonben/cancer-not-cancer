@@ -1,3 +1,11 @@
+<script setup>
+useHead({
+    htmlAttrs: {
+        class: 'theme-light',
+    },
+});
+</script>
+
 <template>
     <div>
         <!-- Every page should have the navbar + body -->

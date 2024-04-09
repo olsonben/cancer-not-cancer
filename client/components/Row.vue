@@ -8,13 +8,13 @@
             </template>
             <template v-else-if="propName === 'action'">
                 <div class="buttons is-center">
-                    <button class="button is-small is-info" type="button" @click="editRow">
+                    <button class="button is-small is-info has-text-white" type="button" @click="editRow">
                         <span class="icon"><fa-icon :icon="['far', 'pen-to-square']" /></span>
                     </button>
-                    <button class="button is-small is-danger" type="button" @click="deleteRow">
+                    <button class="button is-small is-danger has-text-white" type="button" @click="deleteRow">
                         <span class="icon"><fa-icon :icon="['far', 'trash-can']" /></span>
                     </button>
-                    <button class="button is-small is-success" type="button" @click="exportAction">
+                    <button class="button is-small is-success has-text-white" type="button" @click="exportAction">
                         <span class="icon"><fa-icon :icon="['fas', 'download']" /></span>
                     </button>
                 </div>

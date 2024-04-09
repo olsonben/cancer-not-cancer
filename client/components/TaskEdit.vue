@@ -8,7 +8,8 @@
                     <div class="field">
                         <label class="label">Name</label>
                         <div class="control is-medium">
-                            <input class="input is-medium has-text-weight-bold" type="text" v-model="localTask.short_name">
+                            <input class="input is-medium has-text-weight-bold" type="text"
+                                v-model="localTask.short_name">
                         </div>
                     </div>
                     <div class="field">
@@ -21,25 +22,18 @@
                     <!-- Tab navigation -->
                     <div class="task-edit-nav tabs is-boxed">
                         <ul>
-                            <li v-for="tab in tabs"
-                                :key="tab.name"
-                                :class="{ 'is-active': activeTab === tab.name }"
+                            <li v-for="tab in tabs" :key="tab.name" :class="{ 'is-active': activeTab === tab.name }"
                                 @click="activeTab = tab.name">
                                 <a>{{ tab.label }}</a>
                             </li>
                         </ul>
                     </div>
-                
+
                     <!-- Tab contents for editing the task -->
                     <div class="field">
                         <template v-for="tab in tabs">
-                            <component
-                                :is="tab.component"
-                                :key="tab.name"
-                                v-if="activeTab === tab.name"
-                                v-bind="tab.props"
-                                v-on="tab.events"
-                            />
+                            <component :is="tab.component" :key="tab.name" v-if="activeTab === tab.name"
+                                v-bind="tab.props" v-on="tab.events" />
                         </template>
                     </div>
 
@@ -49,7 +43,7 @@
                             <button class="button is-warning" @click="cancelChanges">Cancel</button>
                         </p>
                         <p class="control">
-                            <button class="button is-success" @click="saveChanges">Save</button>
+                            <button class="button is-success has-text-white" @click="saveChanges">Save</button>
                         </p>
                     </div>
                 </div>
