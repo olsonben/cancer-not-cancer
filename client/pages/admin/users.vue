@@ -112,6 +112,11 @@ export default {
             notificationTime: "5000",
         }
     },
+    created() {
+        useHead({
+            title: 'Admin - Users'
+        })
+    },
 
     methods: {
         addSubmittedUser(submitId, propObj) {

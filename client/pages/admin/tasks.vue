@@ -80,6 +80,9 @@ export default {
     watch: {
     },
     created() {
+        useHead({
+            title: 'Admin - Tasks'
+        })
         this.getTasksTable()
     },
 

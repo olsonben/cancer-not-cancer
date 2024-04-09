@@ -1,6 +1,10 @@
 <script setup>
 import { useUserStore } from "~/store/user";
 const isLoggedIn = useUserStore().isLoggedIn
+
+useHead({
+    title: 'Home'
+})
 </script>
 
 <template>

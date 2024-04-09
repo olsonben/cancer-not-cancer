@@ -6,6 +6,18 @@ definePageMeta({
     key: 'pathapp-view'
 })
 
+let isPopState = ref(false)
+const popstateHandler = (event) => {
+    isPopState.value = true
+}
+
+// setup popstate listener
+window.addEventListener('popstate', popstateHandler)
+onBeforeUnmount(() => {
+    window.removeEventListener('popstate', popstateHandler)
+})
+
+
 const userStore = useUserStore()
 const api = useApi()
 const queue = useImageQueue(1)
@@ -163,6 +175,13 @@ watch(() => curTask.onDeck, async (newValue, oldValue) => {
         useHead({
             title: `Task: ${curTask.id} - Image: ${curTask.onDeck.image_id}`
         })
+    }
+})
+
+watch(() => isPopState.value, (popstate) => {
+    if (popstate === true) {
+        console.log('BACK BUTTON DETECTED')
+        isPopState.value = false
     }
 })
 

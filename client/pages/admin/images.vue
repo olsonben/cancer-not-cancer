@@ -135,6 +135,11 @@ export default {
         }
     },
 
+    created() {
+        useHead({
+            title: 'Admin - Images'
+        })
+    },
     mounted() {
         this.reset()
     },

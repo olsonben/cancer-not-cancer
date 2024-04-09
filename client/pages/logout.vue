@@ -4,16 +4,14 @@
     </div>
 </template>
 
-<script>
+<script setup>
 import { useUserStore } from '~/store/user'
+useHead({
+    title: 'Logout'
+})
 
-export default {
-    // Automatically logout when coming to this page
-    created() {
-        const user = useUserStore()
-        if (user.isLoggedIn) {
-            user.logout()
-        }
-    }
+const user = useUserStore()
+if (user.isLoggedIn) {
+    user.logout()
 }
 </script>

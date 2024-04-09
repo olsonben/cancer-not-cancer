@@ -1,3 +1,8 @@
+<script setup lang="ts">
+useHead({
+  title: 'Issues'
+})
+</script>
 <template>
     <div class='section'>
 
