@@ -122,5 +122,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/* CSS for the current page */
+/* NavBar is fixed to the top */
+.main-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+
+    width: 100%;
+}
 </style>
