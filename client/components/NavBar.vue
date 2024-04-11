@@ -41,8 +41,7 @@
                 </NuxtLink>
 
                 <!-- CancerNotCancer -->
-                <!-- TODO: temp navigation to task-0, remove when no longer needed. -->
-                <NuxtLink to='/pathapp/task-0' v-if='isPathologist' class="navbar-item">
+                <NuxtLink to='/pathapp/' v-if='isPathologist' class="navbar-item">
                     CancerNotCancer
                 </NuxtLink>
 

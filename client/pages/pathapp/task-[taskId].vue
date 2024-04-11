@@ -1,8 +1,4 @@
 <script setup>
-definePageMeta({
-    key: 'pathapp-view'
-})
-
 let isPopState = ref(false)
 const popstateHandler = (event) => {
     isPopState.value = true
@@ -14,14 +10,12 @@ onBeforeUnmount(() => {
     window.removeEventListener('popstate', popstateHandler)
 })
 
-
-
 const api = useApi()
 const queue = useTaskQueue(1)
 
 const route = useRoute()
 const taskId = Number(route.params.taskId) || null
-const imageId = Number(route.params.imageId) || null
+let imageId = Number(route.params.imageId) || null
 
 let firstImage = null
 if (imageId) {
@@ -151,7 +145,13 @@ watch(() => currentImage.value, async (newValue, oldValue) => {
     }
     if (newValue) {
         const router = useRouter()
-        router.push({ path: `/pathapp/task-${curTask.id}/${currentImage.value.image_id}` })
+        if (imageId === null) {
+            // TODO: can this be done without using imageId
+            imageId = currentImage.value.image_id
+            router.replace({ path: `/pathapp/task-${curTask.id}/${currentImage.value.image_id}` })
+        } else {
+            router.push({ path: `/pathapp/task-${curTask.id}/${currentImage.value.image_id}` })
+        }
         useHead({
             title: `Task: ${curTask.id} - Image: ${currentImage.value.image_id}`
         })
