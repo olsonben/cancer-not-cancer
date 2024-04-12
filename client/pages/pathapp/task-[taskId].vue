@@ -48,9 +48,6 @@ const curTask = reactive({
 
 const currentImage = useState('currentImage')
 
-/** Helper for resetting the image some after rating. */
-const resetTrigger = ref(false)
-
 /** Turns on the annotation modal. */
 const showAnnotationGuide = () => { curTask.showGuide = true }
 
@@ -76,7 +73,6 @@ const onClick = async (source) => {
 
         // move on to the next image, and reset comment box
         queue.nextImage()
-        resetTrigger.value = !resetTrigger.value
 
         // record important data, this POST is async, but making the
         // request happen after the image swapping after seeing weird

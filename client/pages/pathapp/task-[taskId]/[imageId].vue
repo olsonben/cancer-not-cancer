@@ -1,8 +1,5 @@
 <script setup>
-import { watch } from 'vue';
-
 const curImage = useState('currentImage')
-const resetTrigger = ref(false)
 
 </script>
 
@@ -13,7 +10,6 @@ const resetTrigger = ref(false)
         :chipSize="curImage?.chipSize"
         :fovSize="curImage?.fovSize"
         :zoomScale="curImage?.zoomScale"
-        :resetTrigger="resetTrigger"
     />
 </template>
 
