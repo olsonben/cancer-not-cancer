@@ -1,4 +1,5 @@
 <script setup>
+import { useTaskQueue } from '@/store/taskQueue'
 const config = useRuntimeConfig()
 const router = useRouter()
 
@@ -83,7 +84,7 @@ const { data, pending, error, refresh: getMoreImages } = await useFetch(`/images
 queue.addImages(data.value)
 
 if (imageId === null) {
-    imageId = queue.currentImage.value.image_id
+    imageId = queue.currentImage.image_id
     router.replace({ path: `/pathapp/task-${curTask.id}/${imageId}` })
 }
 
@@ -102,22 +103,22 @@ const showAnnotationGuide = () => { curTask.showGuide = true }
 const onClick = async (source) => {
     // determine the message based on source
     if (source === 'yes') {
-        queue.currentImage.value.rating = 1
+        queue.currentImage.rating = 1
     } else if (source === 'no') {
-        queue.currentImage.value.rating = -1
+        queue.currentImage.rating = -1
     } else if (source === 'maybe') {
-        queue.currentImage.value.rating = 0
+        queue.currentImage.rating = 0
     } else {
         return
     }
-    console.log('onClick: Rating:', queue.currentImage.value.rating)
+    console.log('onClick: Rating:', queue.currentImage.rating)
 
     // record the response
     try {
         // save important data
-        const ratingImageId = queue.currentImage.value.image_id
-        const rating = queue.currentImage.value.rating
-        const comment = queue.currentImage.value.comment
+        const ratingImageId = queue.currentImage.image_id
+        const rating = queue.currentImage.rating
+        const comment = queue.currentImage.comment
 
         // move on to the next image, and reset comment box
         queue.nextImage()
@@ -190,7 +191,7 @@ const getNewQueue = async () => {
 // getNewQueue()
 
 /** If the next image is null, we need to pull more images from the database. */
-watch(() => queue.currentImage.value, async (newValue, oldValue) => {
+watch(() => queue.currentImage, async (newValue, oldValue) => {
     if (newValue === null && oldValue !== null) {
         // end of queue... get more images if possible
         // getNewQueue()
@@ -201,14 +202,14 @@ watch(() => queue.currentImage.value, async (newValue, oldValue) => {
         // const router = useRouter()
         if (imageId === null) {
             // TODO: can this be done without using imageId
-            imageId = queue.currentImage.value.image_id
-            router.replace({ path: `/pathapp/task-${curTask.id}/${queue.currentImage.value.image_id}` })
+            imageId = queue.currentImage.image_id
+            router.replace({ path: `/pathapp/task-${curTask.id}/${queue.currentImage.image_id}` })
         } else {
             // router.push({ path: `/pathapp/task-${curTask.id}/${currentImage.value.image_id}` })
-            navigateTo({ path: `/pathapp/task-${curTask.id}/${queue.currentImage.value.image_id}` })
+            navigateTo({ path: `/pathapp/task-${curTask.id}/${queue.currentImage.image_id}` })
         }
         useHead({
-            title: `Task: ${curTask.id} - Image: ${queue.currentImage.value.image_id}`
+            title: `Task: ${curTask.id} - Image: ${queue.currentImage.image_id}`
         })
     }
 })
@@ -238,7 +239,7 @@ const cssVars = computed(() => {
 })
 
 // const disableSwipe = computed(() => !curTask.onDeck || curTask.showGuide)
-const disableSwipe = computed(() => queue.currentImage.value.image_id === null || curTask.showGuide)
+const disableSwipe = computed(() => queue.currentImage.image_id === null || curTask.showGuide)
 
 const onSwipeMove = (newPercent) => {
     swipe.percent = newPercent
@@ -261,9 +262,9 @@ const onSwipeEnd = (direction) => {
     } else if (direction === 'left') {
         onClick('no')
     } else if (direction === 'up') {
-        queue.currentImage.value.commenting = true
+        queue.currentImage.commenting = true
     } else if (direction === 'down') {
-        queue.currentImage.value.commenting = false
+        queue.currentImage.commenting = false
     }
 }
 

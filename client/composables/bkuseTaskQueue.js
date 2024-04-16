@@ -47,7 +47,7 @@ const additionalAttributes = {
     commenting: false
 }
 
-export const useTaskQueue = (maxPreload = 1) => {
+export const bkuseTaskQueue = (maxPreload = 1) => {
     
     /** @type { ImageQueue } */
     const queue = useState('imageQueue', () => [])
@@ -161,7 +161,6 @@ export const useTaskQueue = (maxPreload = 1) => {
         } else {
             historyIndex.value--
         }
-
     }
 
     const undo = () => {

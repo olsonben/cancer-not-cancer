@@ -50,7 +50,6 @@ const additionalAttributes = {
 }
 
 export const useTaskQueue = defineStore('taskQueue', () => {
-    console.log('QUEUE CREATED')
     const maxPreload = 1
     /** @type { Ref<ImageQueue> } */
     const queue = ref([])
@@ -58,28 +57,58 @@ export const useTaskQueue = defineStore('taskQueue', () => {
     const index = ref(0)
     const historyIndex = ref(0)
     const currentImage = ref(nullImage)
-    const initialLoad = ref(false)
 
-    watch(initialLoad, (nVal, oVal) => { console.log('init change')})
+    const updateCurrentImage = () => {
+        console.log('updateCurrentImage')
+        const position = index.value - historyIndex.value
+        if (position < queue.value.length) {
+            const nextImage = queue.value[position]
+            if (!isLoaded(nextImage)) {
+                // first or newly added images
+                chained = true
+                preLoadImage(position, 0)
+            } else if (!chained) {
+                // load 1 image to keep the preloaded queue full
+                preLoadImage(position + maxPreload, maxPreload - 1)
+            }
+            currentImage.value = nextImage
+
+        } else {
+            console.log('setting null image')
+            currentImage.value = nullImage
+        }
+    }
+
+    watch(() => index.value, (newVal, oldVal) => {
+        console.log('watch index', newVal, oldVal)
+        updateCurrentImage()
+    })
+    watch(historyIndex, () => {
+        console.log('watch historyIndex')
+        updateCurrentImage()
+    })
 
     /**
      * @param {BaseImageObject} initImageObject
      */
     const addImage = (initImageObject) => {
-        indexMap.value.set(initImageObject.image_id, queue.value.length)
+        const currentLength = queue.value.length
+        indexMap.value[initImageObject.image_id] = currentLength
         queue.value.push({ ...initImageObject, ...additionalAttributes })
-        initialLoad.value = true
+        if (historyIndex.value === 0 && index.value === currentLength) {
+            // new/first load
+            console.log('taskQueue: new/first load')
+            updateCurrentImage()
+        }
     }
 
     /**
      * @param {Array<BaseImageObject>} initialImageObjects 
      */
     const addImages = (initialImageObjects) => {
-        console.log('adding images')
         for (const initImageObject of initialImageObjects) {
             addImage(initImageObject)
         }
-        console.log('done: adding images')
     }
 
     /**
@@ -95,7 +124,7 @@ export const useTaskQueue = defineStore('taskQueue', () => {
      * @param {Number} indx The next image to load
      * @param {Number} preLoadCount - number of images currently preloaded
      */
-    const loadImage = (indx, preLoadCount = 0) => {
+    const preLoadImage = (indx, preLoadCount = 0) => {
         // no more images to load
         if (indx >= queue.value.length) return
 
@@ -115,7 +144,7 @@ export const useTaskQueue = defineStore('taskQueue', () => {
 
             // chain together to queue up multiple preloaded images
             if (preLoadCount < maxPreload && chained) {
-                loadImage(indx + 1, preLoadCount + 1)
+                preLoadImage(indx + 1, preLoadCount + 1)
             } else {
                 chained = false
             }
@@ -126,56 +155,34 @@ export const useTaskQueue = defineStore('taskQueue', () => {
      * Updates to the next image.
      */
     const nextImage = () => {
-        if (historyIndex.value > 0) {
-            currentImage.value = queue.value[index.value - 1]
-            historyIndex.value = 0
-            return
+        console.log('taskQueue: nextImage')
+        if (historyIndex.value === 0) {
+            index.value++
+        } else {
+            historyIndex.value--
         }
-
-        if (index.value >= queue.value.length) {
-            console.log('No more images')
-            currentImage.value = nullImage
-            return
-        }
-
-        const nxtImg = queue.value[index.value]
-
-        if (!isLoaded(nxtImg)) {
-            // first or newly added images
-            chained = true
-            loadImage(index.value, 0)
-        } else if (!chained) {
-            // load 1 image to keep the preloaded queue full
-            loadImage(index.value + maxPreload, maxPreload - 1)
-        }
-        index.value += 1
-        currentImage.value = nxtImg
     }
 
     const undo = () => {
-        if (historyIndex.value === index.value - 1) {
+        if (historyIndex.value === index.value) {
             console.log('No more to undo.')
         } else {
             historyIndex.value++
-            currentImage.value = queue.value[index.value - 1 - historyIndex.value]
         }
     }
 
     const redo = () => {
         if (historyIndex.value > 0) {
-            historyIndex.value--
-            currentImage.value = queue.value[index.value - 1 - historyIndex.value]
+            nextImage()
         } else {
             console.log('You are on the latest image.')
         }
     }
 
     const getImageById = (id) => {
-        console.log(`getImageById: ${id}, ${queue.value.length}`)
-        // ~~returns undefined if the id doesn't exist~~
-        // returns nullImage if the id doesn't exist
-        return queue.value[indexMap.value.get(id)] || nullImage
+        // returns undefined if the id doesn't exist
+        return queue.value[indexMap.value.get(id)]
     }
 
-    return { addImage, addImages, nextImage, undo, redo, getImageById, currentImage, initialLoad }
+    return { addImage, addImages, nextImage, undo, redo, getImageById, currentImage }
 })
