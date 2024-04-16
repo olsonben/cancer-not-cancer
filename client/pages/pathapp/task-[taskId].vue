@@ -1,4 +1,7 @@
 <script setup>
+const config = useRuntimeConfig()
+const router = useRouter()
+
 let isPopState = ref(false)
 const popstateHandler = (event) => {
     isPopState.value = true
@@ -11,7 +14,7 @@ onBeforeUnmount(() => {
 })
 
 const api = useApi()
-const queue = useTaskQueue(1)
+const queue = useTaskQueue()
 
 const route = useRoute()
 const taskId = Number(route.params.taskId) || null
@@ -31,9 +34,6 @@ if (imageId) {
     }
 }
 
-/*******************************
- * TASK/RATING DATA AND CONTROLS
- *******************************/
 const getCurrentTask = (id) => {
     const allTasks = useState('allTasks')
     return allTasks.value.find((task) => task.id === id)
@@ -46,30 +46,78 @@ const curTask = reactive({
     showGuide: false
 })
 
-const currentImage = useState('currentImage')
+
+
+
+// TODO: Handle Errors
+const { data, pending, error, refresh: getMoreImages } = await useFetch(`/images/task/${curTask.id}`, {
+    method: 'GET',
+    baseURL: config.public.apiUrl,
+    credentials: 'include',
+    // onResponse({ request, response, options }) {
+    //     // Process the response data
+
+    // }
+    transform: (response) => {
+        const check = new Set()
+        if (firstImage) check.add(firstImage.image_id)
+        const imageArray = response.reduce((acc, imgData) => {
+            if (check.has(imgData.image_id)) {
+                return acc
+            } else {
+                check.add(imgData.image_id)
+                return acc.concat([buildImageObject(imgData)])
+            }
+        }, [])
+
+        // shuffle the images
+        shuffleArray(imageArray)
+        if (firstImage) {
+            imageArray.unshift(buildImageObject(firstImage))
+        }
+        firstImage = null
+        return imageArray
+    }
+})
+
+queue.addImages(data.value)
+
+if (imageId === null) {
+    imageId = queue.currentImage.value.image_id
+    router.replace({ path: `/pathapp/task-${curTask.id}/${imageId}` })
+}
+
+watch(data, (newValue, oldValue) => {
+    console.log('New raw image data images')
+    queue.addImages(newValue)
+    
+})
+
 
 /** Turns on the annotation modal. */
 const showAnnotationGuide = () => { curTask.showGuide = true }
+
 
 /** On rating either by click or swipe. */
 const onClick = async (source) => {
     // determine the message based on source
     if (source === 'yes') {
-        currentImage.value.rating = 1
+        queue.currentImage.value.rating = 1
     } else if (source === 'no') {
-        currentImage.value.rating = -1
+        queue.currentImage.value.rating = -1
     } else if (source === 'maybe') {
-        currentImage.value.rating = 0
+        queue.currentImage.value.rating = 0
     } else {
         return
     }
+    console.log('onClick: Rating:', queue.currentImage.value.rating)
 
     // record the response
     try {
         // save important data
-        const ratingImageId = currentImage.value.image_id
-        const rating = currentImage.value.rating
-        const comment = currentImage.value.comment
+        const ratingImageId = queue.currentImage.value.image_id
+        const rating = queue.currentImage.value.rating
+        const comment = queue.currentImage.value.comment
 
         // move on to the next image, and reset comment box
         queue.nextImage()
@@ -77,12 +125,20 @@ const onClick = async (source) => {
         // record important data, this POST is async, but making the
         // request happen after the image swapping after seeing weird
         // hiccups with image loading during development
-        api.POST('/hotornot', {
-            id: ratingImageId,
-            rating: rating,
-            comment: comment,
-            taskId: curTask.id
-        })
+
+        // TODO: Update useAPI to have a $fetch method for this kind of instance.
+        $fetch('/hotornot', {
+                method: 'POST',
+                baseURL: config.public.apiUrl,
+                credentials: 'include',
+                body: {
+                    id: ratingImageId,
+                    rating: rating,
+                    comment: comment,
+                    taskId: curTask.id
+                }
+            }
+        )
 
     } catch (error) {
         console.error(error)
@@ -90,7 +146,7 @@ const onClick = async (source) => {
 
 }
 
-const buildImageObject = (imgData) => {
+function buildImageObject (imgData) {
     return {
         ...imgData,
         'chipSize': curTask.chip_size,
@@ -131,25 +187,28 @@ const getNewQueue = async () => {
         console.error(error)
     }
 }
-getNewQueue()
+// getNewQueue()
 
 /** If the next image is null, we need to pull more images from the database. */
-watch(() => currentImage.value, async (newValue, oldValue) => {
+watch(() => queue.currentImage.value, async (newValue, oldValue) => {
     if (newValue === null && oldValue !== null) {
         // end of queue... get more images if possible
-        getNewQueue()
+        // getNewQueue()
+        console.log('getMoreImages')
+        getMoreImages()
     }
     if (newValue) {
-        const router = useRouter()
+        // const router = useRouter()
         if (imageId === null) {
             // TODO: can this be done without using imageId
-            imageId = currentImage.value.image_id
-            router.replace({ path: `/pathapp/task-${curTask.id}/${currentImage.value.image_id}` })
+            imageId = queue.currentImage.value.image_id
+            router.replace({ path: `/pathapp/task-${curTask.id}/${queue.currentImage.value.image_id}` })
         } else {
-            router.push({ path: `/pathapp/task-${curTask.id}/${currentImage.value.image_id}` })
+            // router.push({ path: `/pathapp/task-${curTask.id}/${currentImage.value.image_id}` })
+            navigateTo({ path: `/pathapp/task-${curTask.id}/${queue.currentImage.value.image_id}` })
         }
         useHead({
-            title: `Task: ${curTask.id} - Image: ${currentImage.value.image_id}`
+            title: `Task: ${curTask.id} - Image: ${queue.currentImage.value.image_id}`
         })
     }
 })
@@ -158,6 +217,7 @@ watch(() => isPopState.value, (popstate) => {
     if (popstate === true) {
         console.log('BACK BUTTON DETECTED')
         isPopState.value = false
+        // queue.undo()
     }
 })
 
@@ -178,7 +238,7 @@ const cssVars = computed(() => {
 })
 
 // const disableSwipe = computed(() => !curTask.onDeck || curTask.showGuide)
-const disableSwipe = computed(() => currentImage.value.image_id === null || curTask.showGuide)
+const disableSwipe = computed(() => queue.currentImage.value.image_id === null || curTask.showGuide)
 
 const onSwipeMove = (newPercent) => {
     swipe.percent = newPercent
@@ -201,9 +261,9 @@ const onSwipeEnd = (direction) => {
     } else if (direction === 'left') {
         onClick('no')
     } else if (direction === 'up') {
-        currentImage.value.commenting = true
+        queue.currentImage.value.commenting = true
     } else if (direction === 'down') {
-        currentImage.value.commenting = false
+        queue.currentImage.value.commenting = false
     }
 }
 
@@ -256,7 +316,7 @@ function shuffleArray(array) {
 
         <!-- Response section: grade + comment -->
         <div v-if="!curTask.noMoreImages" class='response-area'>
-            <div class="has-text-centered swipe-pad" :class="{ 'shown': !currentImage.commenting }">
+            <div class="has-text-centered swipe-pad" :class="{ 'shown': !queue.currentImage.commenting }">
                 <span class='icon swipe left'>
                     <img src="~assets/icons/arrow-set.svg" alt="swipe left">
                 </span>
@@ -273,14 +333,16 @@ function shuffleArray(array) {
             </div>
 
             <!-- Comment -->
-            <button class='button icon-button comment' @click='currentImage.commenting = !currentImage.commenting'>
+            <button class='button icon-button comment'
+                @click='queue.currentImage.commenting = !queue.currentImage.commenting'>
                 <span class='icon'>
                     <fa-icon :icon="['fas', 'pencil']" class="fa-xl" />
                 </span>
             </button>
             <div class="container">
-                <textarea class='textarea block' :class="{ 'shown': currentImage.commenting }"
-                    placeholder="Add a comment to this image or leave blank." v-model="currentImage.comment"></textarea>
+                <textarea class='textarea block' :class="{ 'shown': queue.currentImage.commenting }"
+                    placeholder="Add a comment to this image or leave blank."
+                    v-model="queue.currentImage.comment"></textarea>
             </div>
 
         </div>

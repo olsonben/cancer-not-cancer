@@ -1,6 +1,11 @@
 <script setup>
-const curImage = useState('currentImage')
-
+const taskQueue = useTaskQueue()
+const curImage = taskQueue.currentImage
+console.log(curImage.value)
+watch(curImage, () => {
+    console.log('curImage Changed')
+    console.log(curImage.value)
+})
 </script>
 
 <template>
