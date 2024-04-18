@@ -2,97 +2,125 @@
 import { useTaskQueue } from '@/store/taskQueue'
 const config = useRuntimeConfig()
 const router = useRouter()
-
-let isPopState = ref(false)
-const popstateHandler = (event) => {
-    isPopState.value = true
-}
-
-// setup popstate listener
-window.addEventListener('popstate', popstateHandler)
-onBeforeUnmount(() => {
-    window.removeEventListener('popstate', popstateHandler)
-})
-
 const api = useApi()
-const queue = useTaskQueue()
+
+useOnBackButton(() => {
+    console.log('BACK BUTTON DETECTED')
+})
 
 const route = useRoute()
 const taskId = Number(route.params.taskId) || null
-let imageId = Number(route.params.imageId) || null
+const imageId = computed(() => (Number(route.params.imageId) || null))
 
-let firstImage = null
-if (imageId) {
-    try {
-        const { response } = await api.GET('/images/', { imageId: imageId })
-        firstImage = response.value
-    } catch (error) {
-        if (error.statusCode === 404) {
-            console.warn(`Image ${imageId} was not found.`)
+const { imageData, getMoreImages, curTask } = await fetchAllData()
+
+const queue = useTaskQueue()
+queue.init(taskId)
+
+/** If the next image is null, we need to pull more images from the database. */
+watch(() => queue.currentImage, async (newValue, oldValue) => {
+    if (newValue.image_id === null && oldValue.image_id !== null) {
+        // end of queue... get more images if possible
+        navigateTo({ path: `/pathapp/task-${curTask.id}/` })
+        useHead({
+            title: `Task: ${curTask.id} - Image: --`
+        })
+        console.log('getMoreImages')
+        getMoreImages()
+    }
+    if (newValue.image_id !== null) {
+        // const router = useRouter()
+        if (imageId.value === null) {
+            // TODO: can this be done without using imageId
+            router.replace({ path: `/pathapp/task-${curTask.id}/${newValue.image_id}` })
         } else {
-            throw error
+            // router.push({ path: `/pathapp/task-${curTask.id}/${currentImage.value.image_id}` })
+            navigateTo({ path: `/pathapp/task-${curTask.id}/${newValue.image_id}` })
         }
-    }
-}
-
-const getCurrentTask = (id) => {
-    const allTasks = useState('allTasks')
-    return allTasks.value.find((task) => task.id === id)
-}
-
-/** Current Task Data */
-const curTask = reactive({
-    ...getCurrentTask(taskId),
-    noMoreImages: false,
-    showGuide: false
-})
-
-
-
-
-// TODO: Handle Errors
-const { data, pending, error, refresh: getMoreImages } = await useFetch(`/images/task/${curTask.id}`, {
-    method: 'GET',
-    baseURL: config.public.apiUrl,
-    credentials: 'include',
-    // onResponse({ request, response, options }) {
-    //     // Process the response data
-
-    // }
-    transform: (response) => {
-        const check = new Set()
-        if (firstImage) check.add(firstImage.image_id)
-        const imageArray = response.reduce((acc, imgData) => {
-            if (check.has(imgData.image_id)) {
-                return acc
-            } else {
-                check.add(imgData.image_id)
-                return acc.concat([buildImageObject(imgData)])
-            }
-        }, [])
-
-        // shuffle the images
-        shuffleArray(imageArray)
-        if (firstImage) {
-            imageArray.unshift(buildImageObject(firstImage))
-        }
-        firstImage = null
-        return imageArray
+        useHead({
+            title: `Task: ${curTask.id} - Image: ${newValue.image_id}`
+        })
     }
 })
 
-queue.addImages(data.value)
-
-if (imageId === null) {
-    imageId = queue.currentImage.image_id
-    router.replace({ path: `/pathapp/task-${curTask.id}/${imageId}` })
-}
-
-watch(data, (newValue, oldValue) => {
-    console.log('New raw image data images')
+queue.addImages(imageData.value)
+watch(imageData, (newValue, oldValue) => {
     queue.addImages(newValue)
-    
 })
+
+async function fetchAllData() {
+    let firstImage = null
+    if (imageId.value) {
+        try {
+            const { response } = await api.GET('/images/', { imageId: imageId.value })
+            firstImage = response.value
+        } catch (error) {
+            if (error.statusCode === 404) {
+                console.warn(`Image ${imageId.value} was not found.`)
+            } else {
+                throw error
+            }
+        }
+    }
+
+    const getCurrentTask = (id) => {
+        const allTasks = useState('allTasks')
+        return allTasks.value.find((task) => task.id === id)
+    }
+
+    /** Current Task Data */
+    const curTask = reactive({
+        ...getCurrentTask(taskId),
+        noMoreImages: false,
+        showGuide: false
+    })
+
+    function buildImageObject(imgData) {
+        return {
+            ...imgData,
+            'chipSize': curTask.chip_size,
+            'fovSize': curTask.fov_size,
+            'zoomScale': curTask.zoom_scale,
+        }
+    }
+
+    const { data, pending, error, refresh: getMoreImages } = await useFetch(`/images/task/${curTask.id}`, {
+        method: 'GET',
+        baseURL: config.public.apiUrl,
+        credentials: 'include',
+        transform: (response) => {
+            const check = new Set()
+            if (firstImage) check.add(firstImage.image_id)
+            const imageArray = response.reduce((acc, imgData) => {
+                if (check.has(imgData.image_id)) {
+                    return acc
+                } else {
+                    check.add(imgData.image_id)
+                    return acc.concat([buildImageObject(imgData)])
+                }
+            }, [])
+
+            // shuffle the images
+            shuffleArray(imageArray)
+            if (firstImage) {
+                imageArray.unshift(buildImageObject(firstImage))
+            }
+            firstImage = null
+            return imageArray
+        }
+    })
+    if (error.value) {
+        // TODO: Handle Errors
+        console.error('GET: /images/task/[taskId] failed')
+        console.error(error.value)
+    }
+
+    return {
+        imageData: data,
+        getMoreImages,
+        curTask
+    }
+}
 
 
 /** Turns on the annotation modal. */
@@ -111,7 +139,7 @@ const onClick = async (source) => {
     } else {
         return
     }
-    console.log('onClick: Rating:', queue.currentImage.rating)
+
 
     // record the response
     try {
@@ -147,80 +175,28 @@ const onClick = async (source) => {
 
 }
 
-function buildImageObject (imgData) {
-    return {
-        ...imgData,
-        'chipSize': curTask.chip_size,
-        'fovSize': curTask.fov_size,
-        'zoomScale': curTask.zoom_scale,
+
+
+
+function useOnBackButton(onBackButtonCallback) {
+    let isPopState = ref(false)
+    const popstateHandler = (event) => {
+        isPopState.value = true
     }
-}
 
-/** Populates the queue with images from the current task. */
-const getNewQueue = async () => {
-    try {
-        const { response } = await api.GET(`/images/task/${curTask.id}`)
-        if (response.value.length === 0) {
-            curTask.noMoreImages = true
-            // TODO: this probably shouldn't live here
-            const router = useRouter()
-            router.push({ path: `/pathapp/task-${curTask.id}/` })
-        } else {
-            const check = new Set()
-            if (firstImage) check.add(firstImage.image_id)
-            const imageArray = response.value.reduce((acc, imgData) => {
-                if (check.has(imgData.image_id)) {
-                    return acc
-                } else {
-                    check.add(imgData.image_id)
-                    return acc.concat([buildImageObject(imgData)])
-                }
-            }, [])
+    // setup popstate listener
+    window.addEventListener('popstate', popstateHandler)
+    onBeforeUnmount(() => {
+        window.removeEventListener('popstate', popstateHandler)
+    })
 
-            // shuffle the images
-            shuffleArray(imageArray)
-            if (firstImage) imageArray.unshift(buildImageObject(firstImage))
-            firstImage = null
-            queue.addImages(imageArray)
-            queue.nextImage()
+    watch(() => isPopState.value, (popstate) => {
+        if (popstate === true) {
+            onBackButtonCallback()
+            isPopState.value = false
         }
-    } catch (error) {
-        console.error(error)
-    }
+    })
 }
-// getNewQueue()
-
-/** If the next image is null, we need to pull more images from the database. */
-watch(() => queue.currentImage, async (newValue, oldValue) => {
-    if (newValue === null && oldValue !== null) {
-        // end of queue... get more images if possible
-        // getNewQueue()
-        console.log('getMoreImages')
-        getMoreImages()
-    }
-    if (newValue) {
-        // const router = useRouter()
-        if (imageId === null) {
-            // TODO: can this be done without using imageId
-            imageId = queue.currentImage.image_id
-            router.replace({ path: `/pathapp/task-${curTask.id}/${queue.currentImage.image_id}` })
-        } else {
-            // router.push({ path: `/pathapp/task-${curTask.id}/${currentImage.value.image_id}` })
-            navigateTo({ path: `/pathapp/task-${curTask.id}/${queue.currentImage.image_id}` })
-        }
-        useHead({
-            title: `Task: ${curTask.id} - Image: ${queue.currentImage.image_id}`
-        })
-    }
-})
-
-watch(() => isPopState.value, (popstate) => {
-    if (popstate === true) {
-        console.log('BACK BUTTON DETECTED')
-        isPopState.value = false
-        // queue.undo()
-    }
-})
 
 /*************************
  * SWIPE DATA AND CONTROLS

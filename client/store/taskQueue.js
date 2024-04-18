@@ -57,9 +57,24 @@ export const useTaskQueue = defineStore('taskQueue', () => {
     const index = ref(0)
     const historyIndex = ref(0)
     const currentImage = ref(nullImage)
+    const taskId = ref(null)
+    
+    function init(iTaskId) {
+        if (iTaskId !== taskId.value) {
+            taskId.value = iTaskId
+            reset()
+        }
+    }
 
-    const updateCurrentImage = () => {
-        console.log('updateCurrentImage')
+    function reset() {
+        queue.value = []
+        indexMap.value = new Map()
+        index.value = 0
+        historyIndex.value = 0
+        currentImage.value = nullImage
+    }
+
+    function updateCurrentImage() {
         const position = index.value - historyIndex.value
         if (position < queue.value.length) {
             const nextImage = queue.value[position]
@@ -80,24 +95,21 @@ export const useTaskQueue = defineStore('taskQueue', () => {
     }
 
     watch(() => index.value, (newVal, oldVal) => {
-        console.log('watch index', newVal, oldVal)
         updateCurrentImage()
     })
     watch(historyIndex, () => {
-        console.log('watch historyIndex')
         updateCurrentImage()
     })
 
     /**
      * @param {BaseImageObject} initImageObject
      */
-    const addImage = (initImageObject) => {
+    function addImage(initImageObject) {
         const currentLength = queue.value.length
         indexMap.value[initImageObject.image_id] = currentLength
         queue.value.push({ ...initImageObject, ...additionalAttributes })
         if (historyIndex.value === 0 && index.value === currentLength) {
             // new/first load
-            console.log('taskQueue: new/first load')
             updateCurrentImage()
         }
     }
@@ -105,7 +117,7 @@ export const useTaskQueue = defineStore('taskQueue', () => {
     /**
      * @param {Array<BaseImageObject>} initialImageObjects 
      */
-    const addImages = (initialImageObjects) => {
+    function addImages(initialImageObjects) {
         for (const initImageObject of initialImageObjects) {
             addImage(initImageObject)
         }
@@ -124,7 +136,7 @@ export const useTaskQueue = defineStore('taskQueue', () => {
      * @param {Number} indx The next image to load
      * @param {Number} preLoadCount - number of images currently preloaded
      */
-    const preLoadImage = (indx, preLoadCount = 0) => {
+    function preLoadImage(indx, preLoadCount = 0) {
         // no more images to load
         if (indx >= queue.value.length) return
 
@@ -155,7 +167,6 @@ export const useTaskQueue = defineStore('taskQueue', () => {
      * Updates to the next image.
      */
     const nextImage = () => {
-        console.log('taskQueue: nextImage')
         if (historyIndex.value === 0) {
             index.value++
         } else {
@@ -184,5 +195,5 @@ export const useTaskQueue = defineStore('taskQueue', () => {
         return queue.value[indexMap.value.get(id)]
     }
 
-    return { addImage, addImages, nextImage, undo, redo, getImageById, currentImage }
+    return { addImage, addImages, nextImage, undo, redo, getImageById, currentImage, reset, init }
 })

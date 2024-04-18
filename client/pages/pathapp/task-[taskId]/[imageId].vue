@@ -1,12 +1,8 @@
 <script setup>
 import { useTaskQueue } from '@/store/taskQueue'
 const taskQueue = useTaskQueue()
-const curImage = taskQueue.currentImage
+const curImage = unref(taskQueue.currentImage)
 
-watch(curImage, () => {
-    console.log('curImage Changed')
-    console.log(curImage)
-})
 </script>
 
 <template>
