@@ -12,10 +12,19 @@ const route = useRoute()
 const taskId = Number(route.params.taskId) || null
 const imageId = computed(() => (Number(route.params.imageId) || null))
 
-const { imageData, getMoreImages, curTask } = await fetchAllData()
+const getCurrentTask = (id) => {
+    const allTasks = useState('allTasks')
+    return allTasks.value.find((task) => task.id === id)
+}
+
+/** Current Task Data */
+const curTask = reactive({
+    ...getCurrentTask(taskId),
+    noMoreImages: false,
+    showGuide: false
+})
 
 const queue = useTaskQueue()
-queue.init(taskId)
 
 /** If the next image is null, we need to pull more images from the database. */
 watch(() => queue.currentImage, async (newValue, oldValue) => {
@@ -25,8 +34,6 @@ watch(() => queue.currentImage, async (newValue, oldValue) => {
         useHead({
             title: `Task: ${curTask.id} - Image: --`
         })
-        console.log('getMoreImages')
-        getMoreImages()
     }
     if (newValue.image_id !== null) {
         // const router = useRouter()
@@ -43,85 +50,7 @@ watch(() => queue.currentImage, async (newValue, oldValue) => {
     }
 })
 
-queue.addImages(imageData.value)
-watch(imageData, (newValue, oldValue) => {
-    queue.addImages(newValue)
-})
-
-async function fetchAllData() {
-    let firstImage = null
-    if (imageId.value) {
-        try {
-            const { response } = await api.GET('/images/', { imageId: imageId.value })
-            firstImage = response.value
-        } catch (error) {
-            if (error.statusCode === 404) {
-                console.warn(`Image ${imageId.value} was not found.`)
-            } else {
-                throw error
-            }
-        }
-    }
-
-    const getCurrentTask = (id) => {
-        const allTasks = useState('allTasks')
-        return allTasks.value.find((task) => task.id === id)
-    }
-
-    /** Current Task Data */
-    const curTask = reactive({
-        ...getCurrentTask(taskId),
-        noMoreImages: false,
-        showGuide: false
-    })
-
-    function buildImageObject(imgData) {
-        return {
-            ...imgData,
-            'chipSize': curTask.chip_size,
-            'fovSize': curTask.fov_size,
-            'zoomScale': curTask.zoom_scale,
-        }
-    }
-
-    const { data, pending, error, refresh: getMoreImages } = await useFetch(`/images/task/${curTask.id}`, {
-        method: 'GET',
-        baseURL: config.public.apiUrl,
-        credentials: 'include',
-        transform: (response) => {
-            const check = new Set()
-            if (firstImage) check.add(firstImage.image_id)
-            const imageArray = response.reduce((acc, imgData) => {
-                if (check.has(imgData.image_id)) {
-                    return acc
-                } else {
-                    check.add(imgData.image_id)
-                    return acc.concat([buildImageObject(imgData)])
-                }
-            }, [])
-
-            // shuffle the images
-            shuffleArray(imageArray)
-            if (firstImage) {
-                imageArray.unshift(buildImageObject(firstImage))
-            }
-            firstImage = null
-            return imageArray
-        }
-    })
-    if (error.value) {
-        // TODO: Handle Errors
-        console.error('GET: /images/task/[taskId] failed')
-        console.error(error.value)
-    }
-
-    return {
-        imageData: data,
-        getMoreImages,
-        curTask
-    }
-}
-
+queue.init(curTask, imageId)
 
 /** Turns on the annotation modal. */
 const showAnnotationGuide = () => { curTask.showGuide = true }
@@ -174,8 +103,6 @@ const onClick = async (source) => {
     }
 
 }
-
-
 
 
 function useOnBackButton(onBackButtonCallback) {
@@ -244,18 +171,6 @@ const onSwipeEnd = (direction) => {
     }
 }
 
-/**
- * Helper - Durstenfeld Shuffle
- * https://stackoverflow.com/a/12646864/3068136
- */
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        const temp = array[i]
-        array[i] = array[j]
-        array[j] = temp
-    }
-}
 </script>
 
 <template>

@@ -1,5 +1,5 @@
 <template>
-    <div class="pt-5">
+    <div>
         No More Images
     </div>
 </template>

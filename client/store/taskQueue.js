@@ -57,21 +57,18 @@ export const useTaskQueue = defineStore('taskQueue', () => {
     const index = ref(0)
     const historyIndex = ref(0)
     const currentImage = ref(nullImage)
-    const taskId = ref(null)
-    
-    function init(iTaskId) {
-        if (iTaskId !== taskId.value) {
-            taskId.value = iTaskId
-            reset()
-        }
-    }
+    const taskObj = ref(null)
+    let allImagesLoaded = false
 
+    const { getMoreImages } = useTaskDataFetch()
+    
     function reset() {
         queue.value = []
         indexMap.value = new Map()
         index.value = 0
         historyIndex.value = 0
         currentImage.value = nullImage
+        allImagesLoaded = false
     }
 
     function updateCurrentImage() {
@@ -88,9 +85,19 @@ export const useTaskQueue = defineStore('taskQueue', () => {
             }
             currentImage.value = nextImage
 
-        } else {
+        } else if (allImagesLoaded) {
             console.log('setting null image')
             currentImage.value = nullImage
+        } else {
+            // load more images
+            getMoreImages(taskObj.value).then((moreImages) => {
+                if (moreImages.length !== 0) {
+                    addImages(moreImages)
+                } else {
+                    allImagesLoaded = true
+                }
+                updateCurrentImage()
+            })
         }
     }
 
@@ -193,6 +200,23 @@ export const useTaskQueue = defineStore('taskQueue', () => {
     const getImageById = (id) => {
         // returns undefined if the id doesn't exist
         return queue.value[indexMap.value.get(id)]
+    }
+
+    async function init(curTask, imageId = null) {
+        if (curTask.id !== taskObj.value?.id) {
+            taskObj.value = curTask
+            reset()
+            const imageData = await getMoreImages(curTask)
+            if (imageData.length === 0) allImagesLoaded = true
+            addImages(imageData)
+        } else if (curTask.id === taskObj.value?.id && imageId === null) {
+            // TODO: possibly update currentImage
+            historyIndex.value = 0
+        } else {
+            // TODO: update position or sort queue with imageId first
+            // OR have a getOneImage that gets put at the front of the queue.
+            console.warn('This state has not been handled yet.')
+        }
     }
 
     return { addImage, addImages, nextImage, undo, redo, getImageById, currentImage, reset, init }
