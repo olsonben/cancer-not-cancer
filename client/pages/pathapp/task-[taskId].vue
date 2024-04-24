@@ -204,9 +204,20 @@ const onSwipeEnd = (direction) => {
             <div v-if="!curTask.noMoreImages" class='level is-flex'>
                 <div class="level-left is-flex">
                     <div class="level-item">
-                        <p class="help is-hidden-desktop">Tap to zoom.</p>
-                        <p class="help is-hidden-touch">Click to zoom.</p>
+                        <p class="help is-hidden-desktop">Tap to Zoom</p>
+                        <p class="help is-hidden-touch">Click to Zoom</p>
                     </div>
+                </div>
+                <div id="swipe-tip" class="is-hidden-desktop level-item mb-0">
+                    <span class='icon swipe left mt-1'>
+                        <img src="~assets/icons/arrow-set.svg" alt="swipe left">
+                    </span>
+                    <p class="help pl-1 pr-1">
+                        Swipe to Grade
+                    </p>
+                    <span class='icon swipe right mt-1'>
+                        <img src="~assets/icons/arrow-set.svg" alt="swipe right">
+                    </span>
                 </div>
                 <div class="level-right is-flex mt-0">
                     <div class="level-item">
@@ -219,15 +230,15 @@ const onSwipeEnd = (direction) => {
         </div>
 
         <!-- Response section: grade + comment -->
-        <div v-if="!curTask.noMoreImages" class='response-area'>
-            <div class="has-text-centered swipe-pad" :class="{ 'shown': !queue.currentImage.commenting }">
+        <div v-if="!curTask.noMoreImages" class='response-area pt-4'>
+            <!-- <div class="has-text-centered swipe-pad" :class="{ 'shown': !queue.currentImage.commenting }">
                 <span class='icon swipe left'>
                     <img src="~assets/icons/arrow-set.svg" alt="swipe left">
                 </span>
                 <span class='icon swipe right'>
                     <img src="~assets/icons/arrow-set.svg" alt="swipe right">
                 </span>
-            </div>
+            </div> -->
 
             <!-- Grade buttons -->
             <div class='block grade-buttons'>
@@ -420,6 +431,13 @@ $no-cancer-color: #ff6184;
             }
         }
     }
+}
+
+.icon.swipe.right {
+    transform: rotate(180deg);
+}
+#swipe-tip .swipe {
+    opacity: 0.4;
 }
 
 .icon-button {
