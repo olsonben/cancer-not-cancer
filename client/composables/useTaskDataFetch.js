@@ -18,7 +18,7 @@ export const useTaskDataFetch = () => {
                 baseURL: config.public.apiUrl,
                 credentials: 'include',
                 query: {
-                    imageId: imageId
+                    'imageId': imageId
                 }
             })
         } catch (error) {
@@ -62,9 +62,21 @@ export const useTaskDataFetch = () => {
         // shuffle the images
         shuffleArray(imageArray)
         if (firstImage) {
-            imageArray.unshift(buildImageObject(firstImage))
+            imageArray.unshift(buildImageObject(curTask, firstImage))
         }
         return imageArray
+    }
+    
+    // TODO: rename these functions so the make more sense
+    const getOneImage = async (curTask, imageId) => {
+        if (curTask && imageId) {
+            try {
+                const newImage = await getFirstImage(imageId)
+                return processImageData(curTask, [], newImage)[0]
+            } catch (error) {
+                console.error(error)
+            }
+        }
     }
 
     const getMoreImages = async (curTask, initImageId = null) => {
@@ -81,6 +93,7 @@ export const useTaskDataFetch = () => {
     }
 
     return {
-        getMoreImages
+        getMoreImages,
+        getOneImage
     }
 }

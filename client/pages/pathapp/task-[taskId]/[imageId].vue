@@ -1,7 +1,7 @@
 <script setup>
 import { useTaskQueue } from '@/store/taskQueue'
 const taskQueue = useTaskQueue()
-const curImage = unref(taskQueue.currentImage)
+const curImage = computed(() => taskQueue.currentImage)
 
 </script>
 

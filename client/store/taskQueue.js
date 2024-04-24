@@ -24,8 +24,6 @@ import { defineStore } from "pinia"
  * @typedef {Array<ImageObject>} ImageQueue 
  */
 
-let chained = true // chain multiple loads together
-
 /** @type { ImageObject } */
 const nullImage = {
     imageUrl: '',
@@ -53,18 +51,19 @@ export const useTaskQueue = defineStore('taskQueue', () => {
     const maxPreload = 1
     /** @type { Ref<ImageQueue> } */
     const queue = ref([])
-    const indexMap = ref(new Map())
+    let indexMap = new Map()
+    let chained = true // chain multiple loads together
     const index = ref(0)
     const historyIndex = ref(0)
     const currentImage = ref(nullImage)
     const taskObj = ref(null)
     let allImagesLoaded = false
 
-    const { getMoreImages } = useTaskDataFetch()
+    const { getMoreImages, getOneImage } = useTaskDataFetch()
     
     function reset() {
         queue.value = []
-        indexMap.value = new Map()
+        indexMap = new Map()
         index.value = 0
         historyIndex.value = 0
         currentImage.value = nullImage
@@ -108,26 +107,48 @@ export const useTaskQueue = defineStore('taskQueue', () => {
         updateCurrentImage()
     })
 
+    function moveElementInArray(indexToMove) {
+        if (indexToMove !== index.value) {
+            if (indexToMove < index.value) {
+                // Decrement current index
+                index.value--;
+            }
+            // Extract the element that needs to be moved
+            const elementToMove = queue.value.splice(indexToMove, 1)[0];
+            // Insert the extracted element at the new current index
+            queue.value.splice(index.value, 0, elementToMove);
+            historyIndex.value = 0
+            indexMap = new Map(queue.value.map((img, i) => [img.image_id, i]))
+            // TODO: this will probably be redundant with the two index watchers
+            // though there is a scenario where the indexs don't change but the
+            // image needs to be updated.
+            updateCurrentImage()
+        }
+    }
+
+    function rearrangeQueueToId(id) {
+        const imageIndex = indexMap.get(id)
+        moveElementInArray(imageIndex)
+    }
+
     /**
      * @param {BaseImageObject} initImageObject
      */
     function addImage(initImageObject) {
         const currentLength = queue.value.length
-        indexMap.value[initImageObject.image_id] = currentLength
+        indexMap.set(initImageObject.image_id, currentLength)
         queue.value.push({ ...initImageObject, ...additionalAttributes })
-        if (historyIndex.value === 0 && index.value === currentLength) {
-            // new/first load
-            updateCurrentImage()
-        }
     }
 
     /**
      * @param {Array<BaseImageObject>} initialImageObjects 
      */
     function addImages(initialImageObjects) {
+        const shouldUpdate = Boolean(historyIndex.value === 0 && index.value === queue.value.length)
         for (const initImageObject of initialImageObjects) {
             addImage(initImageObject)
         }
+        if (shouldUpdate) updateCurrentImage()
     }
 
     /**
@@ -199,23 +220,33 @@ export const useTaskQueue = defineStore('taskQueue', () => {
 
     const getImageById = (id) => {
         // returns undefined if the id doesn't exist
-        return queue.value[indexMap.value.get(id)]
+        return queue.value[indexMap.get(id)]
+    }
+
+    const isImageInQueue = (id) => {
+        return (indexMap.get(id) !== undefined)
     }
 
     async function init(curTask, imageId = null) {
         if (curTask.id !== taskObj.value?.id) {
             taskObj.value = curTask
             reset()
-            const imageData = await getMoreImages(curTask)
+            const imageData = await getMoreImages(curTask, imageId)
             if (imageData.length === 0) allImagesLoaded = true
             addImages(imageData)
         } else if (curTask.id === taskObj.value?.id && imageId === null) {
-            // TODO: possibly update currentImage
+            // TODO: possibly update currentImage, once undo is in use
+            // REPRODUCE: grade 3, undo, nav to tasks, pick same task
             historyIndex.value = 0
         } else {
-            // TODO: update position or sort queue with imageId first
-            // OR have a getOneImage that gets put at the front of the queue.
-            console.warn('This state has not been handled yet.')
+            if (currentImage.value.image_id !== imageId) {
+                if (!isImageInQueue(imageId)) {
+                    const newImage = getOneImage(curTask, imageId)
+                    addImage(newImage)
+                }
+
+                rearrangeQueueToId(imageId)
+            }
         }
     }
 

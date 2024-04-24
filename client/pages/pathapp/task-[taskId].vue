@@ -29,6 +29,7 @@ const queue = useTaskQueue()
 /** If the next image is null, we need to pull more images from the database. */
 watch(() => queue.currentImage, async (newValue, oldValue) => {
     if (newValue.image_id === null && oldValue.image_id !== null) {
+        console.log('history 1')
         // end of queue... get more images if possible
         navigateTo({ path: `/pathapp/task-${curTask.id}/` })
         useHead({
@@ -38,10 +39,12 @@ watch(() => queue.currentImage, async (newValue, oldValue) => {
     if (newValue.image_id !== null) {
         // const router = useRouter()
         if (imageId.value === null) {
-            // TODO: can this be done without using imageId
+            console.log('history 2')
+            // previously different task
             router.replace({ path: `/pathapp/task-${curTask.id}/${newValue.image_id}` })
         } else {
-            // router.push({ path: `/pathapp/task-${curTask.id}/${currentImage.value.image_id}` })
+            console.log('history 3')
+            // After grading the previous slide OR first load with imageId defined
             navigateTo({ path: `/pathapp/task-${curTask.id}/${newValue.image_id}` })
         }
         useHead({
@@ -50,7 +53,16 @@ watch(() => queue.currentImage, async (newValue, oldValue) => {
     }
 })
 
-queue.init(curTask, imageId)
+queue.init(curTask, imageId.value)
+
+if (queue.currentImage.image_id) {
+    console.log('history 4')
+    // revisit
+    router.replace({ path: `/pathapp/task-${curTask.id}/${queue.currentImage.image_id}` })
+    useHead({
+        title: `Task: ${curTask.id} - Image: ${queue.currentImage.image_id}`
+    })
+}
 
 /** Turns on the annotation modal. */
 const showAnnotationGuide = () => { curTask.showGuide = true }
