@@ -192,8 +192,14 @@ const onSwipeEnd = (direction) => {
 
         <!-- Image to grade -->
         <div class='prompt'>
-            <div class='controls is-flex mb-5'>
+            <div class='controls is-flex mb-2'>
                 <div class="title is-4">{{ curTask.prompt }}</div>
+            </div>
+            <div class="level mb-1">
+                <div class="level-item">
+                    <div class="button is-small mr-1" @click="queue.undo">undo</div>
+                    <div class="button is-small ml-1" @click="queue.redo">redo</div>
+                </div>
             </div>
             <div class="has-text-danger" v-if="curTask.noMoreImages">No more images available in this task.</div>
 
