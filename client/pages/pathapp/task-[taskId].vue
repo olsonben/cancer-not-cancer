@@ -29,7 +29,6 @@ const queue = useTaskQueue()
 /** If the next image is null, we need to pull more images from the database. */
 watch(() => queue.currentImage, async (newValue, oldValue) => {
     if (newValue.image_id === null && oldValue.image_id !== null) {
-        console.log('history 1')
         // end of queue... get more images if possible
         navigateTo({ path: `/pathapp/task-${curTask.id}/` })
         useHead({
@@ -39,11 +38,9 @@ watch(() => queue.currentImage, async (newValue, oldValue) => {
     if (newValue.image_id !== null) {
         // const router = useRouter()
         if (imageId.value === null) {
-            console.log('history 2')
             // previously different task
             router.replace({ path: `/pathapp/task-${curTask.id}/${newValue.image_id}` })
         } else {
-            console.log('history 3')
             // After grading the previous slide OR first load with imageId defined
             navigateTo({ path: `/pathapp/task-${curTask.id}/${newValue.image_id}` })
         }
@@ -56,7 +53,6 @@ watch(() => queue.currentImage, async (newValue, oldValue) => {
 queue.init(curTask, imageId.value)
 
 if (queue.currentImage.image_id) {
-    console.log('history 4')
     // revisit
     router.replace({ path: `/pathapp/task-${curTask.id}/${queue.currentImage.image_id}` })
     useHead({
@@ -192,13 +188,28 @@ const onSwipeEnd = (direction) => {
 
         <!-- Image to grade -->
         <div class='prompt'>
-            <div class='controls is-flex mb-2'>
-                <div class="title is-4">{{ curTask.prompt }}</div>
-            </div>
-            <div class="level mb-1">
-                <div class="level-item">
-                    <div class="button is-small mr-1" @click="queue.undo">undo</div>
-                    <div class="button is-small ml-1" @click="queue.redo">redo</div>
+            <div class="level mb-1 is-mobile is-flex">
+                <div class="level-left is-flex-grow-1 is-flex-shrink-1">
+                    <div class="back-link is-size-4 mt-2">
+                        <NuxtLink to="/pathapp">
+                            <span class="icon">
+                                <fa-icon :icon="['fas', 'chevron-left']" />
+                            </span>
+                        </NuxtLink>
+                    </div>
+                    <div id="prompt-question" class="title is-5">
+                        {{ curTask.prompt }}
+                    </div>
+                </div>
+                <div class="level-right mt-0 is-flex-grow-0 is-flex-shrink-0">
+                    <button class="button is-small" :disabled="queue.noUndos" title="undo" type="button"
+                        @click="queue.undo">
+                        <span class="icon"><fa-icon :icon="['fas', 'reply']" /></span>
+                    </button>
+                    <button class="button is-small" :disabled="queue.noRedos" title="redo" type="button"
+                        @click="queue.redo">
+                        <span class="icon mirror"><fa-icon :icon="['fas', 'reply']" /></span>
+                    </button>
                 </div>
             </div>
             <div class="has-text-danger" v-if="curTask.noMoreImages">No more images available in this task.</div>
@@ -335,20 +346,6 @@ $no-cancer-color: #ff6184;
         max-width: 100%;
     }
 
-    .controls {
-        color: hsl(0deg, 0%, 29%);
-        // width: 100%;
-
-        @include for-size(mobile) {
-            padding: 0 0;
-        }
-
-        strong {
-            padding-top: 0.8rem;
-            display: inline-block;
-        }
-    }
-
 }
 
 .annotation-link {
@@ -454,6 +451,24 @@ $no-cancer-color: #ff6184;
     &.comment {
         background-color: rgba(0, 0, 0, 0);
     }
+}
+
+.mirror {
+    transform: scale(-1,1);
+}
+
+.back-link a {
+    color: hsl(0, 0%, 50%);
+}
+.back-link:hover a {
+    color: hsl(0, 0%, 21%);
+}
+
+// NOTE: text-wrap is super new!
+// https://developer.chrome.com/docs/css-ui/css-text-wrap-balance
+#prompt-question {
+    // white-space: unset;
+    text-wrap: balance;
 }
 
 .grade-buttons {

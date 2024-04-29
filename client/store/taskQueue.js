@@ -59,6 +59,9 @@ export const useTaskQueue = defineStore('taskQueue', () => {
     const taskObj = ref(null)
     let allImagesLoaded = false
 
+    const noUndos = computed(() => (index.value - historyIndex.value) === 0)
+    const noRedos = computed(() => historyIndex.value === 0)
+
     const { getMoreImages, getOneImage } = useTaskDataFetch()
     
     function reset() {
@@ -250,5 +253,17 @@ export const useTaskQueue = defineStore('taskQueue', () => {
         }
     }
 
-    return { addImage, addImages, nextImage, undo, redo, getImageById, currentImage, reset, init }
+    return {
+        addImage,
+        addImages,
+        nextImage,
+        undo,
+        redo,
+        noUndos,
+        noRedos,
+        getImageById,
+        currentImage,
+        reset,
+        init
+    }
 })
