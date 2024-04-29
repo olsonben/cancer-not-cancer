@@ -63,6 +63,18 @@ if (queue.currentImage.image_id) {
 /** Turns on the annotation modal. */
 const showAnnotationGuide = () => { curTask.showGuide = true }
 
+const preRatingClass = computed(() => {
+    switch (queue.currentImage.rating) {
+        case -1:
+            return 'prev-no'
+        case 0:
+            return 'prev-maybe'
+        case 1:
+            return 'prev-yes'
+        default:
+            return ''
+    }
+})
 
 /** On rating either by click or swipe. */
 const onClick = async (source) => {
@@ -214,7 +226,8 @@ const onSwipeEnd = (direction) => {
             </div>
             <div class="has-text-danger" v-if="curTask.noMoreImages">No more images available in this task.</div>
 
-            <ImageSwipe @swipe-move="onSwipeMove" @swipe-end="onSwipeEnd" :disabled="disableSwipe">
+            <ImageSwipe :class="preRatingClass" @swipe-move="onSwipeMove" @swipe-end="onSwipeEnd"
+                :disabled="disableSwipe">
                 <NuxtPage />
             </ImageSwipe>
 
@@ -469,6 +482,17 @@ $no-cancer-color: #ff6184;
 #prompt-question {
     // white-space: unset;
     text-wrap: balance;
+}
+.prev-yes {
+    border: 4px solid $yes-cancer-color;
+}
+
+.prev-no {
+    border: 4px solid $no-cancer-color;
+}
+
+.prev-maybe {
+    border: 4px solid black;
 }
 
 .grade-buttons {
