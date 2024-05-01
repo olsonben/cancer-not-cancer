@@ -81,17 +81,6 @@ export default defineNuxtConfig({
     }
   },
 
-  /** 
-   * Plugins: https://nuxt.com/docs/guide/directory-structure/plugins
-   * Plugins are loaded during application creation and are usable throughout the app.
-   * Note: Ad blockers may breaking the site because of matomo.
-   */
-  plugins: [
-    '~/plugins/error-handler.js',
-    '~/plugins/draggable.js',
-    ...(process.env.NODE_ENV === 'production' ? [{ src: '~/plugins/matomo.js', mode: 'client' }] : []),
-  ],
-
   /**
    * Auto import components: https://nuxt.com/docs/guide/directory-structure/components#component-names
    * Allows component usage like Nuxt2.
