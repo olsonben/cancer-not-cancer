@@ -91,8 +91,8 @@ const taskOps = {
         const query = `SELECT
                     t.*,
                     COALESCE(hot.ratings, 0) as ratings,
-                    COALESCE(ob_count.num_users, 0) as num_users,
-                    COALESCE(im_count.total, 0) as total,
+                    COALESCE(ob_count.num_users, 0) as observer_count,
+                    COALESCE(im_count.total, 0) as image_count,
                     COALESCE(hot.ratings/(ob_count.num_users*im_count.total), 0) as progress
                     FROM tasks as t
                     LEFT JOIN (
