@@ -11,7 +11,7 @@
                 <!-- Logout/Login -->
                 <div class="buttons">
                     <NuxtLink v-if='isLoggedIn' to='/logout' class='button is-light'>Log Out</NuxtLink>
-                    <a v-else :href='loginLink' class='button is-light'>Log In</a>
+                    <NuxtLink v-else :to='loginLink' class='button is-light'>Log In</NuxtLink>
                 </div>
             </div>
 
@@ -41,7 +41,8 @@
                 </NuxtLink>
 
                 <!-- CancerNotCancer -->
-                <NuxtLink to='/pathapp' v-if='isPathologist' class="navbar-item">
+                <!-- TODO: temp navigation to task-0, remove when no longer needed. -->
+                <NuxtLink to='/pathapp/task-0' v-if='isPathologist' class="navbar-item">
                     CancerNotCancer
                 </NuxtLink>
 
@@ -71,7 +72,7 @@
                     <!-- Logout/Login -->
                     <div class="buttons">
                         <NuxtLink v-if='isLoggedIn' to='/logout' class='button is-light'>Log Out</NuxtLink>
-                        <a v-else :href='loginLink' class='button is-light'>Log In</a>
+                        <NuxtLink v-else :to='loginLink' class='button is-light'>Log In</NuxtLink>
                     </div>
                 </div>
             </div>

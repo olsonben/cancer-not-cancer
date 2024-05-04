@@ -20,7 +20,15 @@
  * @typedef {Array<QueueObject>} ImageQueue 
  */
 
-export const useImageQueue = (maxPreload) => {
+let chained = true // chain multiple loads together
+let maxPreload = null
+
+export const useImageQueue = (iMaxPreload = 1) => {
+    if (maxPreload === null) {
+        // First instance of image queue
+        maxPreload = iMaxPreload
+    }
+
     const additionalAttributes = {
         loaded: false,
         imgHtml: null,
@@ -30,10 +38,8 @@ export const useImageQueue = (maxPreload) => {
     /**
      * @type {Ref<ImageQueue>}
      */
-    const queue = ref([])
-    const index = ref(0)
-    let chained = true // chain multiple loads together
-
+    const queue = useState('imageQueue', () => [])
+    const index = useState('imageQueueIndex', () => 0)
 
     /**
      * 

@@ -7,11 +7,11 @@
 
 import { useUserStore } from "~/store/user"
 
-const pathologistPages = ['pathapp']
+const pathologistPages = ['pathapp', 'pathapp-task-taskId-imageId']
 const investigatorPages = ['admin-images', 'admin-tasks', 'admin-dataview']
 const adminPages = ['admin-users']
+const publicPages = ['index', 'about', 'issues']
 
-// TODO: this breaks relogging in on the logout page.
 export default defineNuxtRouteMiddleware(async (to, from) => { 
     const userStore = useUserStore()
 
@@ -19,19 +19,27 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     if (!userStore.isLoaded) {
         await userStore.login()
     }
-
+    if (publicPages.includes(to.name)) {
+        return
+    }
     // Redirect if authentication doesn't match route.
     if (pathologistPages.includes(to.name)) {
         if (userStore.isLoggedIn && !userStore.isPathologist) {
             return navigateTo('/')
+        } else if (!userStore.isLoggedIn) {
+            return navigateTo(getLoginUrl(to.fullPath), { external: true })
         }
     } else if (investigatorPages.includes(to.name)) {
         if (userStore.isLoggedIn && !userStore.isUploader) {
             return navigateTo('/')
+        } else if (!userStore.isLoggedIn) {
+            return navigateTo(getLoginUrl(to.fullPath), { external: true })
         }
     } else if (adminPages.includes(to.name)) {
         if (userStore.isLoggedIn && !userStore.isAdmin) {
             return navigateTo('/')
+        } else if (!userStore.isLoggedIn) {
+            return navigateTo(getLoginUrl(to.fullPath), { external: true })
         }
     }
 })
