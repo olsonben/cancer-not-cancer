@@ -75,22 +75,11 @@ export default defineNuxtConfig({
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: '@import "@/assets/scss/variables.scss"; @import "@/assets/scss/colors.scss";',
+          additionalData: '@use "@/assets/scss/variables.scss" as *; @use "@/assets/scss/colors.scss" as *;',
         }
       },
     }
   },
-
-  /** 
-   * Plugins: https://nuxt.com/docs/guide/directory-structure/plugins
-   * Plugins are loaded during application creation and are usable throughout the app.
-   * Note: Ad blockers may breaking the site because of matomo.
-   */
-  plugins: [
-    '~/plugins/error-handler.js',
-    '~/plugins/draggable.js',
-    ...(process.env.NODE_ENV === 'production' ? [{ src: '~/plugins/matomo.js', mode: 'client' }] : []),
-  ],
 
   /**
    * Auto import components: https://nuxt.com/docs/guide/directory-structure/components#component-names
@@ -120,8 +109,12 @@ export default defineNuxtConfig({
    * Sourcemap and devtools are on by default in dev mode. To use them in
    * staging or production you should uncomment them.
    */
-  // sourcemap: true,
-  devtools: { enabled: false }
+  sourcemap: true,
+  devtools: { enabled: true,
+    timeline: {
+      enabled: true
+    }
+  }
   // debug: true
 
 })

@@ -41,8 +41,7 @@
                 </NuxtLink>
 
                 <!-- CancerNotCancer -->
-                <!-- TODO: temp navigation to task-0, remove when no longer needed. -->
-                <NuxtLink to='/pathapp/task-0' v-if='isPathologist' class="navbar-item">
+                <NuxtLink to='/pathapp/' v-if='isPathologist' class="navbar-item">
                     CancerNotCancer
                 </NuxtLink>
 
@@ -122,5 +121,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/* CSS for the current page */
+/* NavBar is fixed to the top */
+.main-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+
+    width: 100%;
+}
 </style>

@@ -255,7 +255,7 @@ export default {
             border-color: $link;
             border-width: 1px;
             border-style: solid;
-            box-shadow: 0px 2px 4px 0.5px rgba($cap-darknavbg,0.6); // add alpha val
+            box-shadow: 0px 2px 4px 0.5px rgba($dark-grey,0.6); // add alpha val
         }
 
     }

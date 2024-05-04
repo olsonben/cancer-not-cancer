@@ -64,7 +64,7 @@ export default {
     position: relative;
     width: 100%;
     height: 50vh; // If you need padding, don't do it here!
-    line-height: 0;
+    // line-height: 0;
     overflow: hidden;
 
 

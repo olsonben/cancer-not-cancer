@@ -66,11 +66,12 @@ const imageOps = {
     },
 
     async getImageQueue(userId, taskId) {
+        // TODO: make this configurable as it might tie into caching and performance
         const limit = 25
         const query = `
             WITH
                 HotOrNotQuick AS (
-                    SELECT hotornot.image_id as image_id
+                    SELECT DISTINCT hotornot.image_id as image_id
                     FROM hotornot
                     WHERE
                     user_id = ?

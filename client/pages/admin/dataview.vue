@@ -149,6 +149,9 @@ export default {
         }
     },
     created() {
+        useHead({
+            title: 'Admin - Stats'
+        })
         this.getTasks()
         this.lookupData()
     },

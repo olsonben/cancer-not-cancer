@@ -86,80 +86,31 @@ const taskOps = {
         // Gets existing tasks, then collects image counts per task, observer count,
         // and sums the progress of all the observers for 'overall_progress' per task.
 
-        // TODO: I think this can probably be cleaned up a little
-        // getting image counts should only require the image_tags table,
-        // and there maybe other redundant joins. For now it works!
-        const query = `WITH image_count_table AS (
-        SELECT task_images.task_id AS task_id, COUNT(DISTINCT task_images.image_id) AS image_count
-        FROM task_images
-        LEFT JOIN tasks ON tasks.id = task_images.task_id
-        WHERE tasks.investigator = ?
-        GROUP BY task_images.task_id
-        ),
-        observer_count_table AS (
-        SELECT tasks.id AS task_id, COUNT(DISTINCT observers.user_id) AS observer_count
-        FROM tasks
-        LEFT JOIN observers ON observers.task_id = tasks.id
-        WHERE tasks.investigator = ?
-        GROUP BY tasks.id
-        ),
-        progress_table AS (
-            SELECT hotornot.user_id, COUNT(DISTINCT hotornot.image_id) AS graded_images_count, hotornot.task_id,
-            total_images.total_images,
-            (COUNT(DISTINCT hotornot.image_id) / total_images.total_images) AS progress_percentage
-        FROM hotornot
-        JOIN (
-            SELECT task_images.task_id as tt_id, COUNT(DISTINCT task_images.image_id) AS total_images
-            FROM task_images
-            GROUP BY task_images.task_id
-        ) AS total_images ON total_images.tt_id = hotornot.task_id
-        GROUP BY hotornot.task_id, hotornot.user_id
-        ),
-        overall AS (
-            SELECT progress_table.task_id AS task_id, SUM(progress_table.progress_percentage)/COUNT(progress_table.progress_percentage) AS overall_progress
-        FROM progress_table
-        GROUP BY progress_table.task_id
-        )
-        SELECT tasks.id, tasks.short_name, tasks.prompt, tasks.chip_size, tasks.fov_size, tasks.zoom_scale,
-            COALESCE(image_count_table.image_count, 0) AS image_count,
-            COALESCE(observer_count_table.observer_count, 0) AS observer_count,
-            COALESCE(overall.overall_progress, 0) AS progress
-        FROM tasks
-        LEFT JOIN image_count_table ON tasks.id = image_count_table.task_id
-        LEFT JOIN observer_count_table ON tasks.id = observer_count_table.task_id
-        LEFT JOIN overall ON tasks.id = overall.task_id
-        WHERE tasks.investigator = ?;`
-
-
-// ```sql
-// SELECT 
-//     tasks.id, 
-//     tasks.short_name, 
-//     tasks.prompt, 
-//     tasks.chip_size, 
-//     tasks.fov_size, 
-//     tasks.zoom_scale,
-//     (image_counts.image_count + observer_counts.observer_count) AS total_count,
-//     image_counts.image_count AS image_count,
-//     observer_counts.observer_count AS observer_count,
-//     (COALESCE(image_counts.image_count, 0) + COALESCE(observer_counts.observer_count, 0)) / (tasks.total_images + COALESCE(image_counts.total_images, 0)) 
-// AS progress
-// FROM tasks
-// LEFT JOIN (
-//     SELECT task_id AS t_id, COUNT(DISTINCT image_id) AS total_images, COUNT(DISTINCT task_id) AS image_count
-//     FROM task_images
-//     INNER JOIN tasks ON tasks.id = task_images.task_id
-//     WHERE tasks.investigator = ?
-//     GROUP BY task_id
-// ) AS image_counts ON tasks.id = image_counts.t_id
-// LEFT JOIN (
-//     SELECT tasks.id, COUNT(DISTINCT observers.user_id) AS observer_count
-//     FROM tasks
-//     INNER JOIN observers ON observers.task_id = tasks.id
-//     WHERE tasks.investigator = ?
-//     GROUP BY tasks.id
-// ) AS observer_counts ON tasks.id = observer_counts.id;
-// ```
+        // TODO: this query does not account for users who are removed from a task
+        // after making ratings. This would make for progress beyond 1.0
+        const query = `SELECT
+                    t.*,
+                    COALESCE(hot.ratings, 0) as ratings,
+                    COALESCE(ob_count.num_users, 0) as num_users,
+                    COALESCE(im_count.total, 0) as total,
+                    COALESCE(hot.ratings/(ob_count.num_users*im_count.total), 0) as progress
+                    FROM tasks as t
+                    LEFT JOIN (
+                        SELECT observers.task_id, COUNT(DISTINCT user_id) as num_users
+                        FROM observers
+                        GROUP BY observers.task_id
+                    ) AS ob_count ON ob_count.task_id = t.id
+                    LEFT JOIN (
+                        SELECT task_images.task_id, COUNT(*) as total
+                        FROM task_images
+                        GROUP BY task_images.task_id
+                    ) AS im_count ON im_count.task_id = t.id
+                    LEFT JOIN (
+                        SELECT hotornot.task_id, COUNT(DISTINCT hotornot.user_id, hotornot.image_id, hotornot.task_id) as ratings
+                        FROM hotornot
+                        GROUP BY hotornot.task_id
+                    ) as hot ON hot.task_id = t.id
+                    WHERE t.investigator = 116`
 
         const rows = await dbOps.select(query, [userId, userId, userId])
         return rows
@@ -175,8 +126,11 @@ const taskOps = {
         const query = `SELECT gradings.total / (images.total* observers.total) AS progress
         FROM (
             SELECT COUNT(*) as total
-            FROM hotornot
-            WHERE hotornot.task_id = ?
+            FROM (
+                SELECT DISTINCT user_id, image_id
+                FROM hotornot
+                WHERE hotornot.task_id = ?
+            ) AS t
         ) AS gradings,
         (
             SELECT COUNT(*) AS total

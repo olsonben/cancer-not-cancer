@@ -87,6 +87,13 @@ class DatabaseOps {
         }
     }
 
+    /** Close database connection */
+    async end() {
+        console.log('Closing database connection.')
+        const db = await this.db
+        db.end()
+    }
+
     /**
      * Process select queries that return rows as results.
      * @param {string} sql Sql string template - 'Select * From tbl Where id=?'

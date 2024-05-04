@@ -1,167 +1,149 @@
 <script setup>
-import { useUserStore } from '@/store/user'
-import { computed } from 'vue';
-
-definePageMeta({
-    key: 'pathapp-view'
-})
-
-const userStore = useUserStore()
+import { useTaskQueue } from '@/store/taskQueue'
+const config = useRuntimeConfig()
+const router = useRouter()
 const api = useApi()
-const queue = useImageQueue(1)
+
+useOnBackButton(() => {
+    console.log('BACK BUTTON DETECTED')
+})
 
 const route = useRoute()
 const taskId = Number(route.params.taskId) || null
-const imageId = Number(route.params.imageId) || null
+const imageId = computed(() => (Number(route.params.imageId) || null))
 
-let firstImage = null
-if (imageId) {
-    try {
-        const { response } = await api.GET('/images/', { imageId: imageId})
-        firstImage = response.value
-    } catch (error) {
-        if (error.statusCode === 404) {
-            console.warn(`Image ${imageId} was not found.`)
-        } else {
-            throw error
-        }
-    }
+const getCurrentTask = (id) => {
+    const allTasks = useState('allTasks')
+    return allTasks.value.find((task) => task.id === id)
 }
 
-/*******************************
- * TASK/RATING DATA AND CONTROLS
- *******************************/
 /** Current Task Data */
 const curTask = reactive({
-    onDeck: null,
-    id: taskId,
-    allTasks: [],
+    ...getCurrentTask(taskId),
     noMoreImages: false,
     showGuide: false
 })
 
-// TODO: I would be good to update the structure above to be the actual current task.
-// Then this can be removed.
-const currentTask = computed(() => {
-    return curTask.allTasks.find((task) => task.id === curTask.id)
+const queue = useTaskQueue()
+
+/** If the next image is null, we need to pull more images from the database. */
+watch(() => queue.currentImage, async (newValue, oldValue) => {
+    if (newValue.image_id === null && oldValue.image_id !== null) {
+        // end of queue... get more images if possible
+        navigateTo({ path: `/pathapp/task-${curTask.id}/` })
+        useHead({
+            title: `Task: ${curTask.id} - Image: --`
+        })
+    }
+    if (newValue.image_id !== null) {
+        // const router = useRouter()
+        if (imageId.value === null) {
+            // previously different task
+            router.replace({ path: `/pathapp/task-${curTask.id}/${newValue.image_id}` })
+        } else {
+            // After grading the previous slide OR first load with imageId defined
+            navigateTo({ path: `/pathapp/task-${curTask.id}/${newValue.image_id}` })
+        }
+        useHead({
+            title: `Task: ${curTask.id} - Image: ${newValue.image_id}`
+        })
+    }
 })
 
-/** Rating Data for the Current Image */
-const curImage = reactive({
-    rating: '',
-    comment: '',
-    commenting: false,
-})
+queue.init(curTask, imageId.value)
 
-/** Helper for resetting the image some after rating. */
-const resetTrigger = ref(false)
+if (queue.currentImage.image_id) {
+    // revisit
+    router.replace({ path: `/pathapp/task-${curTask.id}/${queue.currentImage.image_id}` })
+    useHead({
+        title: `Task: ${curTask.id} - Image: ${queue.currentImage.image_id}`
+    })
+}
 
 /** Turns on the annotation modal. */
 const showAnnotationGuide = () => { curTask.showGuide = true }
+
+const preRatingClass = computed(() => {
+    switch (queue.currentImage.rating) {
+        case -1:
+            return 'prev-no'
+        case 0:
+            return 'prev-maybe'
+        case 1:
+            return 'prev-yes'
+        default:
+            return ''
+    }
+})
 
 /** On rating either by click or swipe. */
 const onClick = async (source) => {
     // determine the message based on source
     if (source === 'yes') {
-        curImage.rating = 1
+        queue.currentImage.rating = 1
     } else if (source === 'no') {
-        curImage.rating = -1
+        queue.currentImage.rating = -1
     } else if (source === 'maybe') {
-        curImage.rating = 0
+        queue.currentImage.rating = 0
     } else {
         return
     }
 
-    curTask.onDeck.rating = curImage.rating
 
     // record the response
     try {
         // save important data
-        const ratingImageId = curTask.onDeck.image_id
-        const comment = curImage.comment
+        const ratingImageId = queue.currentImage.image_id
+        const rating = queue.currentImage.rating
+        const comment = queue.currentImage.comment
 
         // move on to the next image, and reset comment box
-        curTask.onDeck = queue.getNextImage()
-        curImage.comment = ''
-        curImage.commenting = false
-        resetTrigger.value = !resetTrigger.value
+        queue.nextImage()
 
         // record important data, this POST is async, but making the
         // request happen after the image swapping after seeing weird
         // hiccups with image loading during development
-        api.POST('/hotornot', {
-            id: ratingImageId,
-            rating: curImage.rating,
-            comment: comment,
-            taskId: curTask.id
-        })
 
-    } catch (error) {
-        console.error(error)
-    }
-
-}
-
-const buildImageObject = (imgData) => {
-    return {
-        ...imgData,
-        'chipSize': currentTask.chip_size,
-        'fovSize': currentTask.fov_size,
-        'zoomScale': currentTask.zoom_scale,
-    }
-}
-
-/** Populates the queue with images from the current task. */
-const getNewQueue = async () => {
-    try {
-        const { response } = await api.GET(`/images/task/${curTask.id}`)
-        if (response.value.length === 0) {
-            curTask.noMoreImages = true
-            // TODO: this probably shouldn't live here
-            const router = useRouter()
-            router.push({ path: `/pathapp/task-${curTask.id}/` })
-        } else {
-            const check = new Set()
-            if (firstImage) check.add(firstImage.image_id)
-            const imageArray = response.value.reduce((acc, imgData) => {
-                if (check.has(imgData.image_id)) {
-                    return acc
-                } else {
-                    check.add(imgData.image_id)
-                    return acc.concat([buildImageObject(imgData)])
+        // TODO: Update useAPI to have a $fetch method for this kind of instance.
+        $fetch('/hotornot', {
+                method: 'POST',
+                baseURL: config.public.apiUrl,
+                credentials: 'include',
+                body: {
+                    id: ratingImageId,
+                    rating: rating,
+                    comment: comment,
+                    taskId: curTask.id
                 }
-            }, [])
+            }
+        )
 
-            // shuffle the images
-            shuffleArray(imageArray)
-            if (firstImage) imageArray.unshift(buildImageObject(firstImage))
-            firstImage = null
-            queue.addImages(imageArray)
-            curTask.onDeck = queue.getNextImage()
-        }
     } catch (error) {
         console.error(error)
     }
+
 }
 
-/** If current task changes, update queue */
-watch(() => curTask.id, (newTaskId) => {
-    // TODO: check this out further
-    queue.reset()
-    curTask.noMoreImages = false
-    getNewQueue()
-})
-/** If the next image is null, we need to pull more images from the database. */
-watch(() => curTask.onDeck, async (newValue, oldValue) => {
-    if (newValue === null && oldValue !== null) {
-        // end of queue... get more images if possible
-        getNewQueue()
+
+function useOnBackButton(onBackButtonCallback) {
+    let isPopState = ref(false)
+    const popstateHandler = (event) => {
+        isPopState.value = true
     }
-    if (newValue) {
-        const router = useRouter()
-        router.push({ path: `/pathapp/task-${curTask.id}/${curTask.onDeck.image_id}` })
-    }
-})
+
+    // setup popstate listener
+    window.addEventListener('popstate', popstateHandler)
+    onBeforeUnmount(() => {
+        window.removeEventListener('popstate', popstateHandler)
+    })
+
+    watch(() => isPopState.value, (popstate) => {
+        if (popstate === true) {
+            onBackButtonCallback()
+            isPopState.value = false
+        }
+    })
+}
 
 /*************************
  * SWIPE DATA AND CONTROLS
@@ -179,11 +161,12 @@ const cssVars = computed(() => {
     }
 })
 
-const disableSwipe = computed(() => !curTask.onDeck || curTask.showGuide)
+// const disableSwipe = computed(() => !curTask.onDeck || curTask.showGuide)
+const disableSwipe = computed(() => queue.currentImage.image_id === null || curTask.showGuide)
 
 const onSwipeMove = (newPercent) => {
     swipe.percent = newPercent
-    
+
     if (swipe.percent >= 1) {
         swipe.moveLeft = false
         swipe.moveRight = true
@@ -202,73 +185,69 @@ const onSwipeEnd = (direction) => {
     } else if (direction === 'left') {
         onClick('no')
     } else if (direction === 'up') {
-        curImage.commenting = true
+        queue.currentImage.commenting = true
     } else if (direction === 'down') {
-        curImage.commenting = false
+        queue.currentImage.commenting = false
     }
 }
 
-/*************************
- * DATA FETCHING
- *************************/
-const loadTaskData = async () => {
-    const { response } = await api.GET('/tasks/')
-    curTask.allTasks = response.value
-    getNewQueue()
-}
-
-/** Fetch data. */
-if (userStore.isLoggedIn) loadTaskData()
-
-/** If loggin state was slow, attempt to pull data again. */
-watch(() => userStore.isLoggedIn, async (loggedIn) => {
-    if (loggedIn) {
-        // Previously not logged in, and now logged in.
-        loadTaskData()
-    }
-})
-
-/**
- * Helper - Durstenfeld Shuffle
- * https://stackoverflow.com/a/12646864/3068136
- */
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        const temp = array[i]
-        array[i] = array[j]
-        array[j] = temp
-    }
-}
 </script>
 
 <template>
-    <div class='app' :style="cssVars" >
+    <div class='app' :style="cssVars">
         <div class="bg no"></div>
         <div class="bg yes"></div>
 
         <!-- Image to grade -->
         <div class='prompt'>
-            <div class='controls is-flex mb-5'>
-                <TaskPicker class="is-flex-grow-1" :initialTaskId="taskId"
-                    @taskSelected="(newTaskId) => { curTask.id = newTaskId }">
-                </TaskPicker>
+            <div class="level mb-1 is-mobile is-flex">
+                <div class="level-left is-flex-grow-1 is-flex-shrink-1">
+                    <div class="back-link is-size-4 mt-2">
+                        <NuxtLink to="/pathapp">
+                            <span class="icon">
+                                <fa-icon :icon="['fas', 'chevron-left']" />
+                            </span>
+                        </NuxtLink>
+                    </div>
+                    <div id="prompt-question" class="title is-5">
+                        {{ curTask.prompt }}
+                    </div>
+                </div>
+                <div class="level-right mt-0 is-flex-grow-0 is-flex-shrink-0">
+                    <button class="button is-small" :disabled="queue.noUndos" title="undo" type="button"
+                        @click="queue.undo">
+                        <span class="icon"><fa-icon :icon="['fas', 'reply']" /></span>
+                    </button>
+                    <button class="button is-small" :disabled="queue.noRedos" title="redo" type="button"
+                        @click="queue.redo">
+                        <span class="icon mirror"><fa-icon :icon="['fas', 'reply']" /></span>
+                    </button>
+                </div>
             </div>
             <div class="has-text-danger" v-if="curTask.noMoreImages">No more images available in this task.</div>
 
-            <ImageSwipe @swipe-move="onSwipeMove" @swipe-end="onSwipeEnd" :disabled="disableSwipe">
-                <ImageDisplay v-if="!curTask.noMoreImages" :imageUrl="curTask.onDeck?.imageUrl"
-                    :altText="curTask.onDeck?.name" :chipSize="curTask.onDeck?.chipSize"
-                    :fovSize="curTask.onDeck?.fovSize" :zoomScale="curTask.onDeck?.zoomScale"
-                    :resetTrigger="resetTrigger" />
+            <ImageSwipe :class="preRatingClass" @swipe-move="onSwipeMove" @swipe-end="onSwipeEnd"
+                :disabled="disableSwipe">
+                <NuxtPage />
             </ImageSwipe>
 
             <div v-if="!curTask.noMoreImages" class='level is-flex'>
                 <div class="level-left is-flex">
                     <div class="level-item">
-                        <p class="help is-hidden-desktop">Tap to zoom.</p>
-                        <p class="help is-hidden-touch">Click to zoom.</p>
+                        <p class="help is-hidden-desktop">Tap to Zoom</p>
+                        <p class="help is-hidden-touch">Click to Zoom</p>
                     </div>
+                </div>
+                <div id="swipe-tip" class="is-hidden-desktop level-item mb-0">
+                    <span class='icon swipe left mt-1'>
+                        <img src="~assets/icons/arrow-set.svg" alt="swipe left">
+                    </span>
+                    <p class="help pl-1 pr-1">
+                        Swipe to Grade
+                    </p>
+                    <span class='icon swipe right mt-1'>
+                        <img src="~assets/icons/arrow-set.svg" alt="swipe right">
+                    </span>
                 </div>
                 <div class="level-right is-flex mt-0">
                     <div class="level-item">
@@ -281,15 +260,15 @@ function shuffleArray(array) {
         </div>
 
         <!-- Response section: grade + comment -->
-        <div v-if="!curTask.noMoreImages" class='response-area'>
-            <div class="has-text-centered swipe-pad" :class="{ 'shown': !curImage.commenting }">
+        <div v-if="!curTask.noMoreImages" class='response-area pt-4'>
+            <!-- <div class="has-text-centered swipe-pad" :class="{ 'shown': !queue.currentImage.commenting }">
                 <span class='icon swipe left'>
                     <img src="~assets/icons/arrow-set.svg" alt="swipe left">
                 </span>
                 <span class='icon swipe right'>
                     <img src="~assets/icons/arrow-set.svg" alt="swipe right">
                 </span>
-            </div>
+            </div> -->
 
             <!-- Grade buttons -->
             <div class='block grade-buttons'>
@@ -299,14 +278,16 @@ function shuffleArray(array) {
             </div>
 
             <!-- Comment -->
-            <button class='button icon-button comment' @click='curImage.commenting = !curImage.commenting'>
+            <button class='button icon-button comment'
+                @click='queue.currentImage.commenting = !queue.currentImage.commenting'>
                 <span class='icon'>
                     <fa-icon :icon="['fas', 'pencil']" class="fa-xl" />
                 </span>
             </button>
             <div class="container">
-                <textarea class='textarea block' :class="{ 'shown': curImage.commenting }"
-                    placeholder="Add a comment to this image or leave blank." v-model="curImage.comment"></textarea>
+                <textarea class='textarea block' :class="{ 'shown': queue.currentImage.commenting }"
+                    placeholder="Add a comment to this image or leave blank."
+                    v-model="queue.currentImage.comment"></textarea>
             </div>
 
         </div>
@@ -353,7 +334,7 @@ $no-cancer-color: #ff6184;
             @include bg-fade-out;
         }
     }
-    
+
     &.yes {
         background-color: lighten($yes-cancer-color, 10%);
         opacity: var(--bg-yes-opacity);
@@ -378,20 +359,6 @@ $no-cancer-color: #ff6184;
         max-width: 100%;
     }
 
-    .controls {
-        color: hsl(0deg, 0%, 29%);
-        // width: 100%;
-
-        @include for-size(mobile) {
-            padding: 0 0;
-        }
-
-        strong {
-            padding-top: 0.8rem;
-            display: inline-block;
-        }
-    }
- 
 }
 
 .annotation-link {
@@ -404,7 +371,7 @@ $no-cancer-color: #ff6184;
     margin: 0 auto;
     width: 100%;
     max-width: 50vh;
-    
+
     display: flex;
     justify-content: center;
     flex-direction: column;
@@ -442,7 +409,7 @@ $no-cancer-color: #ff6184;
             transition-property: height, opacity;
             transition-duration: 0.25s;
             transition-timing-function: ease-out;
-            
+
 
             &.left {
                 align-self: flex-start;
@@ -473,7 +440,7 @@ $no-cancer-color: #ff6184;
             transition-property: height, opacity;
             transition-duration: 0.25s;
             transition-timing-function: ease-out;
-    
+
             &.shown {
                 height: 70px;
                 opacity: 1;
@@ -482,15 +449,52 @@ $no-cancer-color: #ff6184;
     }
 }
 
+.icon.swipe.right {
+    transform: rotate(180deg);
+}
+#swipe-tip .swipe {
+    opacity: 0.4;
+}
+
 .icon-button {
     /* centered circle */
     border-radius: 50%;
     margin: 0 auto $button-margin auto;
 
     &.comment {
-        background-color: rgba(0,0,0,0);
+        background-color: rgba(0, 0, 0, 0);
     }
 }
+
+.mirror {
+    transform: scale(-1,1);
+}
+
+.back-link a {
+    color: hsl(0, 0%, 50%);
+}
+.back-link:hover a {
+    color: hsl(0, 0%, 21%);
+}
+
+// NOTE: text-wrap is super new!
+// https://developer.chrome.com/docs/css-ui/css-text-wrap-balance
+#prompt-question {
+    // white-space: unset;
+    text-wrap: balance;
+}
+.prev-yes {
+    border: 4px solid $yes-cancer-color;
+}
+
+.prev-no {
+    border: 4px solid $no-cancer-color;
+}
+
+.prev-maybe {
+    border: 4px solid black;
+}
+
 .grade-buttons {
     display: flex;
     flex-direction: row;
@@ -506,14 +510,17 @@ $no-cancer-color: #ff6184;
         width: 5.5rem;
 
         &.no {
-                        /* lighten is a native sass function */
+            /* lighten is a native sass function */
             background-color: lighten($no-cancer-color, 20%);
+
             &.shown {
                 background-color: $no-cancer-color;
             }
         }
+
         &.yes {
             background-color: lighten($yes-cancer-color, 30%);
+
             &.shown {
                 background-color: $yes-cancer-color;
             }
@@ -521,5 +528,4 @@ $no-cancer-color: #ff6184;
     }
 
 }
-
 </style>
