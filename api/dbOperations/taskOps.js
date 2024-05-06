@@ -110,9 +110,9 @@ const taskOps = {
                         FROM hotornot
                         GROUP BY hotornot.task_id
                     ) as hot ON hot.task_id = t.id
-                    WHERE t.investigator = 116`
+                    WHERE t.investigator = ?`
 
-        const rows = await dbOps.select(query, [userId, userId, userId])
+        const rows = await dbOps.select(query, [userId])
         return rows
     },
 
