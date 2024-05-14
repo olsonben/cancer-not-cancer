@@ -22,16 +22,26 @@ export const useApi = () => {
 
     return {
         async GET(route, query, key = null, headers = null) {
+            let allHeaders = headers ? headers : {}
+
+            if (process.server) {
+                const cookie = useCookie('sessionId').value
+                if (cookie) {
+                    allHeaders.cookie = `sessionId=${encodeURIComponent(cookie)}`
+                }
+            }
+            
             const { data: response, status, error } = await useFetch(route, {
                 method: 'GET',
                 baseURL: config.public.apiUrl,
                 credentials: 'include',
-                server: false, // Fire on client
+                // server: false, // Fire on client
                 watch: false, // Don't re-fetch on query change
                 query: query,
-                ...(headers ? { headers: headers } : {}),
+                headers: allHeaders,
                 ...(key ? { key: key} : {})
             })
+
             if (status.value === "success") {
                 return { response, status }
             } else {

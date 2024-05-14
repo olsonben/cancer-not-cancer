@@ -103,7 +103,7 @@ export default defineNuxtConfig({
   /**
    * Server side rendering: set to false because this site is served statically.
    */
-  ssr: false,
+  ssr: true,
 
   /**
    * Sourcemap and devtools are on by default in dev mode. To use them in
