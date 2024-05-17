@@ -19,7 +19,9 @@
                     </div>
                     <div class="control">
                         <button class="button is-small is-warning" type="button" @click="setNewName">save</button>
-                        <button class="button is-small is-danger" type="button" @click="changeName = !changeName"><span class="icon"><fa-icon :icon="['fas', 'xmark']" /></span></button>
+                        <button class="button is-small is-danger" type="button" @click="changeName = !changeName">
+                            <span class="icon"><fa-icon :icon="['fas', 'xmark']" /></span>
+                        </button>
                     </div>
                 </div>
             </div>

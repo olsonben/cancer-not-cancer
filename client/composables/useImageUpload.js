@@ -61,7 +61,7 @@ export const useImageUpload = () => {
                     uploadHeaders['finalblock'] = true
                 }
                 
-                // TODO: Add try/catch here and responsed to failed api request
+                // TODO: use $fetch
                 const { response } = await api.POST(endpoint, formData, null, uploadHeaders)
 
                 if (response.value !== 'No files uploaded.') {

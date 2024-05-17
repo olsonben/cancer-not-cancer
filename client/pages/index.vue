@@ -3,7 +3,7 @@ import { useUserStore } from "~/store/user";
 const isLoggedIn = useUserStore().isLoggedIn
 
 useHead({
-    title: 'Home'
+    title: 'Cancer Not Cancer'
 })
 </script>
 

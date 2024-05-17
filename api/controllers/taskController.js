@@ -12,8 +12,8 @@ const taskController = {
     /** Returns all tasks owned/associated with a user id. Admins can change user id. */
     async getOwnedTasks (req, res) {
         let investigatorId = req.user.id
-        if (req.query.user_id && req.user.permissions.admin) {
-            investigatorId = req.query.user_id
+        if (req.query.userId && req.user.permissions.admin) {
+            investigatorId = req.query.userId
         }
         const data = await taskOps.getTasks(investigatorId)
         res.send(data)

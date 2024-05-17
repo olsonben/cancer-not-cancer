@@ -89,31 +89,10 @@ const exportTask = (task) => {
     exportData.value = task
 }
 
-// const getTasksTable = async () => {
-//     try {
-//         const { response } = await api.GET('/tasks/table')
-//         taskData.value = response.value
-//     } catch (err) {
-//         console.error(err);
-//     }
-// }
 
-
-// onMounted(() => {
-//     // TODO: move to useFetch
-//     getTasksTable()
-// })
-
-const config = useRuntimeConfig()
-
-
-const { data: response, status, error } = await useFetch('/tasks/table', {
-    method: 'GET',
-    baseURL: config.public.apiUrl,
-    credentials: 'include',
-})
-
+const { response } = await api.GET('/tasks/table')
 taskData.value = response.value
+
 
 </script>
 
@@ -160,7 +139,9 @@ taskData.value = response.value
                     <h3>Existing Tasks</h3>
                     <table class="table is-striped is-narrow is-fullwidth is-hoverable">
                         <thead>
-                            <th v-for="colName in columns">{{ colName }}</th>
+                            <tr>
+                                <th v-for="colName in columns">{{ colName }}</th>
+                            </tr>
                         </thead>
                         <tbody>
 

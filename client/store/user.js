@@ -2,6 +2,8 @@ import { defineStore } from "pinia"
 
 // https://pinia.vuejs.org/core-concepts/#Setup-Stores
 export const useUserStore = defineStore('user', () => {
+    console.log('User Store Created')
+
     const api = useApi()
 
     // STATE (not exported (private))
@@ -26,11 +28,11 @@ export const useUserStore = defineStore('user', () => {
     // Check with the api if the user is logged in and update permissions accordingly.
     async function login() {
         try {
-            const { response, status } = await api.GET('/isLoggedIn')
+            console.log('userStore: login()')
 
+            const { response, status } = await api.GET('/isLoggedIn')
             // response.value will be false if not logged in
             if (response.value) {
-                console.log('Enabling User')
                 const user = response.value
 
                 loggedIn.value = true
@@ -46,7 +48,7 @@ export const useUserStore = defineStore('user', () => {
             initLogin.value = true
         } catch (error) {
             console.log('Error with user login')
-            console.error(error)
+            console.log(error)
         }
     }
 

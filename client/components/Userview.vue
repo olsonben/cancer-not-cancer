@@ -1,3 +1,36 @@
+<script setup>
+const api = useApi()
+
+const defaultUserArray = () => {
+    return [{
+        'id': null,
+        'fullname': 'Self',
+        'username': null
+    }]
+}
+const { userId, label } = defineProps({
+     userId: { type: Number },
+     label: { type: String, default: 'View as user:' },
+})
+
+const emit = defineEmits(['update:userId'])
+
+const users = ref(defaultUserArray())
+const selectedUser = ref(null)
+const loading = ref(true)
+
+const { response } = await api.GET('/users/')
+loading.value = false
+users.value = defaultUserArray().concat(response.value)
+
+watch(selectedUser, (newUserID) => {
+        // Allows us to pass the data to the parent component
+        emit('update:userId', newUserID)
+    },
+    { immediate: true }
+)
+</script>
+
 <template>
     <div>
         <strong>{{ label }}</strong><div class="select is-medium" :class="{ 'is-loading': loading }">
@@ -7,49 +40,6 @@
         </div>
     </div>
 </template>
-
-<script>
-const api = useApi()
-// this.$store.state.user.permissions.admin
-const defaultUserArray = () => {
-    return [{
-        'id': null,
-        'fullname': 'Self',
-        'username': null
-    }]
-}
-export default {
-    props: {
-        userId: Number,
-        label: {
-            default: 'View as user:',
-            type: String
-        },
-    },
-    emits: ['update:userId'],
-    data() {
-        return {
-            users: defaultUserArray(),
-            selectedUser: null,
-            loading: true
-        }
-    },
-    async mounted() {
-        const { response } = await api.GET('/users/')
-        this.loading = false
-        this.users = defaultUserArray().concat(response.value)
-    },
-    watch: {
-        selectedUser: {
-            immediate: true,
-            handler(newUserID) {
-                // Allows us to pass the data to the parent component
-                this.$emit('update:userId', newUserID)
-            }
-        }
-    },
-}
-</script>
 
 <style lang="scss" scoped>
 </style>

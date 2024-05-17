@@ -1,3 +1,171 @@
+<script setup>
+const api = useApi()
+const fileTools = useFileTools()
+const Adder = resolveComponent('Adder')
+const ImagePicker = resolveComponent('ImagePicker')
+const RoiSettings = resolveComponent('RoiSettings')
+const ContentEditor = resolveComponent('ContentEditor')
+
+const { task } = defineProps(['task'])
+const emit = defineEmits(['save', 'cancel'])
+
+
+const activeTab = ref('observers')
+const localTask = ref(task)
+const observers = reactive({
+    applied: [],
+    available: [],
+})
+
+const root = reactive({
+    id: 0,
+    name: 'root',
+    contents: [],
+    type: 'tag',
+    selected: [],
+})
+const annotationGuide = ref('')
+
+const updateObservers = (observersData) => {
+    observers.applied = observersData.applied
+    observers.available = observersData.available
+}
+const report = () => {
+    console.log('Files selected')
+    console.log(fileTools.getSelectedFiles(root))
+}
+
+const updateRoi = (roiData) => {
+    localTask.chip_size = roiData.chipSize
+    localTask.fov_size = roiData.fovSize
+    localTask.zoom_scale = roiData.zoomScale
+}
+
+const updateGuide = (guideContent) => {
+    annotationGuide.value = guideContent
+}
+
+const tabs = computed(() => {
+    const chipSize = localTask.value.chip_size
+    const fovSize = localTask.value.fov_size
+    const zoomScale = localTask.value.zoom_scale
+    return [
+        {
+            name: 'observers',
+            label: "Observers",
+            component: Adder,
+            props: { tags: observers },
+            events: { update: updateObservers }
+        },
+        {
+            name: 'images',
+            label: "Images",
+            component: ImagePicker,
+            props: { files: root.contents },
+            events: { report: report }
+
+        },
+        {
+            name: 'roi',
+            label: "ROI",
+            component: RoiSettings,
+            props: { chipSize, fovSize, zoomScale },
+            events: { update: updateRoi }
+
+        },
+        {
+            name: 'guide',
+            label: "Annotation Guide",
+            component: ContentEditor,
+            props: { initialContent: annotationGuide.value },
+            events: { update: updateGuide }
+
+        }
+    ]
+})
+
+const saveChanges = async () => {
+    try {
+        const selectedImages = fileTools.getSelectedFiles(root)
+
+        const results = await Promise.allSettled([
+            api.POST('/tasks/update', {
+                id: localTask.value.id,
+                short_name: localTask.value.short_name,
+                prompt: localTask.value.prompt,
+                chip_size: localTask.value.chip_size,
+                fov_size: localTask.value.fov_size,
+                zoom_scale: localTask.value.zoom_scale,
+            }),
+            api.POST('/tasks/observers', {
+                task_id: localTask.value.id,
+                observerIds: JSON.stringify(observers.applied.map(user => user.id)),
+            }),
+            api.POST('/tasks/images', {
+                task_id: localTask.value.id,
+                imageIds: JSON.stringify(selectedImages),
+            }),
+            api.POST(`/tasks/${localTask.value.id}/guide`, {
+                content: annotationGuide.value
+            })
+        ])
+        // TODO: clean up results logic
+        // TODO: We shouldn't be updating a prop unless its a model
+        if (results[0].status === "fulfilled") {
+            task.short_name = localTask.value.short_name
+            task.prompt = localTask.value.prompt
+            task.chip_size = localTask.value.chip_size
+            task.fov_size = localTask.value.fov_size
+            task.zoom_scale = localTask.value.zoom_scale
+        } else {
+            console.error("There was an error saving the task data.")
+        }
+
+        const closeIfNoErrors = results.every((res) => (res.status === "fulfilled"))
+
+        // Emit save event to update stats in task table.
+        emit('save', {
+            observers: results[1].status === "fulfilled" ? observers.applied.length : null,
+            images: results[2].status === "fulfilled" ? selectedImages.length : null
+        }, closeIfNoErrors)
+
+        if (!closeIfNoErrors) {
+            // TODO: turn this into a notification
+            console.warn("Not all content was saved. To preserve current unsaved changes, the task editor has not been closed.")
+        }
+
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+const cancelChanges = () => {
+    console.log('changes cancelled')
+    emit('cancel')
+}
+
+const [observersData, imagesData, guideData] = await Promise.all([
+    api.GET('/tasks/observers', {
+        task_id: task.id
+    }),
+    api.GET('/tasks/images', {
+        task_id: task.id
+    }),
+    api.GET(`/tasks/${task.id}/guide`)
+])
+
+root.contents = imagesData.response.value
+annotationGuide.value = guideData.response.value
+for (const user of observersData.response.value) {
+    if (user.applied) {
+        observers.applied.push(user)
+    } else {
+        observers.available.push(user)
+    }
+}
+
+</script>
+
 <template>
     <div class="modal" v-bind:class="{ 'is-active': true }">
         <div class="modal-background" @click="cancelChanges"></div>
@@ -57,185 +225,6 @@
         </div>
     </div>
 </template>
-
-<script>
-const api = useApi()
-const fileTools = useFileTools()
-const Adder = resolveComponent('Adder')
-const ImagePicker = resolveComponent('ImagePicker')
-const RoiSettings = resolveComponent('RoiSettings')
-const ContentEditor = resolveComponent('ContentEditor')
-
-export default {
-    props: ['task'],
-    emits: ['save', 'cancel'],
-    data() {
-        return {
-            activeTab: 'observers',
-            localTask: Object.assign({}, this.task),
-            observers: {
-                applied: [],
-                available: [],
-            },
-            root: {
-                id: 0,
-                name: 'root',
-                contents: [],
-                type: 'tag',
-                selected: [],
-            },
-            annotationGuide: ''
-        }
-    },
-    computed: {
-        tabs() {
-            const chipSize = this.localTask.chip_size
-            const fovSize = this.localTask.fov_size
-            const zoomScale = this.localTask.zoom_scale
-            return [
-                {
-                    name: 'observers',
-                    label: "Observers",
-                    component: Adder,
-                    props: { tags: this.observers },
-                    events: { update: this.updateObservers }
-                },
-                {
-                    name: 'images',
-                    label: "Images",
-                    component: ImagePicker,
-                    props: { files: this.root.contents },
-                    events: { report: this.report }
-
-                },
-                {
-                    name: 'roi',
-                    label: "ROI",
-                    component: RoiSettings,
-                    props: { chipSize, fovSize, zoomScale },
-                    events: { update: this.updateRoi }
-
-                },
-                {
-                    name: 'guide',
-                    label: "Annotation Guide",
-                    component: ContentEditor,
-                    props: { initialContent: this.annotationGuide },
-                    events: { update: this.updateGuide }
-
-                }
-            ]
-        }
-    },
-    async mounted() {
-        try {
-            const [observersData, imagesData, guideData] = await Promise.all([
-                api.GET('/tasks/observers', {
-                    task_id: this.task.id
-                }),
-                api.GET('/tasks/images', {
-                    task_id: this.task.id
-                }),
-                api.GET(`/tasks/${this.task.id}/guide`)
-            ])
-            const observers = observersData.response.value
-            const images = imagesData.response.value
-            const guideContent = guideData.response.value
-
-            for (const user of observers) {
-                if (user.applied) {
-                    this.observers.applied.push(user)
-                } else {
-                    this.observers.available.push(user)
-                }
-            }
-            
-            // TODO: this can be done above
-            this.root.contents = images
-            this.annotationGuide = guideContent
-        } catch (error) {
-            console.error(error)
-        }
-    },
-    methods: {
-        async saveChanges() {
-            try {
-                const selectedImages = fileTools.getSelectedFiles(this.root)
-
-                const results = await Promise.allSettled([
-                    api.POST('/tasks/update', {
-                        id: this.localTask.id,
-                        short_name: this.localTask.short_name,
-                        prompt: this.localTask.prompt,
-                        chip_size: this.localTask.chip_size,
-                        fov_size: this.localTask.fov_size,
-                        zoom_scale: this.localTask.zoom_scale,
-                    }),
-                    api.POST('/tasks/observers', {
-                        task_id: this.localTask.id,
-                        observerIds: JSON.stringify(this.observers.applied.map(user => user.id)),
-                    }),
-                    api.POST('/tasks/images', {
-                        task_id: this.localTask.id,
-                        imageIds: JSON.stringify(selectedImages),
-                    }),
-                    api.POST(`/tasks/${this.localTask.id}/guide`, {
-                        content: this.annotationGuide
-                    })
-                ])
-                // TODO: clean up results logic
-                if (results[0].status === "fulfilled") {
-                    this.task.short_name = this.localTask.short_name
-                    this.task.prompt = this.localTask.prompt
-                    this.task.chip_size = this.localTask.chip_size
-                    this.task.fov_size = this.localTask.fov_size
-                    this.task.zoom_scale = this.localTask.zoom_scale
-                } else {
-                    console.error("There was an error saving the task data.")
-                }
-
-                const closeIfNoErrors = results.every((res) => (res.status === "fulfilled"))
-
-                // Emit save event to update stats in task table.
-                this.$emit('save', {
-                    observers: results[1].status === "fulfilled" ? this.observers.applied.length : null,
-                    images: results[2].status === "fulfilled" ? selectedImages.length : null
-                }, closeIfNoErrors)
-
-                if (!closeIfNoErrors) {
-                    // TODO: turn this into a notification
-                    console.warn("Not all content was saved. To preserve current unsaved changes, the task editor has not been closed.")
-                }
-
-            } catch (err) {
-                console.error(err)
-            }
-        },
-        cancelChanges() {
-            console.log('changes cancelled')
-            this.$emit('cancel')
-        },
-        updateObservers(observersData) {
-            this.observers.applied = observersData.applied
-            this.observers.available = observersData.available
-        },
-        updateRoi(roiData){
-            this.localTask.chip_size = roiData.chipSize
-            this.localTask.fov_size = roiData.fovSize
-            this.localTask.zoom_scale = roiData.zoomScale
-        },
-        updateGuide(guideContent) {
-            this.annotationGuide = guideContent
-        },
-        report() {
-            console.log('Files selected')
-            console.log(fileTools.getSelectedFiles(this.root))
-        }
-    }
-}
-
-</script>
-
 
 <style lang='scss' scoped>
 .prompt {

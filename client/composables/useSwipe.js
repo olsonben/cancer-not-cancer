@@ -108,18 +108,20 @@ export const useSwipe = (target, threshold, onSwipeEnd) => {
 
     }
 
-    // Fixes a firefox swipe conflict. When swiping if the reload page
-    // swipe starts to engage, other animations freeze and hang. The
-    // following line deactivates swiping to reload page.
-    targetRef.value.documentElement.style.setProperty('--overscroll', 'none')
-    // Turn scrolling off
-    targetRef.value.documentElement.style.setProperty('--overflow', 'hidden')
-
-    // Required for touches
-    targetRef.value.addEventListener('touchstart', handleTouchStart, false)
-    targetRef.value.addEventListener('touchmove', handleTouchMove, false)
-    targetRef.value.addEventListener('touchend', handleTouchEnd, false)
-    targetRef.value.addEventListener('touchcancel', handleTouchCancel, false)
+    onMounted(() => {
+        // Fixes a firefox swipe conflict. When swiping if the reload page
+        // swipe starts to engage, other animations freeze and hang. The
+        // following line deactivates swiping to reload page.
+        targetRef.value.documentElement.style.setProperty('--overscroll', 'none')
+        // Turn scrolling off
+        targetRef.value.documentElement.style.setProperty('--overflow', 'hidden')
+    
+        // Required for touches
+        targetRef.value.addEventListener('touchstart', handleTouchStart, false)
+        targetRef.value.addEventListener('touchmove', handleTouchMove, false)
+        targetRef.value.addEventListener('touchend', handleTouchEnd, false)
+        targetRef.value.addEventListener('touchcancel', handleTouchCancel, false)
+    })
 
     onUnmounted(() => {
         // Reactivates swipe to reload (deactivated in the mount method)

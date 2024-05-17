@@ -127,14 +127,17 @@ const onClick = async (source) => {
 
 function useOnBackButton(onBackButtonCallback) {
     let isPopState = ref(false)
-    const popstateHandler = (event) => {
-        isPopState.value = true
-    }
 
-    // setup popstate listener
-    window.addEventListener('popstate', popstateHandler)
-    onBeforeUnmount(() => {
-        window.removeEventListener('popstate', popstateHandler)
+    onMounted(() => {
+        const popstateHandler = (event) => {
+            isPopState.value = true
+        }
+    
+        // setup popstate listener
+        window.addEventListener('popstate', popstateHandler)
+        onBeforeUnmount(() => {
+            window.removeEventListener('popstate', popstateHandler)
+        })
     })
 
     watch(() => isPopState.value, (popstate) => {
