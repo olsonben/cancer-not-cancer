@@ -50,7 +50,11 @@ watch(() => queue.currentImage, async (newValue, oldValue) => {
     }
 })
 
-queue.init(curTask, imageId.value)
+// Wait for the store to initate during ssr
+await useAsyncData('initialQueue', async () => {
+    await queue.init(curTask, imageId.value)
+    return true
+})
 
 if (queue.currentImage.image_id) {
     // revisit

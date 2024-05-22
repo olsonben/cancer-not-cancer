@@ -14,12 +14,21 @@ export const useTaskDataFetch = () => {
         let firstImage = null
         if (imageId === null) return firstImage
         try {
+            // TODO: move header to a utility or composable
+            let allHeaders = {}
+            if (process.server) {
+                const cookie = useCookie('sessionId').value
+                if (cookie) {
+                    allHeaders.cookie = `sessionId=${encodeURIComponent(cookie)}`
+                }
+            }
             firstImage = await $fetch('/images/', {
                 baseURL: config.public.apiUrl,
                 credentials: 'include',
                 query: {
                     'imageId': imageId
-                }
+                },
+                headers: allHeaders,
             })
         } catch (error) {
             if (error.statusCode === 404) {
@@ -35,11 +44,21 @@ export const useTaskDataFetch = () => {
     const getImages = async (taskId) => {
         let imageData = []
         try {
+            // TODO: move header to a utility or composable
+            let allHeaders = {}
+            if (process.server) {
+                const cookie = useCookie('sessionId').value
+                if (cookie) {
+                    allHeaders.cookie = `sessionId=${encodeURIComponent(cookie)}`
+                }
+            }
             imageData = await $fetch(`/images/task/${taskId}`, {
                 baseURL: config.public.apiUrl,
                 credentials: 'include',
-                cache: 'no-cache'
+                cache: 'no-cache',
+                headers: allHeaders,
             })
+
         } catch (error) {
             console.error('Image data error.')
             console.error(error)
@@ -67,8 +86,7 @@ export const useTaskDataFetch = () => {
         return imageArray
     }
     
-    // TODO: rename these functions so the make more sense
-    const getOneImage = async (curTask, imageId) => {
+    const getSingleImage = async (curTask, imageId) => {
         if (curTask && imageId) {
             try {
                 const newImage = await getFirstImage(imageId)
@@ -79,7 +97,7 @@ export const useTaskDataFetch = () => {
         }
     }
 
-    const getMoreImages = async (curTask, initImageId = null) => {
+    const getBatchOfImages = async (curTask, initImageId = null) => {
         try {
             const [firstImage, imageData] = await Promise.all([
                 getFirstImage(initImageId),
@@ -93,7 +111,7 @@ export const useTaskDataFetch = () => {
     }
 
     return {
-        getMoreImages,
-        getOneImage
+        getBatchOfImages,
+        getSingleImage
     }
 }

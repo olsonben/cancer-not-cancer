@@ -36,9 +36,9 @@ const report = () => {
 }
 
 const updateRoi = (roiData) => {
-    localTask.chip_size = roiData.chipSize
-    localTask.fov_size = roiData.fovSize
-    localTask.zoom_scale = roiData.zoomScale
+    localTask.value.chip_size = roiData.chipSize
+    localTask.value.fov_size = roiData.fovSize
+    localTask.value.zoom_scale = roiData.zoomScale
 }
 
 const updateGuide = (guideContent) => {

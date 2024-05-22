@@ -1,5 +1,6 @@
 <script setup>
 import { useTaskQueue } from '@/store/taskQueue'
+
 const taskQueue = useTaskQueue()
 const curImage = computed(() => taskQueue.currentImage)
 
@@ -7,11 +8,11 @@ const curImage = computed(() => taskQueue.currentImage)
 
 <template>
     <ImageDisplay
-        :imageUrl="curImage?.imageUrl"
-        :altText="curImage?.name"
-        :chipSize="curImage?.chipSize"
-        :fovSize="curImage?.fovSize"
-        :zoomScale="curImage?.zoomScale"
+        :imageUrl="curImage.imageUrl"
+        :altText="curImage.name"
+        :chipSize="curImage.chipSize"
+        :fovSize="curImage.fovSize"
+        :zoomScale="curImage.zoomScale"
     />
 </template>
 

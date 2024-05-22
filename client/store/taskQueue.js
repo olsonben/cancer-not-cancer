@@ -47,59 +47,68 @@ const additionalAttributes = {
     commenting: false
 }
 
+/// TODO: try and remove process.client or abstract out client logic
 export const useTaskQueue = defineStore('taskQueue', () => {
+    const { getBatchOfImages, getSingleImage } = useTaskDataFetch()
+    
     const maxPreload = 1
     /** @type { Ref<ImageQueue> } */
     const queue = ref([])
-    let indexMap = new Map()
-    let chained = true // chain multiple loads together
+    const chained = ref(true) // chain multiple loads together
     const index = ref(0)
     const historyIndex = ref(0)
     const currentImage = ref(nullImage)
     const taskObj = ref(null)
-    let allImagesLoaded = false
+    let allImagesLoaded = ref(false)
 
     const noUndos = computed(() => (index.value - historyIndex.value) === 0)
     const noRedos = computed(() => historyIndex.value === 0)
 
-    const { getMoreImages, getOneImage } = useTaskDataFetch()
     
     function reset() {
         queue.value = []
-        indexMap = new Map()
+        chained.value = true
         index.value = 0
         historyIndex.value = 0
         currentImage.value = nullImage
-        allImagesLoaded = false
+        allImagesLoaded.value = false
+    }
+
+    const getImageIndexById = (id) => {
+        return queue.value.findIndex(img => img.image_id === id)
     }
 
     function updateCurrentImage() {
         const position = index.value - historyIndex.value
         if (position < queue.value.length) {
-            const nextImage = queue.value[position]
-            if (!isLoaded(nextImage)) {
-                // first or newly added images
-                chained = true
-                preLoadImage(position, 0)
-            } else if (!chained) {
-                // load 1 image to keep the preloaded queue full
-                preLoadImage(position + maxPreload, maxPreload - 1)
+            const nextCurImage = queue.value[position]
+            if (process.client) {
+                if (!isLoaded(nextCurImage)) {
+                    // first or newly added images
+                    chained.value = true
+                    preLoadImage(position, 0)
+                } else if (!chained.value) {
+                    // load 1 image to keep the preloaded queue full
+                    preLoadImage(position + maxPreload, maxPreload - 1)
+                }
             }
-            currentImage.value = nextImage
+            currentImage.value = nextCurImage
 
-        } else if (allImagesLoaded) {
+        } else if (allImagesLoaded.value) {
             console.log('setting null image')
             currentImage.value = nullImage
         } else {
-            // load more images
-            getMoreImages(taskObj.value).then((moreImages) => {
-                if (moreImages.length !== 0) {
-                    addImages(moreImages)
-                } else {
-                    allImagesLoaded = true
-                }
-                updateCurrentImage()
-            })
+            // load more images, this second fetch shouldn't happen on the server
+            if (process.client) {
+                getBatchOfImages(taskObj.value).then((moreImages) => {
+                    if (moreImages.length !== 0) {
+                        addImages(moreImages)
+                    } else {
+                        allImagesLoaded.value = true
+                    }
+                    updateCurrentImage()
+                })
+            }
         }
     }
 
@@ -121,7 +130,7 @@ export const useTaskQueue = defineStore('taskQueue', () => {
             // Insert the extracted element at the new current index
             queue.value.splice(index.value, 0, elementToMove);
             historyIndex.value = 0
-            indexMap = new Map(queue.value.map((img, i) => [img.image_id, i]))
+
             // TODO: this will probably be redundant with the two index watchers
             // though there is a scenario where the indexs don't change but the
             // image needs to be updated.
@@ -130,8 +139,10 @@ export const useTaskQueue = defineStore('taskQueue', () => {
     }
 
     function rearrangeQueueToId(id) {
-        const imageIndex = indexMap.get(id)
-        moveElementInArray(imageIndex)
+        const imageIndex = getImageIndexById(id)
+        if (imageIndex !== -1) {
+            moveElementInArray(imageIndex)
+        }
     }
 
     /**
@@ -139,7 +150,6 @@ export const useTaskQueue = defineStore('taskQueue', () => {
      */
     function addImage(initImageObject) {
         const currentLength = queue.value.length
-        indexMap.set(initImageObject.image_id, currentLength)
         queue.value.push({ ...initImageObject, ...additionalAttributes })
     }
 
@@ -168,28 +178,30 @@ export const useTaskQueue = defineStore('taskQueue', () => {
      * @param {Number} preLoadCount - number of images currently preloaded
      */
     function preLoadImage(indx, preLoadCount = 0) {
-        // no more images to load
-        if (indx >= queue.value.length) return
-
-        // image data object to be loaded
-        const imageObj = queue.value[indx]
-
-        // Already loaded
-        if (isLoaded(imageObj)) return
-
-        const imgElement = new Image()
-        imageObj.imgHtml = imgElement
-        imgElement.loading = 'eager' // prevent lazy loading
-        imgElement.src = imageObj.imageUrl
-        imgElement.onload = () => {
-            imageObj.loaded = true
-            delete imageObj.imgHtml // remove HTMLImageElement to save memory
-
-            // chain together to queue up multiple preloaded images
-            if (preLoadCount < maxPreload && chained) {
-                preLoadImage(indx + 1, preLoadCount + 1)
-            } else {
-                chained = false
+        if (process.client) {
+            // no more images to load
+            if (indx >= queue.value.length) return
+            
+            // image data object to be loaded
+            const imageObj = queue.value[indx]
+            
+            // Already loaded
+            if (isLoaded(imageObj)) return
+            
+            const imgElement = new Image()
+            imageObj.imgHtml = imgElement
+            imgElement.loading = 'eager' // prevent lazy loading
+            imgElement.src = imageObj.imageUrl
+            imgElement.onload = () => {
+                imageObj.loaded = true
+                delete imageObj.imgHtml // remove HTMLImageElement to save memory
+                
+                // chain together to queue up multiple preloaded images
+                if (preLoadCount < maxPreload && chained.value) {
+                    preLoadImage(indx + 1, preLoadCount + 1)
+                } else {
+                    chained.value = false
+                }
             }
         }
     }
@@ -221,21 +233,16 @@ export const useTaskQueue = defineStore('taskQueue', () => {
         }
     }
 
-    const getImageById = (id) => {
-        // returns undefined if the id doesn't exist
-        return queue.value[indexMap.get(id)]
-    }
-
     const isImageInQueue = (id) => {
-        return (indexMap.get(id) !== undefined)
+        return (getImageIndexById(id) !== -1)
     }
 
     async function init(curTask, imageId = null) {
         if (curTask.id !== taskObj.value?.id) {
             taskObj.value = curTask
             reset()
-            const imageData = await getMoreImages(curTask, imageId)
-            if (imageData.length === 0) allImagesLoaded = true
+            const imageData = await getBatchOfImages(curTask, imageId)
+            if (imageData.length === 0) allImagesLoaded.value = true
             addImages(imageData)
         } else if (curTask.id === taskObj.value?.id && imageId === null) {
             // TODO: possibly update currentImage, once undo is in use
@@ -244,7 +251,7 @@ export const useTaskQueue = defineStore('taskQueue', () => {
         } else {
             if (currentImage.value.image_id !== imageId) {
                 if (!isImageInQueue(imageId)) {
-                    const newImage = getOneImage(curTask, imageId)
+                    const newImage = getSingleImage(curTask, imageId)
                     addImage(newImage)
                 }
 
@@ -261,9 +268,7 @@ export const useTaskQueue = defineStore('taskQueue', () => {
         redo,
         noUndos,
         noRedos,
-        getImageById,
         currentImage,
-        reset,
         init
     }
 })
