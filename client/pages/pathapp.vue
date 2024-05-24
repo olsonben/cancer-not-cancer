@@ -2,8 +2,10 @@
 const api = useApi()
 
 // get tasks assigned to user
-const { response: tasks } = await api.GET('/tasks/')
-const allTasks = useState('allTasks',  () => tasks.value)
+const { data: tasks } = await api.straightGET('/tasks/')
+
+
+const allTasks = useState('allTasks',  () => tasks)
 
 </script>
 <template>

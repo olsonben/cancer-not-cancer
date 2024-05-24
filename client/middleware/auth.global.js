@@ -17,11 +17,13 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
     // If this is the initial loading of the app, see if the user has a valid session.
     if (!userStore.isLoaded) {
-        await userStore.login()
+        // Wait for the store to initate during ssr
+        await useAsyncData('userStore.login', async () => await userStore.login())
     }
     if (publicPages.includes(to.name)) {
         return
     }
+
     // Redirect if authentication doesn't match route.
     if (pathologistPages.includes(to.name)) {
         if (userStore.isLoggedIn && !userStore.isPathologist) {

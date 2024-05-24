@@ -56,31 +56,35 @@ export const useApi = () => {
             }
         },
         async straightGET(route, query, key = null, headers = null, watch = null) {
-            let allHeaders = headers ? headers : {}
+            try {
+                let allHeaders = headers ? headers : {}
 
-            if (process.server) {
-                const cookie = useCookie('sessionId').value
-                if (cookie) {
-                    allHeaders.cookie = `sessionId=${encodeURIComponent(cookie)}`
+                if (process.server) {
+                    const cookie = useCookie('sessionId').value
+                    if (cookie) {
+                        allHeaders.cookie = `sessionId=${encodeURIComponent(cookie)}`
+                    }
                 }
-            }
 
-            const { data, status, error, refresh } = await useFetch(route, {
-                method: 'GET',
-                baseURL: config.public.apiUrl,
-                credentials: 'include',
-                // server: false, // Fire on client
-                watch: watch || false, // Don't re-fetch on query change
-                query: query,
-                headers: allHeaders,
-                ...(key ? { key: key } : {})
-            })
+                const { data, status, error, refresh } = await useFetch(route, {
+                    method: 'GET',
+                    baseURL: config.public.apiUrl,
+                    credentials: 'include',
+                    // server: false, // Fire on client
+                    watch: watch || false, // Don't re-fetch on query change
+                    query: query,
+                    headers: allHeaders,
+                    ...(key ? { key: key } : {})
+                })
 
-            if (status.value === "success") {
-                return { data, status, error }
-            } else {
-                console.error('There was an error with straightGET.')
-                return { data, status, error, refresh }
+                if (status.value === "success") {
+                    return { data, status, error, refresh }
+                } else {
+                    console.error('There was an error with straightGET.')
+                    return { data, status, error, refresh }
+                }
+            } catch (err) {
+                console.log(err)
             }
         },
         async POST(route, body, key = null, headers = null) {

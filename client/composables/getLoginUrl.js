@@ -4,16 +4,19 @@ const regExclude = new RegExp(toExclude.join('|'))
 
 // Generates a relative login url for redirect after login
 export const getLoginUrl = (overridePath = null) => {
-    const { fullPath } = useRoute()
-    const config = useRuntimeConfig()
-    const apiUrlNoSlash = config.public.apiUrl.replace(/\/+$/, '')
-
     let ref_path = '/'
     if (overridePath && !regExclude.test(overridePath)) {
         ref_path = overridePath
-    } else if (!regExclude.test(fullPath)) {
-        ref_path = fullPath
+    } else {
+        // calling useRoute here prevents it from calling in route middleware
+        const { fullPath } = useRoute()    
+        if (!regExclude.test(fullPath)) {
+            ref_path = fullPath
+        }
     }
+
+    const config = useRuntimeConfig()
+    const apiUrlNoSlash = config.public.apiUrl.replace(/\/+$/, '')
 
     const loginParams = new URLSearchParams({
         'ref_path': ref_path
