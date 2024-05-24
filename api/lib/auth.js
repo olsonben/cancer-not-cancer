@@ -125,13 +125,15 @@ function setup(app) {
             httpOnly: true, // helps prevent cross-site scripting
             secure: false,
             maxAge: 60 * 60 * 1000, // 1 hour in milliseconds
-            sameSite: 'strict'
+            sameSite: 'Lax'
         }
     }
 
     if (process.env.NODE_ENV == 'production') {
         app.set('trust proxy', 1) // trust first proxy (NGINX) ie. http -> https
         sessionConfig.cookie.secure = true // https needed
+        sessionConfig.cookie.sameSite = 'Strict'
+        // TODO: determine if domain can be set to help with strict
     }
 
     app.use(
