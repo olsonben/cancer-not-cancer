@@ -117,7 +117,30 @@ export default defineNuxtConfig({
   /**
    * Server side rendering: set to false because this site is served statically.
    */
-  ssr: true,
+  // ssr: false,
+  routeRules: {
+    '/': {
+      prerender: true
+    },
+    '/pathapp/' : {
+      ssr: false,
+      prerender: false
+    },
+    '/pathapp/*' : {
+      prerender: false,
+      ssr: false
+    },
+    '/admin/*': {
+      prerender: false,
+      ssr: false
+    },
+    '/about': {
+      prerender: true
+    },
+    '/issues': {
+      prerender: true
+    },
+  },
 
   /**
    * Sourcemap and devtools are on by default in dev mode. To use them in

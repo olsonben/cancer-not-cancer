@@ -42,7 +42,7 @@ const showExport = ref(false)
 
 
 const userTableData = computed(() => {
-    console.log(userChart.value)
+    // console.log(userChart.value)
     const tableBodyData = []
     for (const user of userChart.value) {
         const yes = percentage(user.yes, user.total)

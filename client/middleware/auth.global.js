@@ -13,6 +13,8 @@ const adminPages = ['admin-users']
 const publicPages = ['index', 'about', 'issues']
 
 export default defineNuxtRouteMiddleware(async (to, from) => { 
+    if (import.meta.server) return 
+
     const userStore = useUserStore()
 
     // If this is the initial loading of the app, see if the user has a valid session.
