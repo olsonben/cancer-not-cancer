@@ -1,15 +1,11 @@
 <script setup>
 import { useUserStore } from "~/store/user"
-// client-side only scripts
-if (import.meta.client) {
-    const userStore = useUserStore()
-    
-    // Shorthand to check permissions + isLoggedIn
-    const isLoggedIn = computed(() => userStore.isLoggedIn)
-    const isAdmin = computed(() => userStore.isAdmin)
-    const isPathologist = computed(() => userStore.isPathologist)
-    const isUploader = computed(() => userStore.isUploader)
-}
+
+// Shorthand to check permissions + isLoggedIn
+const isLoggedIn = computed(() => useUserStore().isLoggedIn)
+const isAdmin = computed(() => useUserStore().isAdmin)
+const isPathologist = computed(() => useUserStore().isPathologist)
+const isUploader = computed(() => useUserStore().isUploader)
 
 const showNav = ref(false)
 const showAnimation = ref(false)

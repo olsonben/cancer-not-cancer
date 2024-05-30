@@ -1,7 +1,7 @@
 <script setup>
 const api = useApi()
 
-const { data: files, refresh: getFiles } = await api.straightGET('/tasks/images', { task_id: 14 }, null, null)
+const { data: files, refresh: getFiles } = await api.GET('/tasks/images', { task_id: 14 }, null, null)
 
 const createTagName = ref('')
 const attention = ref(false)
@@ -38,8 +38,7 @@ const getFolderById = (tagId, contents) => {
 const editTagName = async (tagId, newName) => {
     console.log('editTagName:', tagId, newName)
     try {
-        // TODO: POST should probably be a regular $fetch
-        const { response } = await api.POST('/images/renameTag', {
+        await api.POST('/images/renameTag', {
             tagId: tagId,
             tagName: newName,
         })
@@ -78,7 +77,7 @@ const moveTag = async (tagId, newParentTagId, oldParentTagId) => {
         newParent.contents.unshift(movingTag)
 
         // Save changes remotely
-        const { response } = await api.POST('images/moveTag', {
+        await api.POST('images/moveTag', {
             tagId: tagId,
             oldParentTagId: oldParentTagId,
             newParentTagId: newParentTagId
@@ -93,10 +92,9 @@ const folderName = ref(null)
 const createTag = async () => {
     try {
         if (createTagName.value !== '') {
-            const { response } = await api.POST('/images/tag', {
+            const newTagFolder = await api.POST('/images/tag', {
                 tagName: createTagName.value,
             })
-            const newTagFolder = response.value
             createTagName.value = ''
             files.value.unshift(newTagFolder)
         } else {
@@ -116,7 +114,7 @@ const createTag = async () => {
 
 const deleteTag = async (tagId) => {
     try {
-        const { response } = await api.POST('/images/deleteTag', {
+        await api.POST('/images/deleteTag', {
             tagId: tagId,
         })
     } catch (error) {
@@ -156,7 +154,7 @@ const deleteAllContents = async (folder) => {
         console.log('Deleting...')
         console.log('images:', listOfImages)
         console.log('folders:', listOfTags)
-        const { response } = await api.POST('/images/deleteAllIn', {
+        await api.POST('/images/deleteAllIn', {
             tags: listOfTags,
             images: listOfImages,
         })
@@ -173,7 +171,7 @@ const deleteAllContents = async (folder) => {
 
 const editFileName = async (fileId, newName) => {
     try {
-        const { response } = await api.POST('/images/rename', {
+        await api.POST('/images/rename', {
             imageId: fileId,
             newName: newName,
         })
@@ -185,7 +183,7 @@ const editFileName = async (fileId, newName) => {
 const deleteFile = async (fileId) => {
     try {
         // TODO: Add Unlock button that warns users.
-        const { response } = await api.POST('/images/delete', {
+        await api.POST('/images/delete', {
             imageId: fileId
         })
     } catch (error) {
@@ -220,7 +218,7 @@ const moveFile = async (fileId, newParentTagId, oldParentTagId) => {
         newParent.contents.unshift(movingFile)
 
         // Save move remotely
-        const { response } = await api.POST('images/move', {
+        await api.POST('images/move', {
             imageId: fileId,
             oldParentTagId: oldParentTagId,
             newParentTagId: newParentTagId

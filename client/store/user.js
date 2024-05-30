@@ -24,7 +24,7 @@ const usePrivateUserStore = defineStore('user-private', () => {
 
 // https://pinia.vuejs.org/core-concepts/#Setup-Stores
 export const useUserStore = defineStore('user', () => {
-    const config = useRuntimeConfig()
+    const api = useApi()
 
     // STATE
     // =======
@@ -43,20 +43,7 @@ export const useUserStore = defineStore('user', () => {
     // Check with the api if the user is logged in and update permissions accordingly.
     async function login() {
         try {
-            let allHeaders = {}
-            if (process.server) {
-                const cookie = useCookie('sessionId').value
-                if (cookie) {
-                    allHeaders.cookie = `sessionId=${encodeURIComponent(cookie)}`
-                }
-            }
-
-            const response = await $fetch('/isLoggedIn', {
-                baseURL: config.public.apiUrl,
-                credentials: 'include',
-                headers: allHeaders,
-            })
-
+            const response = await api.$fetch('/isLoggedIn')
             // response will be false if not logged in
             if (response) {
                 const user = response
@@ -81,12 +68,7 @@ export const useUserStore = defineStore('user', () => {
     // Register a logout
     async function logout() {
         try {
-            await $fetch('/auth/logout', {
-                method: 'POST',
-                baseURL: config.public.apiUrl,
-                credentials: 'include'
-            })
-
+            await api.POST('/auth/logout')
             resetUser()
         } catch (error) {
             console.log('Error with user logout')

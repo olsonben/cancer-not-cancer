@@ -23,11 +23,11 @@ const theAllTask = {
 
 const selectedTask = ref(0)
 const userId = ref(null)
-const { data: ownedTasks } = await api.straightGET('/tasks/owned', { userId }, null, null, [userId])
+const { data: ownedTasks } = await api.GET('/tasks/owned', { userId }, null, null, [userId])
 // TODO: put the following in a asyncData/promise.all
-const { data } = await api.straightGET('/data/', { userId, selectedTask }, null, null, [userId, selectedTask])
-const { data: userChart } = await api.straightGET('/data/perUsers', { userId, selectedTask }, null, null, [userId, selectedTask])
-const { data: imageChart } = await api.straightGET('/data/perImages', { userId, selectedTask }, null, null, [userId, selectedTask])
+const { data } = await api.GET('/data/', { userId, selectedTask }, null, null, [userId, selectedTask])
+const { data: userChart } = await api.GET('/data/perUsers', { userId, selectedTask }, null, null, [userId, selectedTask])
+const { data: imageChart } = await api.GET('/data/perImages', { userId, selectedTask }, null, null, [userId, selectedTask])
 
 
 const tasks = computed(() => [theAllTask, ...ownedTasks.value])

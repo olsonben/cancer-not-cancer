@@ -1,5 +1,5 @@
 export const useTaskDataFetch = () => {
-    const config = useRuntimeConfig()
+    const api = useApi()
     
     const buildImageObject = (curTask, imgData) => {
         return {
@@ -14,21 +14,8 @@ export const useTaskDataFetch = () => {
         let firstImage = null
         if (imageId === null) return firstImage
         try {
-            // TODO: move header to a utility or composable
-            let allHeaders = {}
-            if (process.server) {
-                const cookie = useCookie('sessionId').value
-                if (cookie) {
-                    allHeaders.cookie = `sessionId=${encodeURIComponent(cookie)}`
-                }
-            }
-            firstImage = await $fetch('/images/', {
-                baseURL: config.public.apiUrl,
-                credentials: 'include',
-                query: {
-                    'imageId': imageId
-                },
-                headers: allHeaders,
+            firstImage = await api.$fetch('/images/', {
+                'imageId': imageId
             })
         } catch (error) {
             if (error.statusCode === 404) {
@@ -44,21 +31,7 @@ export const useTaskDataFetch = () => {
     const getImages = async (taskId) => {
         let imageData = []
         try {
-            // TODO: move header to a utility or composable
-            let allHeaders = {}
-            if (process.server) {
-                const cookie = useCookie('sessionId').value
-                if (cookie) {
-                    allHeaders.cookie = `sessionId=${encodeURIComponent(cookie)}`
-                }
-            }
-            imageData = await $fetch(`/images/task/${taskId}`, {
-                baseURL: config.public.apiUrl,
-                credentials: 'include',
-                cache: 'no-cache',
-                headers: allHeaders,
-            })
-
+            imageData = await api.$fetch(`/images/task/${taskId}`, {}, null, { "Cache-Control": "no-cache" })
         } catch (error) {
             console.error('Image data error.')
             console.error(error)

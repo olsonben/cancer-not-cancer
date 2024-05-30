@@ -20,12 +20,12 @@ const exportData = ref(null)
 
 const createTask = async () => {
     try {
-        const { response } = await api.POST('/tasks/', {
+        const response = await api.POST('/tasks/', {
             short_name: task.name,
             prompt: task.prompt,
         })
         taskData.value.push({
-            id: response.value.newTaskId,
+            id: response.newTaskId,
             short_name: task.name,
             prompt: task.prompt,
             chip_size: null,
@@ -48,10 +48,10 @@ const editTask = (task) => {
 
 const updateTaskProgress = async (taskIndex) => {
     try {
-        const { response } = await api.GET('/tasks/progress', {
+        const data = await api.$fetch('/tasks/progress', {
             task_id: taskData.value[taskIndex].id
         })
-        const progress = response.value.progress
+        const progress = data.progress
         taskData.value[taskIndex].progress = progress ? progress : 0
     } catch (err) {
         console.log(err)
@@ -90,8 +90,8 @@ const exportTask = (task) => {
 }
 
 
-const { response } = await api.GET('/tasks/table')
-taskData.value = response.value
+const { data } = await api.GET('/tasks/table')
+taskData.value = data.value
 
 
 </script>

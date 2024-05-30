@@ -19,9 +19,9 @@ const users = ref(defaultUserArray())
 const selectedUser = ref(null)
 const loading = ref(true)
 
-const { response } = await api.GET('/users/')
+const { data } = await api.GET('/users/')
 loading.value = false
-users.value = defaultUserArray().concat(response.value)
+users.value = defaultUserArray().concat(data.value)
 
 watch(selectedUser, (newUserID) => {
         // Allows us to pass the data to the parent component

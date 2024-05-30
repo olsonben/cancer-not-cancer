@@ -17,6 +17,18 @@ const getCurrentTask = (id) => {
     return allTasks.value.find((task) => task.id === id)
 }
 
+/**
+ * {
+ *  id: 21,
+ *  short_name: 'Task C',
+ *  prompt: 'Is this pizza?',
+ *  chip_size: null,
+ *  fov_size: null,
+ *  zoom_scale: null
+ * }
+ */
+
+
 /** Current Task Data */
 const curTask = reactive({
     ...getCurrentTask(taskId),
@@ -108,19 +120,12 @@ const onClick = async (source) => {
         // request happen after the image swapping after seeing weird
         // hiccups with image loading during development
 
-        // TODO: Update useAPI to have a $fetch method for this kind of instance.
-        $fetch('/hotornot', {
-                method: 'POST',
-                baseURL: config.public.apiUrl,
-                credentials: 'include',
-                body: {
-                    id: ratingImageId,
-                    rating: rating,
-                    comment: comment,
-                    taskId: curTask.id
-                }
-            }
-        )
+        api.POST('/hotornot', {
+            id: ratingImageId,
+            rating: rating,
+            comment: comment,
+            taskId: curTask.id
+        })
 
     } catch (error) {
         console.error(error)

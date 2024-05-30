@@ -111,15 +111,16 @@ const saveChanges = async () => {
         ])
         // TODO: clean up results logic
         // TODO: We shouldn't be updating a prop unless its a model
-        if (results[0].status === "fulfilled") {
+        // if (results[0].status === "fulfilled") {
+            // NOTE: api.POST doesn't return a default success status anymore
             task.short_name = localTask.value.short_name
             task.prompt = localTask.value.prompt
             task.chip_size = localTask.value.chip_size
             task.fov_size = localTask.value.fov_size
             task.zoom_scale = localTask.value.zoom_scale
-        } else {
-            console.error("There was an error saving the task data.")
-        }
+        // } else {
+            // console.error("There was an error saving the task data.")
+        // }
 
         const closeIfNoErrors = results.every((res) => (res.status === "fulfilled"))
 
@@ -144,6 +145,7 @@ const cancelChanges = () => {
     emit('cancel')
 }
 
+// TODO: don't use api.GET or use the data directly
 const [observersData, imagesData, guideData] = await Promise.all([
     api.GET('/tasks/observers', {
         task_id: task.id
@@ -154,9 +156,9 @@ const [observersData, imagesData, guideData] = await Promise.all([
     api.GET(`/tasks/${task.id}/guide`)
 ])
 
-root.contents = imagesData.response.value
-annotationGuide.value = guideData.response.value
-for (const user of observersData.response.value) {
+root.contents = imagesData.data.value
+annotationGuide.value = guideData.data.value
+for (const user of observersData.data.value) {
     if (user.applied) {
         observers.applied.push(user)
     } else {

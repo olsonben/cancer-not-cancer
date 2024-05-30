@@ -4,9 +4,7 @@ useHead({
     title: 'Cancer Not Cancer'
 })
 
-if (import.meta.client) {
-    const isLoggedIn = useUserStore().isLoggedIn
-}
+const isLoggedIn = computed(() => useUserStore().isLoggedIn)
 
 </script>
 
