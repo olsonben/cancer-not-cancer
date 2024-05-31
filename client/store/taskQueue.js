@@ -82,7 +82,7 @@ export const useTaskQueue = defineStore('taskQueue', () => {
         const position = index.value - historyIndex.value
         if (position < queue.value.length) {
             const nextCurImage = queue.value[position]
-            if (process.client) {
+            if (import.meta.client) {
                 if (!isLoaded(nextCurImage)) {
                     // first or newly added images
                     chained.value = true
@@ -99,7 +99,7 @@ export const useTaskQueue = defineStore('taskQueue', () => {
             currentImage.value = nullImage
         } else {
             // load more images, this second fetch shouldn't happen on the server
-            if (process.client) {
+            if (import.meta.client) {
                 getBatchOfImages(taskObj.value).then((moreImages) => {
                     if (moreImages.length !== 0) {
                         addImages(moreImages)
@@ -261,6 +261,12 @@ export const useTaskQueue = defineStore('taskQueue', () => {
     }
 
     return {
+        queue,
+        chained,
+        index,
+        historyIndex,
+        taskObj,
+        allImagesLoaded,
         addImage,
         addImages,
         nextImage,

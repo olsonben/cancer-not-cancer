@@ -1,40 +1,22 @@
 <script setup>
 import { useTaskQueue } from '@/store/taskQueue'
-const config = useRuntimeConfig()
 const router = useRouter()
 const api = useApi()
+const route = useRoute()
 
 useOnBackButton(() => {
     console.log('BACK BUTTON DETECTED')
 })
 
-const route = useRoute()
 const taskId = Number(route.params.taskId) || null
 const imageId = computed(() => (Number(route.params.imageId) || null))
 
-const getCurrentTask = (id) => {
-    const allTasks = useState('allTasks')
-    return allTasks.value.find((task) => task.id === id)
-}
-
-/**
- * {
- *  id: 21,
- *  short_name: 'Task C',
- *  prompt: 'Is this pizza?',
- *  chip_size: null,
- *  fov_size: null,
- *  zoom_scale: null
- * }
- */
-
-
+const allTasks = useState('allTasks')
 /** Current Task Data */
-const curTask = reactive({
-    ...getCurrentTask(taskId),
-    noMoreImages: false,
-    showGuide: false
-})
+const curTask = computed(() => allTasks.value.find((task) => task.id === taskId))
+
+const noMoreImages = ref(false)
+const showGuide = ref(false)
 
 const queue = useTaskQueue()
 
@@ -42,42 +24,42 @@ const queue = useTaskQueue()
 watch(() => queue.currentImage, async (newValue, oldValue) => {
     if (newValue.image_id === null && oldValue.image_id !== null) {
         // end of queue... get more images if possible
-        navigateTo({ path: `/pathapp/task-${curTask.id}/` })
+        navigateTo({ path: `/pathapp/task-${curTask.value.id}/` })
         useHead({
-            title: `Task: ${curTask.id} - Image: --`
+            title: `Task: ${curTask.value.id} - Image: --`
         })
     }
     if (newValue.image_id !== null) {
         // const router = useRouter()
         if (imageId.value === null) {
             // previously different task
-            router.replace({ path: `/pathapp/task-${curTask.id}/${newValue.image_id}` })
+            router.replace({ path: `/pathapp/task-${curTask.value.id}/${newValue.image_id}` })
         } else {
             // After grading the previous slide OR first load with imageId defined
-            navigateTo({ path: `/pathapp/task-${curTask.id}/${newValue.image_id}` })
+            navigateTo({ path: `/pathapp/task-${curTask.value.id}/${newValue.image_id}` })
         }
         useHead({
-            title: `Task: ${curTask.id} - Image: ${newValue.image_id}`
+            title: `Task: ${curTask.value.id} - Image: ${newValue.image_id}`
         })
     }
 })
 
 // Wait for the store to initate during ssr
 await useAsyncData('initialQueue', async () => {
-    await queue.init(curTask, imageId.value)
+    await queue.init(curTask.value, imageId.value)
     return true
 })
 
 if (queue.currentImage.image_id) {
     // revisit
-    router.replace({ path: `/pathapp/task-${curTask.id}/${queue.currentImage.image_id}` })
+    router.replace({ path: `/pathapp/task-${curTask.value.id}/${queue.currentImage.image_id}` })
     useHead({
-        title: `Task: ${curTask.id} - Image: ${queue.currentImage.image_id}`
+        title: `Task: ${curTask.value.id} - Image: ${queue.currentImage.image_id}`
     })
 }
 
 /** Turns on the annotation modal. */
-const showAnnotationGuide = () => { curTask.showGuide = true }
+const showAnnotationGuide = () => { showGuide.value = true }
 
 const preRatingClass = computed(() => {
     switch (queue.currentImage.rating) {
@@ -124,7 +106,7 @@ const onClick = async (source) => {
             id: ratingImageId,
             rating: rating,
             comment: comment,
-            taskId: curTask.id
+            taskId: curTask.value.id
         })
 
     } catch (error) {
@@ -172,9 +154,7 @@ const cssVars = computed(() => {
         '--bg-yes-opacity': (swipe.percent > 0 ? swipe.percent * 1.0 : 0),
     }
 })
-
-// const disableSwipe = computed(() => !curTask.onDeck || curTask.showGuide)
-const disableSwipe = computed(() => queue.currentImage.image_id === null || curTask.showGuide)
+const disableSwipe = computed(() => queue.currentImage.image_id === null || showGuide.value)
 
 const onSwipeMove = (newPercent) => {
     swipe.percent = newPercent
@@ -221,8 +201,8 @@ const onSwipeEnd = (direction) => {
                             </span>
                         </NuxtLink>
                     </div>
-                    <div id="prompt-question" class="title is-5">
-                        {{ curTask.prompt }}
+                    <div v-if="curTask" id="prompt-question" class="title is-5">
+                        {{ curTask?.prompt }}
                     </div>
                 </div>
                 <div class="level-right mt-0 is-flex-grow-0 is-flex-shrink-0">
@@ -236,14 +216,14 @@ const onSwipeEnd = (direction) => {
                     </button>
                 </div>
             </div>
-            <div class="has-text-danger" v-if="curTask.noMoreImages">No more images available in this task.</div>
+            <div class="has-text-danger" v-if="noMoreImages">No more images available in this task.</div>
 
             <ImageSwipe :class="preRatingClass" @swipe-move="onSwipeMove" @swipe-end="onSwipeEnd"
                 :disabled="disableSwipe">
                 <NuxtPage />
             </ImageSwipe>
 
-            <div v-if="!curTask.noMoreImages" class='level is-flex'>
+            <div v-if="!noMoreImages" class='level is-flex'>
                 <div class="level-left is-flex">
                     <div class="level-item">
                         <p class="help is-hidden-desktop">Tap to Zoom</p>
@@ -272,7 +252,7 @@ const onSwipeEnd = (direction) => {
         </div>
 
         <!-- Response section: grade + comment -->
-        <div v-if="!curTask.noMoreImages" class='response-area pt-4'>
+        <div v-if="!noMoreImages" class='response-area pt-4'>
             <!-- <div class="has-text-centered swipe-pad" :class="{ 'shown': !queue.currentImage.commenting }">
                 <span class='icon swipe left'>
                     <img src="~assets/icons/arrow-set.svg" alt="swipe left">
@@ -304,8 +284,7 @@ const onSwipeEnd = (direction) => {
 
         </div>
 
-        <AnnotationGuide v-if="curTask.showGuide" @exit="curTask.showGuide = !curTask.showGuide"
-            :task-id="curTask.id" />
+        <AnnotationGuide v-if="showGuide && curTask" @exit="showGuide = !showGuide" :task-id="curTask.id" />
     </div>
 </template>
 

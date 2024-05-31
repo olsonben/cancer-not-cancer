@@ -122,6 +122,10 @@ export default defineNuxtConfig({
     '/': {
       prerender: true
     },
+    '/pathapp' : {
+      prerender: true,
+      ssr: true
+    },
     '/pathapp/**' : {
       // prerender: false,
       ssr: false
