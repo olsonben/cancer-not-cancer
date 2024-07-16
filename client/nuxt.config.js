@@ -5,7 +5,7 @@ import { defineNuxtConfig } from "nuxt/config"
  * work at the same url as production.
  */
 const base = new URL(process.env.PUBLIC_PATH).pathname
-const matomoNoscriptUrl = new URL('js/', process.env.ANALYTICS_URL)
+const matomoNoscriptUrl = new URL('js/', process.env.NUXT_PUBLIC_ANALYTICS_URL)
 matomoNoscriptUrl.searchParams.set('idsite', 1)
 matomoNoscriptUrl.searchParams.set('rec', 1)
 
@@ -58,11 +58,12 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // private config here
     
+    // With a proper .env, the following values will be overwritten
     public: {
-      uploadSizeLimit: process.env.UPLOAD_SIZE_LIMIT,
-      filesPerUploadRequest: process.env.FILES_PER_UPLOAD_REQUEST,
-      apiUrl: process.env.API_URL,
-      matomoUrl: process.env.ANALYTICS_URL,
+      uploadSizeLimit: 50, // in bytes
+      filesPerUploadRequest: 5,
+      apiUrl: '[API URL]',
+      analyticsUrl: '[ANALYTICS URL]',
     }
   },
 

@@ -6,7 +6,7 @@ import { defineNuxtPlugin } from 'nuxt/app'
 export default defineNuxtPlugin((nuxtApp) => {
     if (process.env.NODE_ENV === 'production') {
         const config = useRuntimeConfig()
-        const hostUrl = config.public.matomoUrl
+        const hostUrl = config.public.analyticsUrl
         const scriptUrl = new URL('js/', hostUrl).href
 
         nuxtApp.vueApp.use(VueMatomo, {
