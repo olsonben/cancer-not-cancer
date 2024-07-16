@@ -61,12 +61,11 @@ export const useImageUpload = () => {
                     uploadHeaders['finalblock'] = true
                 }
                 
-                // TODO: Add try/catch here and responsed to failed api request
-                const { response } = await api.POST(endpoint, formData, null, uploadHeaders)
+                const response = await api.POST(endpoint, formData, null, uploadHeaders)
 
-                if (response.value !== 'No files uploaded.') {
+                if (response !== 'No files uploaded.') {
                     // submission complete
-                    for (const file of response.value) {
+                    for (const file of response) {
                         _onFileUpdate(onFileUpdate, file)
                     }
                 } else {

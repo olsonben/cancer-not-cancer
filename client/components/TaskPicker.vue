@@ -13,10 +13,10 @@ const props = defineProps({
 const emit = defineEmits(['taskSelected'])
 
 // get tasks assigned to user
-const { response: tasks } = await api.GET('/tasks/')
+const { data: tasks } = await api.GET('/tasks/')
 const selectedTask = ref(props.initialTaskId)
 
-watch(selectedTask, async (newTask, oldTask) => {
+watch(selectedTask, (newTask, oldTask) => {
     emit('taskSelected', newTask)
 })
 

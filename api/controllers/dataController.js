@@ -10,10 +10,10 @@ const dataController = {
     /** Return overview data for a task, admins can change the visible data by 
      * switching user id. */
     async getData(req, res) {
-        const taskId = req.query.task_id || null
+        const taskId = Number(req.query.selectedTask) || null
         let investigatorId = req.user.id
-        if (req.query.user_id && req.user.permissions.admin) {
-            investigatorId = req.query.user_id
+        if (req.query.userId && req.user.permissions.admin) {
+            investigatorId = req.query.userId
         }
         
         const data = await dataOps.getData(investigatorId, taskId)
@@ -22,10 +22,10 @@ const dataController = {
     
     /** Return per user overview data for a task, admins can change user id. */
     async getDataPerUsers(req, res) {
-        const taskId = req.query.task_id || null
+        const taskId = Number(req.query.selectedTask) || null
         let investigatorId = req.user.id
-        if (req.query.user_id && req.user.permissions.admin) {
-            investigatorId = req.query.user_id
+        if (req.query.userId && req.user.permissions.admin) {
+            investigatorId = req.query.userId
         }
 
         const data = await dataOps.getDataPerUsers(investigatorId, taskId)
@@ -34,10 +34,10 @@ const dataController = {
     
     /** Return per image overview data for a task, admins can change user id. */
     async getDataPerImages(req, res) {
-        const taskId = req.query.task_id || null
+        const taskId = Number(req.query.selectedTask) || null
         let investigatorId = req.user.id
-        if (req.query.user_id && req.user.permissions.admin) {
-            investigatorId = req.query.user_id
+        if (req.query.userId && req.user.permissions.admin) {
+            investigatorId = req.query.userId
         }
 
         const data = await dataOps.getDataPerImages(investigatorId, taskId)

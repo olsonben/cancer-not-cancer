@@ -82,6 +82,20 @@ export default defineNuxtConfig({
   },
 
   /**
+   * To get fontawesome working with SSR, the following is required
+   * Workaround: https://github.com/nuxt/nuxt/discussions/16014
+   * Why: https://github.com/FortAwesome/vue-fontawesome/issues/394#issuecomment-2092933896
+   */
+  build: {
+    transpile: [
+      "@fortawesome/fontawesome-svg-core",
+      "@fortawesome/free-regular-svg-icons",
+      "@fortawesome/free-solid-svg-icons",
+      "@fortawesome/vue-fontawesome",
+    ],
+  },
+
+  /**
    * Auto import components: https://nuxt.com/docs/guide/directory-structure/components#component-names
    * Allows component usage like Nuxt2.
    */ 
@@ -103,7 +117,30 @@ export default defineNuxtConfig({
   /**
    * Server side rendering: set to false because this site is served statically.
    */
-  ssr: false,
+  // ssr: false,
+  routeRules: {
+    '/': {
+      prerender: true
+    },
+    '/pathapp' : {
+      prerender: true,
+      ssr: true
+    },
+    '/pathapp/**' : {
+      // prerender: false,
+      ssr: false
+    },
+    '/admin/**': {
+      // prerender: false,
+      ssr: false
+    },
+    '/about': {
+      prerender: true
+    },
+    '/issues': {
+      prerender: true
+    },
+  },
 
   /**
    * Sourcemap and devtools are on by default in dev mode. To use them in

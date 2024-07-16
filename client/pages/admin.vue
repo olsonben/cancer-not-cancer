@@ -1,3 +1,20 @@
+<script setup>
+import { mapState } from "pinia";
+import { useUserStore } from "../store/user"
+const route = useRoute()
+const userStore = useUserStore()
+
+const isAdmin = computed(() => userStore.isAdmin)
+const isUploader = computed(() => userStore.isUploader)
+
+onMounted(() => {
+    if (["/admin", "/admin/"].includes(route.path)) {
+        const router = useRouter()
+        router.push('/')
+    }
+})
+</script>
+
 <template>
     <div>
         <div class='tabs'>
@@ -12,26 +29,6 @@
         <NuxtPage/>
     </div>
 </template>
-
-<script>
-import { mapState } from "pinia";
-import { useUserStore } from "../store/user"
-const route = useRoute()
-
-export default {
-    // This is more a layout for admin subpages
-    mounted() {
-        // All admin pages are at /admin/X so redirect bad paths.
-        if (["/admin", "/admin/"].includes(route.path)) {
-            const router = useRouter()
-            router.push('/')
-        }
-    },
-    computed: {
-        ...mapState(useUserStore, ['isAdmin', 'isUploader'])
-    },
-}
-</script>
 
 <style lang='scss' scoped>
 a.nuxt-link-exact-active {

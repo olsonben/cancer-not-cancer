@@ -4,11 +4,11 @@ export const useDataTools = () => {
     /** Call the api for task rating data. */
     async function pullTaskData(taskId) {
         try {
-            const { response } = await api.GET('tasks/export', {
+            const data = await api.$fetch('tasks/export', {
                 id: taskId
             })
     
-            return response.value
+            return data
             
         } catch (error) {
             console.error(error)

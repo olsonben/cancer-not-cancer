@@ -1,49 +1,33 @@
+<script setup>
+const props = defineProps({
+    tableData: { type: Object, required: true },
+})
+
+const headers = computed(() => props.tableData.columns)
+const body = computed(() => props.tableData.bodyData)
+const indexProp = computed(() => props.tableData.indexProp)
+const order = computed(() => props.tableData.order)
+
+const selected = ref(null)
+const selectRow = (rowNumber) => {
+    selected.value = rowNumber
+}
+</script>
+
 <template>
     <table class="table is-striped is-narrow">
         <thead>
-            <th v-for="header in headers">{{ header }}</th>
+            <tr>
+                <th v-for="header in headers">{{ header }}</th>
+            </tr>
         </thead>
         <tbody>
-            <Row v-for="row in body" :key="row[indexProp]" :class="{ 'is-selected': false}"  :row="row" :order="order"/>
+            <Row v-for="(row, index) in body" :key="`${row[indexProp]}-${props.tableData.tableId}`"
+                :class="{ 'is-selected': selected == index}" :row="row" :order="order"
+                @click="() => selectRow(index)" />
         </tbody>
     </table>
 </template>
-
-<script>
-    export default {
-        props: {
-            tableData: {
-                type: Object
-            }
-        },
-        data() {
-            return {
-                headers:[],
-                body: [],
-                indexProp: '',
-                order: [],
-                selected: null
-            }
-        },
-        watch: {
-            tableData: {
-                immediate: true,
-                handler(newTableData) {
-                    this.headers = newTableData.columns
-                    this.body = newTableData.bodyData
-                    this.indexProp = newTableData.indexProp
-                    this.order = newTableData.order
-                }
-            }
-        },
-        methods: {
-            // TODO: get row clicks working
-            selectRow(row) {
-                console.log('Selected', row)
-            }
-        }
-    }
-</script>
 
 <style lang="scss" scoped>
 /* CSS for the current page */

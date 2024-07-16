@@ -9,50 +9,83 @@
 export const useApi = () => {
     const config = useRuntimeConfig()
 
-    const handleAuthErrors = async (error) => {
+    const handleAuthErrors = (error) => {
         const statusCode = error.value.statusCode
         if (statusCode === 401 || statusCode === 403) {
             console.log('Unauthorized! Make sure you are logged in. Redirecting to login...')
             navigateTo(getLoginUrl(), { external: true })
         }
-
-        // Still throw the error to reject upstream promises
-        throw error.value // error is just a ref
     }
 
     return {
-        async GET(route, query, key = null, headers = null) {
-            const { data: response, status, error } = await useFetch(route, {
-                method: 'GET',
-                baseURL: config.public.apiUrl,
-                credentials: 'include',
-                server: false, // Fire on client
-                watch: false, // Don't re-fetch on query change
-                query: query,
-                ...(headers ? { headers: headers } : {}),
-                ...(key ? { key: key} : {})
-            })
-            if (status.value === "success") {
-                return { response, status }
-            } else {
-                await handleAuthErrors(error)
+        async GET(route, query, key = null, headers = null, watch = null) {
+            try {
+                let allHeaders = headers ? headers : {}
+
+                if (import.meta.server) {
+                    const cookie = useCookie('sessionId').value
+                    if (cookie) {
+                        allHeaders.cookie = `sessionId=${encodeURIComponent(cookie)}`
+                    }
+                }
+
+                const { data, status, error, refresh } = await useFetch(route, {
+                    method: 'GET',
+                    baseURL: config.public.apiUrl,
+                    credentials: 'include',
+                    watch: watch || false, // Don't re-fetch on query change
+                    query: query,
+                    headers: allHeaders,
+                    ...(key ? { key: key } : {})
+                })
+
+                // TODO: test for auth errors and confirm behavior upon api calls that are unauthed.
+                if (status.value === "success") {
+                    return { data, status, error, refresh }
+                } else {
+                    handleAuthErrors(error)
+                    return { data, status, error, refresh }
+                }
+            } catch (err) {
+                console.log(err)
             }
         },
         async POST(route, body, key = null, headers = null) {
-            const { data: response, status, error } = await useFetch(route, {
-                method: 'POST',
-                baseURL: config.public.apiUrl,
-                credentials: 'include',
-                server: false, // should fire on client
-                watch: false, // Don't re-fetch when body data changes
-                body: body,
-                ...(headers ? { headers: headers } : {}),
-                ...(key ? { key: key } : {})
-            })
-            if (status.value === "success") {
-                return { response, status }
-            } else {
-                await handleAuthErrors(error)
+            try {
+                const response = await $fetch(route, {
+                    method: 'POST',
+                    baseURL: config.public.apiUrl,
+                    credentials: 'include',
+                    body: body,
+                    ...(headers ? { headers: headers } : {})
+                })
+                return response   
+            } catch (error) {
+                if (error.statusCode === 401 || error.statusCode === 403) {
+                    console.log('Unauthorized! Make sure you are logged in.')
+                } else {
+                    console.error(error);
+                }
+            }
+        },
+        async $fetch(route, query, key = null, headers = null) {
+            try {
+                let allHeaders = headers ? headers : {}
+
+                const response = await $fetch(route, {
+                    method: 'GET',
+                    baseURL: config.public.apiUrl,
+                    credentials: 'include',
+                    query: query,
+                    headers: allHeaders
+                })
+                return response
+            } catch (error) {
+                if (error.statusCode === 401 || error.statusCode === 403) {
+                    console.log('Unauthorized! Make sure you are logged in.')
+                } else {
+                    console.error(error);
+                }
             }
         }
     }

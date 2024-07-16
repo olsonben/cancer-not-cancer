@@ -1,3 +1,86 @@
+<script setup>
+useHead({
+    title: 'Admin - Images'
+})
+const { uploadImageFilesForGrading } = useImageUpload()
+
+const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_FAILED = 3, STATUS_LOADED = 4
+
+const notificationTime = "10000" // 10 sec in ms
+
+// Loaded files
+const files = ref([])
+
+// State tracking
+const currentStatus = ref(STATUS_INITIAL)
+const fileCount = ref(0)
+const uploadingFolders = ref(true)
+
+// Notification stuff
+const submittedFiles = ref({})
+const imageManagerKey = ref(1) // we can force and update by incrementing this on upload complete
+const completed = ref(0)
+
+// Shorthand for the html
+const isInitial = computed(() => currentStatus.value === STATUS_INITIAL)
+const isSaving = computed(() => currentStatus.value === STATUS_SAVING)
+const isLoaded = computed(() => currentStatus.value === STATUS_LOADED)
+const folderUpload = computed(() => uploadingFolders.value)
+const fileUpload = computed(() => !uploadingFolders.value)
+const progress = computed(() => Math.min(Math.max(100 * (completed.value / fileCount.value), 0), 100))
+
+const reset = () => {
+    // reset everything except notifications
+    currentStatus.value = STATUS_INITIAL
+    files.value = []
+    fileCount.value = 0
+    completed.value = 0
+}
+
+const removeSubmittedFile = (filename) => {
+    delete submittedFiles.value[filename]
+}
+
+const onFileUpdate = (fileObject) => {
+    submittedFiles.value[fileObject.filename] = fileObject
+    if (submittedFiles.value[fileObject.filename].success === null) {
+        // pending
+    } else {
+        // success or failure, clear notification
+        // sets a timer to kill the notification
+        setTimeout(() => {
+            removeSubmittedFile(fileObject.filename)
+        }, notificationTime)
+
+        completed.value += 1
+        if (completed.value === fileCount.value) {
+            // finished
+            reset()
+            imageManagerKey.value += 1
+        }
+    }
+}
+
+// Fill files.value with the files added at ref=fileInput
+const newImage = (event) => {
+    for (let i = 0; i < event.target.files.length; i++) {
+        let file = event.target.files[i]
+        // This is a quick filter for image files, not the final filter
+        if (/image\/*/.test(file.type)) {
+            files.value.push(file)
+            fileCount.value++
+            currentStatus.value = STATUS_LOADED
+        }
+    }
+}
+
+// Save the image
+const saveImages = async () => {
+    currentStatus.value = STATUS_SAVING
+    uploadImageFilesForGrading(files.value, onFileUpdate)
+}
+</script>
+
 <template>
     <div>
         <!-- Main upload stuff -->
@@ -87,118 +170,6 @@
         </div>
     </div>
 </template>
-
-<script>
-const { uploadImageFilesForGrading } = useImageUpload()
-
-const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_FAILED = 3, STATUS_LOADED = 4
-
-const notificationTime = "10000" // 10 sec in ms
-
-export default {
-    data() {
-        return {
-            // Loaded files
-            files: [],
-
-            // State tracking
-            currentStatus: STATUS_INITIAL,
-            fileCount: 0,
-            uploadingFolders: true,
-
-            // Notification stuff
-            submittedFiles: {},
-            imageManagerKey: 1, // we can force and update by incrementing this on upload complete
-            completed: 0
-        }
-    },
-
-    // Shorthand for the html
-    computed: {
-        isInitial() {
-            return this.currentStatus === STATUS_INITIAL
-        },
-        isSaving() {
-            return this.currentStatus === STATUS_SAVING
-        },
-        isLoaded() {
-            return this.currentStatus === STATUS_LOADED
-        },
-        folderUpload() {
-            return this.uploadingFolders
-        },
-        fileUpload() {
-            return !this.uploadingFolders
-        },
-        progress() {
-            return Math.min(Math.max(100 * (this.completed / this.fileCount), 0), 100)
-        }
-    },
-
-    created() {
-        useHead({
-            title: 'Admin - Images'
-        })
-    },
-    mounted() {
-        this.reset()
-    },
-
-    methods: {
-        reset() {
-            // reset everything except notifications
-            this.currentStatus = STATUS_INITIAL
-            this.files = []
-            this.fileCount = 0
-            this.completed = 0
-        },
-
-        removeSubmittedFile(filename) {
-            delete this.submittedFiles[filename]
-        },
-
-        onFileUpdate(fileObject) {
-            this.submittedFiles[fileObject.filename] = fileObject
-            if (this.submittedFiles[fileObject.filename].success === null) {
-                // pending
-            } else {
-                // success or failure, clear notification
-                // sets a timer to kill the notification
-                setTimeout(() => {
-                    this.removeSubmittedFile(fileObject.filename)
-                }, notificationTime)
-
-                this.completed += 1
-                if (this.completed === this.fileCount) {
-                    // finished
-                    this.reset()
-                    this.imageManagerKey += 1
-                }
-            }
-        },
-
-        // Fill this.files with the files added at ref=fileInput
-        newImage(event) {
-            for (let i = 0; i < event.target.files.length; i++) {
-                let file = event.target.files[i]
-                // This is a quick filter for image files, not the final filter
-                if (/image\/*/.test(file.type)) {
-                    this.files.push(file)
-                    this.fileCount++
-                    this.currentStatus = STATUS_LOADED
-                }
-            }
-
-        },
-
-        // Save the image
-        async saveImages() {
-            this.currentStatus = STATUS_SAVING
-            uploadImageFilesForGrading(this.files, this.onFileUpdate)
-        }
-    }
-}
-</script>
 
 <!-- Cannot scope this for some reason -->
 <style lang='scss'>

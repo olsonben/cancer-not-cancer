@@ -26,7 +26,6 @@ const zoomScale = computed(() => numberValidator(props.zoomScale, ZOOMSCALE))
 const imageUrl = computed(() => props.imageUrl)
 const altText = computed(() => props.altText ?? props.imageUrl)
 
-const showImage = ref(true)
 const zoom = ref(false)
 const origin = ref('0px 0px')
 
@@ -57,20 +56,15 @@ const cssVars = computed(() => {
     }
 })
 
-watch(imageUrl, (newUrl, oldUrl) => {
-    // console.log('new image url:', newUrl)
-})
-
 </script>
 
 <template>
-    <div v-if="showImage" class="zoom-box" :class="{'zoom': zoom }" @click="zoomHandler" :style="cssVars">
-        
-        <div v-if="!imageUrl" class="loading"></div>
-        <template v-else>
+    <div class="zoom-box" :class="{'zoom': zoom }" @click="zoomHandler" :style="cssVars">
+        <div v-show="!imageUrl" class="loading"></div>
+        <div v-show="imageUrl" class="inner-container">
             <div class='roi' :class="{ 'is-hidden': showRoiBox }"></div>
             <img :key="imageUrl" :src='imageUrl' :alt='altText'/>
-        </template>
+        </div>
     </div>
 </template>
 
@@ -81,7 +75,7 @@ watch(imageUrl, (newUrl, oldUrl) => {
     position: relative;
     // background-color: #cea3c5;
     // background-color: #BF73B3;
-    background-color: #D9A7D0;
+    // background-color: #D9A7D0;
 
     /** Image zooming */
     transition-property: transform;
@@ -92,6 +86,11 @@ watch(imageUrl, (newUrl, oldUrl) => {
     &.zoom {
         transform: scale(var(--zoom-scale));
     }    
+
+    .inner-container {
+        width: 100%;
+        height: 100%;
+    }
 
     img {
         object-fit: contain;
@@ -107,7 +106,7 @@ watch(imageUrl, (newUrl, oldUrl) => {
     $center-trans-p: calc(100% * $center-trans);
     .loading {
         /* Border size and color */
-        border: 8px solid #ffffff;
+        border: 8px solid #D9A7D0;
         /* Creates a circle */
         border-radius: 50%;
         /* Circle size */

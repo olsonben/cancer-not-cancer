@@ -1,9 +1,13 @@
 <script setup>
 const api = useApi()
 
-// get tasks assigned to user
-const { response: tasks } = await api.GET('/tasks/')
-const allTasks = useState('allTasks',  () => tasks.value)
+const allTasks = useState('allTasks',  () => [])
+
+if (import.meta.client) {
+    // get tasks assigned to user
+    const tasks = await api.$fetch('/tasks/')
+    allTasks.value = tasks
+}
 
 </script>
 <template>

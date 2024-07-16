@@ -1,19 +1,22 @@
 <script setup>
 import { useUserStore } from "~/store/user";
-const isLoggedIn = useUserStore().isLoggedIn
-
 useHead({
-    title: 'Home'
+    title: 'Cancer Not Cancer'
 })
+
+const isLoggedIn = computed(() => useUserStore().isLoggedIn)
+
 </script>
 
 <template>
     <div class='content section'>
         <h1>Welcome to Cancer Not Cancer</h1>
 
-        <div class="buttons">
-            <NuxtLink v-if="!isLoggedIn" :to='getLoginUrl("/pathapp/")' class='button is-light'>Log In and Go!</NuxtLink>
-        </div>
+        <client-only>
+            <div class="buttons">
+                <NuxtLink v-if="!isLoggedIn" :to='getLoginUrl("/pathapp/")' class='button is-light'>Log In and Go!</NuxtLink>
+            </div>
+        </client-only>
 
         <p>Cancer Not Cancer is a platform for labeling digitized biopsy slides as <i>cancer</i> or <i>not cancer</i>.
         </p>

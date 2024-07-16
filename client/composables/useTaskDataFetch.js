@@ -1,5 +1,5 @@
 export const useTaskDataFetch = () => {
-    const config = useRuntimeConfig()
+    const api = useApi()
     
     const buildImageObject = (curTask, imgData) => {
         return {
@@ -14,12 +14,8 @@ export const useTaskDataFetch = () => {
         let firstImage = null
         if (imageId === null) return firstImage
         try {
-            firstImage = await $fetch('/images/', {
-                baseURL: config.public.apiUrl,
-                credentials: 'include',
-                query: {
-                    'imageId': imageId
-                }
+            firstImage = await api.$fetch('/images/', {
+                'imageId': imageId
             })
         } catch (error) {
             if (error.statusCode === 404) {
@@ -35,11 +31,7 @@ export const useTaskDataFetch = () => {
     const getImages = async (taskId) => {
         let imageData = []
         try {
-            imageData = await $fetch(`/images/task/${taskId}`, {
-                baseURL: config.public.apiUrl,
-                credentials: 'include',
-                cache: 'no-cache'
-            })
+            imageData = await api.$fetch(`/images/task/${taskId}`, {}, null, { "Cache-Control": "no-cache" })
         } catch (error) {
             console.error('Image data error.')
             console.error(error)
@@ -67,8 +59,7 @@ export const useTaskDataFetch = () => {
         return imageArray
     }
     
-    // TODO: rename these functions so the make more sense
-    const getOneImage = async (curTask, imageId) => {
+    const getSingleImage = async (curTask, imageId) => {
         if (curTask && imageId) {
             try {
                 const newImage = await getFirstImage(imageId)
@@ -79,7 +70,7 @@ export const useTaskDataFetch = () => {
         }
     }
 
-    const getMoreImages = async (curTask, initImageId = null) => {
+    const getBatchOfImages = async (curTask, initImageId = null) => {
         try {
             const [firstImage, imageData] = await Promise.all([
                 getFirstImage(initImageId),
@@ -93,7 +84,7 @@ export const useTaskDataFetch = () => {
     }
 
     return {
-        getMoreImages,
-        getOneImage
+        getBatchOfImages,
+        getSingleImage
     }
 }

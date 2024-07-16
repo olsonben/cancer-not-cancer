@@ -1,3 +1,97 @@
+<script setup>
+useHead({
+    title: 'Admin - Stats'
+})
+import { useUserStore } from '~/store/user'
+
+const api = useApi()
+const userStore = useUserStore()
+
+const isAdmin = computed(() => userStore.isAdmin)
+
+const percentage = (part, iTotal) => {
+    const percent = part/iTotal*100
+    return percent.toFixed(2)
+}
+
+const theAllTask = {
+    'id': 0,
+    'prompt': 'All',
+    'short_name': 'all'
+}
+
+
+const selectedTask = ref(0)
+const userId = ref(null)
+const { data: ownedTasks } = await api.GET('/tasks/owned', { userId }, null, null, [userId])
+// TODO: put the following in a asyncData/promise.all
+const { data } = await api.GET('/data/', { userId, selectedTask }, null, null, [userId, selectedTask])
+const { data: userChart } = await api.GET('/data/perUsers', { userId, selectedTask }, null, null, [userId, selectedTask])
+const { data: imageChart } = await api.GET('/data/perImages', { userId, selectedTask }, null, null, [userId, selectedTask])
+
+
+const tasks = computed(() => [theAllTask, ...ownedTasks.value])
+const total = computed(() => data.value.total)
+const yes = computed(() => percentage(data.value.yes, data.value.total))
+const no = computed(() => percentage(data.value.no, data.value.total))
+const maybe = computed(() => percentage(data.value.maybe, data.value.total))
+
+
+const exportData = computed(() => tasks.value.find((t) => t.id === selectedTask.value))
+const showExport = ref(false)
+
+
+const userTableData = computed(() => {
+    // console.log(userChart.value)
+    const tableBodyData = []
+    for (const user of userChart.value) {
+        const yes = percentage(user.yes, user.total)
+        const no = percentage(user.no, user.total)
+        const maybe = percentage(user.maybe, user.total)
+        tableBodyData.push({
+            'user_id': user.user_id,
+            'fullname': user.fullname,
+            'total': user.total,
+            'yes': `${yes}%`,
+            'no': `${no}%`,
+            'maybe': `${maybe}%`,
+        })
+    }
+    return {
+        tableId: `userTable-${selectedTask.value}`,
+        columns: ['User', 'Total', 'Yes', 'No', 'Maybe'],
+        order: ['fullname', 'total', 'yes', 'no', 'maybe'],
+        indexProp: 'user_id',
+        bodyData: tableBodyData,
+    }
+})
+  
+const imageTableData = computed(() => {
+    const tableBodyData = []
+    for (const image of imageChart.value) {
+        const yes = percentage(image.yes, image.total)
+        const no = percentage(image.no, image.total)
+        const maybe = percentage(image.maybe, image.total)
+        tableBodyData.push({
+            'image_id': image.image_id,
+            'total': image.total,
+            'yes': `${yes}%`,
+            'no': `${no}%`,
+            'maybe': `${maybe}%`,
+        })
+    }
+    tableBodyData.sort((a,b) => b.total - a.total)
+    return {
+        columns: ['Image', 'Total', 'Yes', 'No', 'Maybe'],
+        order: ['image_id', 'total', 'yes', 'no', 'maybe'],
+        indexProp: 'image_id',
+        bodyData: tableBodyData,
+    }
+})
+
+
+</script>
+
 <template>
     <div>
         <!-- Main dataview -->
@@ -7,12 +101,12 @@
                 <div class='controls level'>
                     <div class='task-picker level-left'>
                         <strong>Task:</strong> <div class="select is-medium">
-                            <select v-model="selectedTask">
-                                <option v-for="task in tasks" :value="task.id">{{ task.prompt }}</option>
+                            <select v-if="tasks.length" v-model="selectedTask" key="selectedTask" >
+                                <option v-for="task in tasks" :value="task.id" :key="`selectTaskOption${task.id}`">{{ task.prompt }}</option>
                             </select>
                         </div>
                         <div v-show="selectedTask" class="buttons is-center pl-5">
-                            <button class="button is-success" type="button" @click="exportTask">
+                            <button class="button is-success" type="button" @click="showExport=true">
                                 <span class="icon"><fa-icon :icon="['fas', 'download']" /></span>
                             </button>
                         </div>
@@ -29,7 +123,8 @@
                 </div>
                 <div class="box">
                     <div class="table-container table-limiter">
-                        <Table :tableData="userTableData" />
+                        <Table :tableData="userTableData" key="userTable" />
+                        <!-- <Table :tableData="userTableData" :key="`userTable-${selectedTask}`" /> -->
                     </div>
                 </div>
                 <div class="box">
@@ -39,177 +134,9 @@
                 </div>
             </div>
         </section>
-        <Export v-if="exportData != null" :task="exportData" @done="exportData = null" />
+        <Export v-if="showExport" :task="exportData" @done="showExport=false" />
     </div>
 </template>
-
-<script>
-import { mapState } from 'pinia'
-import { useUserStore } from '~/store/user'
-const api = useApi()
-
-const percentage = (part, total) => {
-    const percent = part/total*100
-    return percent.toFixed(2)
-}
-
-const theAllTask = () => {
-    return [{
-        'id': null,
-        'prompt': 'All',
-        'short_name': 'all'
-    }]
-}
-
-export default {
-    data() {
-        return {
-            tasks: theAllTask(),
-            selectedTask: null,
-            data: {},
-            total: 0,
-            yes: 0,
-            no: 0,
-            maybe: 0,
-            userChart: [],
-            imageChart: [],
-            userId: null,
-            exportData: null
-        }
-    },
-    computed: {
-        ...mapState(useUserStore, ['isAdmin']),
-        userTableData() {
-            const tableBodyData = []
-            for (const user of this.userChart) {
-                const yes = percentage(user.yes, user.total)
-                const no = percentage(user.no, user.total)
-                const maybe = percentage(user.maybe, user.total)
-                tableBodyData.push({
-                    'user_id': user.user_id,
-                    'fullname': user.fullname,
-                    'total': user.total,
-                    'yes': `${yes}%`,
-                    'no': `${no}%`,
-                    'maybe': `${maybe}%`,
-                })
-            }
-            return {
-                columns: ['User', 'Total', 'Yes', 'No', 'Maybe'],
-                order: ['fullname', 'total', 'yes', 'no', 'maybe'],
-                indexProp: 'user_id',
-                bodyData: tableBodyData,
-            }
-        },
-        imageTableData() {
-            const tableBodyData = []
-            for (const image of this.imageChart) {
-                const yes = percentage(image.yes, image.total)
-                const no = percentage(image.no, image.total)
-                const maybe = percentage(image.maybe, image.total)
-                tableBodyData.push({
-                    'image_id': image.image_id,
-                    'total': image.total,
-                    'yes': `${yes}%`,
-                    'no': `${no}%`,
-                    'maybe': `${maybe}%`,
-                })
-            }
-            tableBodyData.sort((a,b) => b.total - a.total)
-            return {
-                columns: ['Image', 'Total', 'Yes', 'No', 'Maybe'],
-                order: ['image_id', 'total', 'yes', 'no', 'maybe'],
-                indexProp: 'image_id',
-                bodyData: tableBodyData,
-            }
-        }
-    },
-    watch: {
-        data(newData) {
-            const t = newData.total
-            this.total = newData.total,
-            this.yes = percentage(newData.yes, t),
-            this.no = percentage(newData.no, t),
-            this.maybe = percentage(newData.maybe, t)
-        },
-        selectedTask(newTaskId) {
-            this.lookupData()
-        },
-        userId(newUserID) {
-            // If user id changes, we need to pull task associated with that id.
-            this.getTasks()
-            // If the selectedTask isn't on the all/default/null, reset it
-            // and since selectedTask is being watch, we use this if to update
-            // the data if the task didn't change but the user did.
-            if (this.selectedTask) {
-                this.selectedTask = null
-            } else {
-                this.lookupData()
-            }
-        }
-    },
-    created() {
-        useHead({
-            title: 'Admin - Stats'
-        })
-        this.getTasks()
-        this.lookupData()
-    },
-
-    methods: {
-        async lookupData() {
-            // get general task data
-            try {
-                const { response } = await api.GET('/data/', {
-                    task_id: this.selectedTask,
-                    user_id: this.userId
-                })
-                this.data = response.value
-            } catch (err) {
-                console.error(err);
-            }
-
-            // get task data grouped by users
-            try {
-                const { response } = await api.GET('/data/perUsers', {
-                    task_id: this.selectedTask,
-                    user_id: this.userId
-                })
-                this.userChart = response.value
-            } catch (err) {
-                console.error(err);
-            }
-
-            // get task data grouped by images
-            try {
-                const { response } = await api.GET('/data/perImages', {
-                    task_id: this.selectedTask,
-                    user_id: this.userId
-                })
-                this.imageChart = response.value
-            } catch (err) {
-                console.error(err);
-            }
-        },
-        async getTasks() {
-            try {
-                const { response } = await api.GET('/tasks/owned', {
-                    user_id: this.userId
-                })
-                const tasks = theAllTask().concat(response.value)
-                this.tasks = tasks
-            } catch (err) {
-                console.error(err);
-            }
-        },
-        exportTask() {
-            const task = this.tasks.find((t) => t.id === this.selectedTask)
-            console.log(`Export Task ${task.id}`)
-            this.exportData = task
-        },
-    }
-}
-</script>
 
 <style lang='scss' scoped>
 .box {
