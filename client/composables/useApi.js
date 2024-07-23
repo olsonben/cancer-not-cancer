@@ -20,7 +20,7 @@ export const useApi = () => {
     return {
         async GET(route, query, key = null, headers = null, watch = null) {
             try {
-                let allHeaders = headers ? headers : {}
+                const allHeaders = headers ? headers : {}
 
                 if (import.meta.server) {
                     const cookie = useCookie('sessionId').value
@@ -70,7 +70,7 @@ export const useApi = () => {
         },
         async $fetch(route, query, key = null, headers = null) {
             try {
-                let allHeaders = headers ? headers : {}
+                const allHeaders = headers ? headers : {}
 
                 const response = await $fetch(route, {
                     method: 'GET',
