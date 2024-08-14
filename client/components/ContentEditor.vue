@@ -4,8 +4,9 @@ import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 const { uploadImageFilesForAnnotations } = useImageUpload()
 
-const props = defineProps({
-        initialContent: { type: String, default: '' },
+const content = defineModel('content', {
+    type: String,
+    default: ''
 })
 
 /**
@@ -42,7 +43,7 @@ const insertImage = async (event) => {
 
 const emit = defineEmits(['update'])
 const editor = useEditor({
-    content: props.initialContent,
+    content: content.value,
     extensions: [
         StarterKit.configure({
             heading: {
@@ -56,7 +57,7 @@ const editor = useEditor({
         })
     ],
     onUpdate: () => {
-        emit('update', editor.value.getHTML())
+        content.value = editor.value.getHTML()
     },
     editorProps: {
         // Good Example: https://www.codemzy.com/blog/tiptap-drag-drop-image
@@ -90,6 +91,12 @@ const editor = useEditor({
             // allow default behaviors to continue
             return false
         }
+    }
+})
+watch(() => content.value, (newVal, oldVal) => {
+    // if content is updated in the parent (a reset)
+    if (editor.value.getHTML() !== newVal) {
+        editor.value.commands.setContent(newVal, false)
     }
 })
 

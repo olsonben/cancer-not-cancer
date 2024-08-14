@@ -2,11 +2,13 @@
 const route = useRoute()
 const taskId = Number(route.params.taskId) || null
 const api = useApi()
+const fileTools = useFileTools()
 
 const { data: taskToEdit } = await api.GET(`/tasks/${taskId}`)
-const initialState = structuredClone(toRaw(taskToEdit.value))
-
+let initialState = structuredClone(toRaw(taskToEdit.value))
 const dataStateChange = ref(false)
+
+const currentTask = useState('currentTask', () => taskToEdit)
 
 watch(taskToEdit, (newTask, oldTask) => {
     if (deepEqual(initialState, newTask)) {
@@ -18,6 +20,26 @@ watch(taskToEdit, (newTask, oldTask) => {
 
 const reset = () => {
     taskToEdit.value = structuredClone(initialState)
+}
+
+const saveChanges = async () => {
+    try {
+        const selectedImages = fileTools.getSelectedFiles(currentTask.value.images)
+
+        const result = await api.POST(`/tasks/${taskId}`, {
+            ...currentTask.value.task,
+            observerIds: JSON.stringify(currentTask.value.observers.filter(user => !!user.applied).map(user => user.id)),
+            imageIds: JSON.stringify(selectedImages),
+            content: currentTask.value.guide
+        })
+
+        console.log('Task changes saved successfully!')
+        initialState = structuredClone(toRaw(currentTask.value))
+        dataStateChange.value = false
+
+    } catch (error) {
+        console.error(error)
+    }
 }
 
 </script>
@@ -38,11 +60,11 @@ const reset = () => {
                     Changes</button>
             </p>
             <p class="control">
-                <button class="button is-success" :disabled="!dataStateChange" @click="saveTrigger = !saveTrigger">Save
+                <button class="button is-success" :disabled="!dataStateChange" @click="saveChanges">Save
                     Changes</button>
             </p>
         </div>
-        <TaskEdit v-model="taskToEdit"/>
+        <TaskEdit />
     </div>
 </template>
 

@@ -140,6 +140,29 @@ const taskController = {
         const content = req.body.content
         taskOps.setTaskGuide(taskId, content)
         res.sendStatus(200)
+    },
+    // TODO: consolidate with other task saving code
+    async saveEntireTask(req, res) {
+        let investigatorId = req.user.id
+        const taskId = req.params.taskId
+        // const taskId = req.body.id
+        const short_name = req.body.short_name
+        const prompt = req.body.prompt
+        const chip_size = req.body.chip_size || null
+        const fov_size = req.body.fov_size || null
+        const zoom_scale = req.body.zoom_scale || null
+        const content = req.body.content
+        const observerIds = JSON.parse(req.body.observerIds)
+        const imageIds = JSON.parse(req.body.imageIds)
+
+        // TODO: these can probably be consolidated to a transaction or parallel process?
+        await taskOps.updateTask(investigatorId, taskId, short_name, prompt, chip_size, fov_size, zoom_scale)
+        await taskOps.setTaskGuide(taskId, content)
+        await taskOps.updateObservers(investigatorId, taskId, observerIds)
+        await taskOps.setTaskImages(investigatorId, taskId, imageIds)
+
+        console.log(`Task ${taskId} has been updated.`)
+        res.sendStatus(200)
     }
 }
 

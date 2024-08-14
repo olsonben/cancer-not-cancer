@@ -6,188 +6,92 @@ const ImagePicker = resolveComponent('ImagePicker')
 const RoiSettings = resolveComponent('RoiSettings')
 const ContentEditor = resolveComponent('ContentEditor')
 
-const taskData = defineModel()
+const currentTask = useState('currentTask')
+const shortName = computed({
+    get() {
+        return currentTask.value.task.short_name
+    },
+    set(val) {
+        currentTask.value.task.short_name = val
+    }
+})
+const prompt = computed({
+    get() {
+        return currentTask.value.task.prompt
+    },
+    set(val) {
+        currentTask.value.task.prompt = val
+    }
+})
 
-// const shortName = toRef(taskData.value.task.short_name)
-// watch(shortName, (newName, oldName) => {
-//     console.log('Changing short name to:', shortName.value)
-//     taskData.value.task.short_name = "test"
-// })
+const observers = computed({
+    get() {
+        return currentTask.value.observers
+    }
+})
 
-watch(taskData, (newTask, oldTask) => {
-    console.log('taskData has changed')
-}, {deep:true})
+const imageContent = computed(() => {
+    return currentTask.value.images
+})
+const report = () => {
+    console.log('Files selected')
+    const root = {
+        id: 0,
+        name: 'root',
+        contents: currentTask.value.images,
+        type: 'tag',
+        selected: [],
+    }
 
-// const resetTrigger = useState('resetTrigger')
-// const saveTrigger = useState('saveTrigger')
-// const dataStateChange = useState('dataStateChange')
+    console.log(fileTools.getSelectedFiles(currentTask.value.images))
+}
+
+
+const annotationGuide = computed({
+    get() {
+        return currentTask.value.guide
+    }
+})
+const updateGuide = (guideContent) => {
+    currentTask.value.guide = guideContent
+}
 
 const activeTab = ref('observers')
-
-const observers = reactive({
-    applied: [],
-    available: [],
-})
-
-const root = reactive({
-    id: 0,
-    name: 'root',
-    contents: [],
-    type: 'tag',
-    selected: [],
-})
-
-const annotationGuide = ref('')
-
-const updateObservers = (observersData) => {
-    // observers.applied = observersData.applied
-    // observers.available = observersData.available
-}
-
-const report = () => {
-    // console.log('Files selected')
-    // console.log(fileTools.getSelectedFiles(root))
-}
-
-const updateRoi = (roiData) => {
-    // localTask.value.chip_size = roiData.chipSize
-    // localTask.value.fov_size = roiData.fovSize
-    // localTask.value.zoom_scale = roiData.zoomScale
-}
-
-const updateGuide = (guideContent) => {
-    // annotationGuide.value = guideContent
-}
-
 const tabs = computed(() => {
-    return []
-    // const chipSize = taskData.value.task.chip_size
-    // const fovSize = taskData.value.task.fov_size
-    // const zoomScale = taskData.value.task.zoom_scale
-    // return [
-    //     {
-    //         name: 'observers',
-    //         label: "Observers",
-    //         component: Adder,
-    //         props: { tags: observers },
-    //         events: { update: updateObservers }
-    //     },
-    //     {
-    //         name: 'images',
-    //         label: "Images",
-    //         component: ImagePicker,
-    //         props: { files: root.contents },
-    //         events: { report: report }
+    return [
+        {
+            name: 'observers',
+            label: "Observers",
+            component: Adder,
+            props: { 'tags': observers.value },
+            events: {}
+        },
+        {
+            name: 'images',
+            label: "Images",
+            component: ImagePicker,
+            props: { files: imageContent.value },
+            events: { report: report }
 
-    //     },
-    //     {
-    //         name: 'roi',
-    //         label: "ROI",
-    //         component: RoiSettings,
-    //         props: { chipSize, fovSize, zoomScale },
-    //         events: { update: updateRoi }
+        },
+        {
+            name: 'roi',
+            label: "ROI",
+            component: RoiSettings,
+            props: { },
+            events: { }
 
-    //     },
-    //     {
-    //         name: 'guide',
-    //         label: "Annotation Guide",
-    //         component: ContentEditor,
-    //         props: { initialContent: annotationGuide.value },
-    //         events: { update: updateGuide }
+        },
+        {
+            name: 'guide',
+            label: "Annotation Guide",
+            component: ContentEditor,
+            props: { content: annotationGuide.value },
+            events: { 'update:content': updateGuide }
 
-    //     }
-    // ]
+        }
+    ]
 })
-
-const saveChanges = async () => {
-    // try {
-    //     const selectedImages = fileTools.getSelectedFiles(root)
-
-    //     const results = await Promise.allSettled([
-    //         api.POST('/tasks/update', {
-    //             id: localTask.value.id,
-    //             short_name: localTask.value.short_name,
-    //             prompt: localTask.value.prompt,
-    //             chip_size: localTask.value.chip_size,
-    //             fov_size: localTask.value.fov_size,
-    //             zoom_scale: localTask.value.zoom_scale,
-    //         }),
-    //         api.POST('/tasks/observers', {
-    //             task_id: localTask.value.id,
-    //             observerIds: JSON.stringify(observers.applied.map(user => user.id)),
-    //         }),
-    //         api.POST('/tasks/images', {
-    //             task_id: localTask.value.id,
-    //             imageIds: JSON.stringify(selectedImages),
-    //         }),
-    //         api.POST(`/tasks/${localTask.value.id}/guide`, {
-    //             content: annotationGuide.value
-    //         })
-    //     ])
-    //     // TODO: clean up results logic
-    //     // TODO: We shouldn't be updating a prop unless its a model
-    //     // if (results[0].status === "fulfilled") {
-    //         // NOTE: api.POST doesn't return a default success status anymore
-    //         props.task.short_name = localTask.value.short_name
-    //         props.task.prompt = localTask.value.prompt
-    //         props.task.chip_size = localTask.value.chip_size
-    //         props.task.fov_size = localTask.value.fov_size
-    //         props.task.zoom_scale = localTask.value.zoom_scale
-    //     // } else {
-    //         // console.error("There was an error saving the task data.")
-    //     // }
-
-    //     const closeIfNoErrors = results.every((res) => (res.status === "fulfilled"))
-
-    //     // Emit save event to update stats in task table.
-    //     emit('save', {
-    //         observers: results[1].status === "fulfilled" ? observers.applied.length : null,
-    //         images: results[2].status === "fulfilled" ? selectedImages.length : null
-    //     }, closeIfNoErrors)
-
-    //     if (!closeIfNoErrors) {
-    //         // TODO: turn this into a notification
-    //         console.warn("Not all content was saved. To preserve current unsaved changes, the task editor has not been closed.")
-    //     }
-
-    // } catch (err) {
-    //     console.error(err)
-    // }
-}
-
-const cancelChanges = () => {
-    // console.log('changes cancelled')
-    // emit('cancel')
-}
-
-// TODO: don't use api.GET or use the data directly
-// const [observersData, imagesData, guideData] = await Promise.all([
-//     api.GET('/tasks/observers', {
-//         task_id: props.task.id
-//     }),
-//     api.GET('/tasks/images', {
-//         task_id: props.task.id
-//     }),
-//     api.GET(`/tasks/${props.task.id}/guide`)
-// ])
-
-// root.contents = taskData.value.images
-// annotationGuide.value = taskData.value.guide
-// for (const user of taskData.value.observers) {
-//     if (user.applied) {
-//         observers.applied.push(user)
-//     } else {
-//         observers.available.push(user)
-//     }
-// }
-
-const resetChanges = () => {
-    // console.log('TaskEdit resetChanges')
-}
-
-const savesaveChanges = () => {
-    // console.log('TaskEdit saveChanges')
-}
 
 </script>
 
@@ -196,13 +100,13 @@ const savesaveChanges = () => {
     <div class="field">
         <label class="label">Name</label>
         <div class="control is-medium">
-            <input class="input is-medium has-text-weight-bold" type="text" v-model="taskData.task.short_name">
+            <input class="input is-medium has-text-weight-bold" type="text" v-model="shortName">
         </div>
     </div>
     <div class="field">
         <label class="label">Prompt</label>
         <div class="control is-medium">
-            <textarea class="textarea has-text-weight-medium prompt" v-model="taskData.task.prompt" />
+            <textarea class="textarea has-text-weight-medium prompt" v-model="prompt" />
         </div>
     </div>
 
