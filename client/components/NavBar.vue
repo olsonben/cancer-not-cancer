@@ -25,7 +25,7 @@ const showAnimation = ref(false)
                 <div class="buttons">
                     <client-only>
                         <NuxtLink v-if='isLoggedIn' to='/logout' class='button is-light'>Log Out</NuxtLink>
-                        <NuxtLink v-else :to='getLoginUrl' class='button is-light'>Log In</NuxtLink>
+                        <NuxtLink v-else :to='getLoginUrl()' class='button is-light'>Log In</NuxtLink>
                     </client-only>
                 </div>
             </div>
@@ -80,7 +80,7 @@ const showAnimation = ref(false)
                     <div class="buttons">
                         <client-only>
                             <NuxtLink v-if='isLoggedIn' to='/logout' class='button is-light'>Log Out</NuxtLink>
-                            <NuxtLink v-else :to='loginLink' class='button is-light'>Log In</NuxtLink>
+                            <NuxtLink v-else :to='getLoginUrl()' class='button is-light'>Log In</NuxtLink>
                         </client-only>
                     </div>
                 </div>
