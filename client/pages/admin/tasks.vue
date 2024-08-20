@@ -43,7 +43,8 @@ const createTask = async () => {
 }
 
 const editTask = (task) => {
-    taskToEdit.value = task
+    // TODO: use inline
+    navigateTo(`/admin/task/${task.id}`)
 }
 
 const updateTaskProgress = async (taskIndex) => {
@@ -109,21 +110,21 @@ taskData.value = data.value
                         </div>
                         <div class="field-body">
                             <div class="field is-grouped">
-                            <p class="control has-icons-left">
-                                <input class="input" type="text" :maxlength="100" placeholder="name" v-model="task.name">
-                                <span class="icon is-small is-left">
-                                <fa-icon :icon="['fas', 'tag']" />
-                                </span>
-                            </p>
-                            <p class="control is-expanded has-icons-left has-icons-right">
-                                <input class="input" type="text" placeholder="Prompt" v-model="task.prompt" />
-                                <span class="icon is-small is-left">
-                                <fa-icon :icon="['fas', 'question']" />
-                                </span>
-                            </p>
-                            <p class="control">
-                                <input class='button is-success' type="submit" value="Create" />
-                            </p>
+                                <p class="control has-icons-left">
+                                    <input class="input" type="text" :maxlength="100" placeholder="name" v-model="task.name">
+                                    <span class="icon is-small is-left">
+                                    <fa-icon :icon="['fas', 'tag']" />
+                                    </span>
+                                </p>
+                                <p class="control is-expanded has-icons-left has-icons-right">
+                                    <input class="input" type="text" placeholder="Prompt" v-model="task.prompt" />
+                                    <span class="icon is-small is-left">
+                                    <fa-icon :icon="['fas', 'question']" />
+                                    </span>
+                                </p>
+                                <p class="control">
+                                    <input class='button is-success' type="submit" value="Create" />
+                                </p>
                             </div>
                         </div>
                     </div>

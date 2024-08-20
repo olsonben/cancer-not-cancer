@@ -1,7 +1,24 @@
 export const useFileTools = () => {
+    const makeRootFolder = (fileContentTree) => {
+        const root = {
+            id: 0,
+            name: 'root',
+            contents: fileContentTree,
+            type: 'tag',
+            selected: [],
+        }
+        return root
+    }
+
     return {
         /** Get all selected files from the a nested folder structure object. */
         getSelectedFiles(folderObject) {
+            // Folder structures from the api are sent as Arrays without a root folder
+            // so if it is an array we can enclose it in a temp root folder.
+            if (Array.isArray(folderObject)) {
+                folderObject = makeRootFolder(folderObject)
+            }
+
             let allSelectedFiles = folderObject.contents.reduce(function recur(selected, child) {
                 let childSelect = []
                 if (child.type === 'tag') {
@@ -10,10 +27,10 @@ export const useFileTools = () => {
                     childSelect.push(child.id)
                 }
                 selected.push(...childSelect)
-        
+                
                 return selected
             }, [])
-        
+            
             return allSelectedFiles
         },
         /** Get all nested files within a nested folder structure object. */

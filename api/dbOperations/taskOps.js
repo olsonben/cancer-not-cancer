@@ -31,6 +31,31 @@ const taskOps = {
         const rows = await dbOps.select(query, [userId])
         return rows
     },
+    
+    /**
+     * Get a task by its ID and the owner's ID.
+     *
+     * @param {Number} taskId - The ID of the task to retrieve.
+     * @param {Number} userId - The ID of the user who owns the task.
+     * @returns {Array.<Object>} - An array containing information about the task, or an empty array if no task is found.
+     */
+    async getTaskById(taskId, userId)  {
+        const query = `SELECT 
+                tasks.id as id,
+                tasks.short_name as short_name,
+                tasks.prompt as prompt,
+                tasks.chip_size as chip_size,
+                tasks.zoom_scale as zoom_scale,
+                tasks.fov_size as fov_size
+            FROM
+                tasks
+            WHERE
+                tasks.id = ?
+            AND tasks.investigator = ?`
+        const rows = await dbOps.select(query, [taskId, userId])
+        return rows
+    },
+
     /**
      * Create a new task/prompt.
      * @param {Number} userId - Id of user creating task.

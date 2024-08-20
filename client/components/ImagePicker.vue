@@ -37,7 +37,7 @@ export default {
     border: 1px solid $primary;
 
     .menu {
-        max-height: 300px;
+        max-height: 60vh;
         overflow-y: scroll;
         padding: 0.625rem;
     }
