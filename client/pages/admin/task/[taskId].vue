@@ -4,13 +4,16 @@ const taskId = Number(route.params.taskId) || null
 const api = useApi()
 const fileTools = useFileTools()
 
+// NOTE: We can't pass taskToEdit directly into useState because it won't update the
+// state if it already happens to exist.
+const currentTask = useState('currentTask', () => null)
 const { data: taskToEdit } = await api.GET(`/tasks/${taskId}`)
 let initialState = structuredClone(toRaw(taskToEdit.value))
 const dataStateChange = ref(false)
 
-const currentTask = useState('currentTask', () => taskToEdit)
+currentTask.value = taskToEdit.value
 
-watch(taskToEdit, (newTask, oldTask) => {
+watch(currentTask, (newTask, oldTask) => {
     if (deepEqual(initialState, newTask)) {
         dataStateChange.value = false
     } else {
@@ -19,7 +22,7 @@ watch(taskToEdit, (newTask, oldTask) => {
 }, { deep: true })
 
 const reset = () => {
-    taskToEdit.value = structuredClone(initialState)
+    currentTask.value = structuredClone(initialState)
 }
 
 const saveChanges = async () => {
