@@ -32,7 +32,7 @@ const cellKey = (i) => `${row.id}-${i}`
                     <button class="button is-small is-danger" type="button" @click="deleteRow">
                         <span class="icon"><fa-icon :icon="['far', 'trash-can']" /></span>
                     </button>
-                    <button class="button is-small is-success" type="button" @click="exportAction">
+                    <button class="button is-small is-success" type="button" @click="exportRow">
                         <span class="icon"><fa-icon :icon="['fas', 'download']" /></span>
                     </button>
                 </div>

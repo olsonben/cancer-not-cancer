@@ -1,19 +1,17 @@
 <template>
-    <div class="is-flex" >
-        <input v-if="!editable & !deletable" type="checkbox" :value="inputName" v-model="checked" :indeterminate.prop="selectedState === 'partial'" @click="onCheck">
-        <a
-            class="file-link folder"
-            :class="{ 'dragHover': dragOverStyle }"
-            @click="clickToExpand"
-            v-draggable="draggableConfig"
-            @drop="onDrop" @dragover.prevent @dragenter="dragEnter" @dragleave="dragLeave"
-        >
+    <div class="is-flex">
+        <input v-if="selectable" type="checkbox" :value="inputName" v-model="checked"
+            :indeterminate.prop="selectedState === 'partial'" @click="onCheck">
+        <a class="file-link folder" :class="{ 'dragHover': dragOverStyle }" @click="clickToExpand"
+            v-draggable="draggableConfig" @drop="onDrop" @dragover.prevent @dragenter="dragEnter"
+            @dragleave="dragLeave">
             {{ modelValue.name }}
             <span v-if="modelValue.contents.length > 0" class="expander" :class="{ 'is-expanded': expand }"></span>
             <span class="icon add"><fa-icon :icon="['fas', 'xmark']" /></span>
         </a>
-        
-        <button v-if="editable & !changeName" class="button is-small is-info" type="button" @click="changeName = !changeName">
+
+        <button v-if="editable & !changeName" class="button is-small is-info" type="button"
+            @click="changeName = !changeName">
             <span class="icon"><fa-icon :icon="['far', 'pen-to-square']" /></span>
         </button>
         <button v-if="deletable" class="button is-small is-danger ml-1" type="button" @click="removeTag">
@@ -36,8 +34,10 @@
     <ul v-if="modelValue.contents.length > 0" class="menu-list" :class="{ 'is-expanded': expand }">
         <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
         <li v-for="(file, index) in modelValue.contents" :key="fileKey(file)">
-            <folder v-if="isFolder(file)" v-model="modelValue.contents[index]" :editable="editable" :deletable="deletable" @change="changeHandler" :parentTagId="modelValue.id"/>
-            <File v-else v-model="modelValue.contents[index]" :editable="editable" :deletable="deletable" @change="changeHandler" :parentTagId="modelValue.id"></File>
+            <folder v-if="isFolder(file)" v-model="modelValue.contents[index]" :editable="editable"
+                :selectable="selectable" :deletable="deletable" @change="changeHandler" :parentTagId="modelValue.id" />
+            <File v-else v-model="modelValue.contents[index]" :editable="fileEditable" :deletable="fileDeletable"
+                :selectable="selectable" @change="changeHandler" :parentTagId="modelValue.id"></File>
         </li>
     </ul>
 </template>
@@ -60,6 +60,10 @@ export default {
             type: Boolean
         },
         deletable: {
+            default: false,
+            type: Boolean
+        },
+        selectable: {
             default: false,
             type: Boolean
         },
@@ -100,8 +104,28 @@ export default {
                 data: this.modelValue,
                 parentTagId: this.parentTagId
             }
+        },
+        fileEditable() {
+            if (this.editable && this.modelValue.name == 'Annotation Guides') {
+                return true
+            } else {
+                return false
+            }
+        },
+        fileDeletable() {
+            if (this.deletable && !this.selectable && this.modelValue.name == 'Annotation Guides') {
+                return true
+            } else {
+                return false
+            }
         }
 
+    },
+    mounted() {
+        if (this.modelValue.name == 'Annotation Guides') {
+            console.log(this.editable)
+            console.log(this.modelValue.name)
+        }
     },
     methods: {
         fileKey(file) {

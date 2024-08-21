@@ -47,39 +47,24 @@ const editTask = (task) => {
     navigateTo(`/admin/task/${task.id}`)
 }
 
-const updateTaskProgress = async (taskIndex) => {
-    try {
-        const data = await api.$fetch('/tasks/progress', {
-            task_id: taskData.value[taskIndex].id
-        })
-        const progress = data.progress
-        taskData.value[taskIndex].progress = progress ? progress : 0
-    } catch (err) {
-        console.log(err)
-    }
+const taskToDelete = ref(null)
+const deletionMessage = ref(null)
+
+const confirmDelete = (task) => {
+    deletionMessage.value = `Are you sure you want to delete the <strong>${task.short_name}</strong> task?`
+    taskToDelete.value = task.id
 }
 
-const finishTaskEdit = (auxData, close = true) => {
-    const index = taskData.value.findIndex(task => task.id == taskToEdit.value.id)
-    if (auxData.observers !== null)
-        taskData.value[index].observer_count = auxData.observers
-    if (auxData.images !== null)
-        taskData.value[index].image_count = auxData.images
-    
-    updateTaskProgress(index)
-    
-    if (close) {
-        taskToEdit.value = null
-    }
-}
-
-const deleteTask = async (task) => {
+const deleteTask = async () => {
     try {
+        const taskId = taskToDelete.value
         await api.POST('/tasks/delete', {
-            id: task.id
+            id: taskId
         })
-        const index = taskData.value.findIndex(curTask => curTask.id === task.id)
+        const index = taskData.value.findIndex(curTask => curTask.id === taskId)
         taskData.value.splice(index, 1)
+        console.log(`Task Deleted - id:${taskId}`)
+        taskToDelete.value = null
     } catch (err) {
         console.log(err)
     }
@@ -90,10 +75,8 @@ const exportTask = (task) => {
     exportData.value = task
 }
 
-
 const { data } = await api.GET('/tasks/table')
 taskData.value = data.value
-
 
 </script>
 
@@ -146,14 +129,13 @@ taskData.value = data.value
                         </thead>
                         <tbody>
 
-                            <Row v-for="row in taskData" :key="row[indexProp]" :class="{ 'is-selected': false }"  :row="row" :order="order" @edit="editTask" @delete="deleteTask" @export="exportTask" />
+                            <Row v-for="row in taskData" :key="row[indexProp]" :class="{ 'is-selected': false }"  :row="row" :order="order" @edit="editTask" @delete="confirmDelete" @export="exportTask" />
                         </tbody>
                     </table>
                 </div>
             </div>
         </section>
-        <!-- Edit Task -->
-        <TaskEdit v-if="taskToEdit != null" :task="taskToEdit" @save="finishTaskEdit" @cancel="taskToEdit = null"/>
+        <Confirm v-if="taskToDelete" :message="deletionMessage" @confirm="deleteTask" @cancel="taskToDelete = null" />
         <Export v-if="exportData != null" :task="exportData" @done="exportData=null" />
     </div>
 </template>
