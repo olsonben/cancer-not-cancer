@@ -1,7 +1,7 @@
 <template>
         <div class="is-flex">
-            <input v-if="!editable & !deletable" type="checkbox" :value="inputName" v-model="modelValue.selected">
-            <a class="file-link" v-draggable="draggableConfig" @drop.prevent @dragover.prevent @dragenter.prevent @dragleave.prevent>{{ modelValue.name }}</a>
+            <input v-if="selectable" type="checkbox" :value="inputName" v-model="modelValue.selected">
+            <div class="file-link" :class="{pointer: draggableConfig.editable}" v-draggable="draggableConfig" @drop.prevent @dragover.prevent @dragenter.prevent @dragleave.prevent>{{ modelValue.name }}</div>
 
 
             <button v-if="editable & !changeName" class="button is-small is-info" type="button" @click="changeName = !changeName">
@@ -19,7 +19,9 @@
                     </div>
                     <div class="control">
                         <button class="button is-small is-warning" type="button" @click="setNewName">save</button>
-                        <button class="button is-small is-danger" type="button" @click="changeName = !changeName"><span class="icon"><fa-icon :icon="['fas', 'xmark']" /></span></button>
+                        <button class="button is-small is-danger" type="button" @click="changeName = !changeName">
+                            <span class="icon"><fa-icon :icon="['fas', 'xmark']" /></span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -43,6 +45,10 @@ export default {
             type: Boolean
         },
         deletable: {
+            default: false,
+            type: Boolean
+        },
+        selectable: {
             default: false,
             type: Boolean
         },
@@ -100,14 +106,18 @@ export default {
 }
 </script>
 
-<style lang='scss' scoped>
+<style lang='scss'>
 
 .file-link {
     position: relative;
+    padding: 0.5em 0.75em;
     
     &.folder {
         padding-right: 2rem;
     }
 }
 
+.file-link.pointer {
+    cursor: pointer;
+}
 </style>

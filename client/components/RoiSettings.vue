@@ -1,17 +1,34 @@
 <script setup>
 const placeholder = usePlaceholder()
+const currentTask = useState('currentTask')
 
-// initial/existing roi settings
-const props = defineProps({
-    'chipSize' : { default: null },
-    'fovSize': {},
-    'zoomScale': {}
+const receptiveField = computed({
+    get() {
+        return currentTask.value.task.fov_size || 911
+    },
+    set(val) {
+        currentTask.value.task.fov_size = val
+    }
 })
 
-// local roi settings
-const receptiveField = ref(props.fovSize || 911)
-const chipSize = ref(props.chipSize === null ? 128 : props.chipSize)
-const zoomScale = ref(props.zoomScale || 4)
+const chipSize = computed({
+    get() {
+        const chip_size = currentTask.value.task.chip_size
+        return chip_size === null ? 128 : chip_size
+    },
+    set(val) {
+        currentTask.value.task.chip_size = val
+    }
+})
+
+const zoomScale = computed({
+    get() {
+        return currentTask.value.task.zoom_scale || 4
+    },
+    set(val) {
+        currentTask.value.task.zoom_scale = val
+    }
+})
 
 // simple boolean to track zoom toggle
 const zoom = ref(false)
@@ -25,6 +42,7 @@ const roiPercentage = computed(() => chipSize.value / receptiveField.value * 100
 // for inline zoom css
 const zoomStyle = computed(() => {
     let scale = '1'
+    // TODO: consider adding validation for values less than 1
     if (zoom.value) {
         scale = String(zoomScale.value)
     }
@@ -32,23 +50,12 @@ const zoomStyle = computed(() => {
     return { transform: `scale(${scale})` }
 })
 
-// Events: Update tell the parent component that values have changed
-const emit = defineEmits(['update'])
-const update = () => {
-    emit('update', {
-        chipSize: chipSize.value,
-        fovSize: receptiveField.value,
-        zoomScale: zoomScale.value
-    })
-}
 
-// watch for changes to update the parent
-watch([receptiveField, chipSize, zoomScale], (newValues, oldValues) => {
-    // if the receptiveField changes, update placeholder image size
-    if (newValues[0] !== oldValues[0]) {
-        dataUrlPlaceholder.value = placeholder.generate(newValues[0])
+// if the receptiveField changes, update placeholder image size
+watch(receptiveField, (newValue, oldValue) => {
+    if (newValue !== oldValue) {
+        dataUrlPlaceholder.value = placeholder.generate(newValues)
     }
-    update()
 })
 
 </script>

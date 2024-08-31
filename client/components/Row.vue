@@ -1,6 +1,24 @@
+<script setup>
+const { row, order } = defineProps(['row', 'order'])
+const emit = defineEmits(['edit', 'delete', 'export'])
+
+const editRow = () => {
+    emit('edit', row)
+}
+const deleteRow = () => {
+    emit('delete', row)
+}
+const exportRow = () => {
+    emit('export', row)
+}
+
+const cellKey = (i) => `${row.id}-${i}`
+
+</script>
+
 <template>
     <tr>
-        <td v-for="(propName, index) in order" :key="index">
+        <td v-for="(propName, index) in order" :key="cellKey(index)">
             <template v-if="propName === 'progress'">
                 <progress max="1" class="progress is-small is-info" :value="row[propName]">
                     {{ row[propName] }}
@@ -14,7 +32,7 @@
                     <button class="button is-small is-danger" type="button" @click="deleteRow">
                         <span class="icon"><fa-icon :icon="['far', 'trash-can']" /></span>
                     </button>
-                    <button class="button is-small is-success" type="button" @click="exportAction">
+                    <button class="button is-small is-success" type="button" @click="exportRow">
                         <span class="icon"><fa-icon :icon="['fas', 'download']" /></span>
                     </button>
                 </div>
@@ -25,21 +43,3 @@
         </td>
     </tr>
 </template>
-
-<script>
-    export default {
-        props: ['row', 'order'],
-        emits: ['edit', 'delete', 'export'],
-        methods: {
-            editRow() {
-                this.$emit('edit', this.row)
-            },
-            deleteRow() {
-                this.$emit('delete', this.row)
-            },
-            exportAction() {
-                this.$emit('export', this.row)
-            }
-        }
-    }
-</script>

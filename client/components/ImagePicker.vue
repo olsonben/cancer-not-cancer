@@ -6,8 +6,8 @@
             <ul class="menu-list">
                 <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
                 <li v-for="(file, index) in files" :key="file.id">
-                    <folder v-if="isFolder(file)" v-model="files[index]"/>
-                    <File v-else v-model="files[index]"></File>
+                    <folder v-if="isFolder(file)" v-model="files[index]" :selectable="true" />
+                    <File v-else v-model="files[index]" :selectable="true"></File>
                 </li>
 
             </ul>
@@ -37,7 +37,7 @@ export default {
     border: 1px solid $primary;
 
     .menu {
-        max-height: 300px;
+        max-height: 60vh;
         overflow-y: scroll;
         padding: 0.625rem;
     }

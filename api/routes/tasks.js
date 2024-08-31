@@ -20,5 +20,9 @@ router.post('/observers', isValid, asyncHandler(taskController.updateObservers))
 router.get('/images', isValid, asyncHandler(taskController.getImages))
 router.post('/images', isValid, asyncHandler(taskController.setTaskImages))
 router.get('/export', isValid, asyncHandler(taskController.exportTaskById))
+router.get('/:taskId/guide', isObserver, asyncHandler(taskController.getTaskGuide))
+router.post('/:taskId/guide', isValid, asyncHandler(taskController.saveTaskGuide))
+router.get('/:taskId', isValid, asyncHandler(taskController.getTaskById))
+router.post('/:taskId', isValid, asyncHandler(taskController.saveEntireTask))
 
 export default router

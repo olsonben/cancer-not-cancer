@@ -8,6 +8,8 @@ import { customAlphabet } from 'nanoid/async'
 import sanitize from 'sanitize-filename'
 import deleteEmpty from 'delete-empty'
 
+const imageBaseURL = process.env.IMAGE_URL
+
 // Removing the dash and hyphen from ids for upload folders
 const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 20)
 
@@ -47,6 +49,26 @@ export async function removeEmptyImageFolders() {
     }
 }
 
+function asyncDebounce(func, delay=5000) {
+    let timeoutId
+
+    return async function(...args) {
+        if (timeoutId) {
+            clearTimeout(timeoutId)
+        }
+        timeoutId = setTimeout(async () => {
+            try {
+                await func.apply(this, args)
+            } catch (err) {
+                console.log(err)
+            }
+        }, delay);
+    }
+}
+
+// TODO: Add protections for multiple uploads simultaneously
+export const delayedRemoveEmptyImageFolders = asyncDebounce(removeEmptyImageFolders, 5000)
+
 // Removes a file if it can.
 export async function removeFile(filePath) {
     try {
@@ -70,8 +92,7 @@ function updateFileInfo(fileInfo, success, message) {
 // Save a readablestream to disk. First saves to the temporary director, then
 // moves the complete save to the image directory.
 async function saveFile(file, fileInfo) {
-    // tmpdir stores files for 3~10 days
-    const saveTo = path.join(os.tmpdir(), path.basename(fileInfo.savePath))
+    const saveTo = path.join(process.env.IMAGES_DIR, 'tmp', path.basename(fileInfo.savePath))
     const moveTo = path.join(fileInfo.savePath)
 
     // Since we are trying to preserve the path we have to do a lot of directory creating.
@@ -168,23 +189,7 @@ function toIsoWithTimezoneString(date) {
         '-' + pad(Math.abs(tzo) % 60);
 }
 
-// Handle upload image(s) request for express
-export async function uploadImages(req, res, next) {
-    // console.log('UPLOAD REQUEST MADE::', req.headers)
-    const folderDateString = toIsoWithTimezoneString(new Date(req.headers.uploadtime))
-
-    // Consider hashing the userid
-    const saveDirectory = `${req.user.id}_${folderDateString}`
-    // straight hash for directory
-    // const saveDirectory = await nanoid()
-    
-    // Check for proper content-type, needs to be multipart/form-data
-    // busboy should error out on malformed data, be we do our own check before starting.
-    if (!req.headers['content-type'].includes('multipart/form-data')) {
-        res.status(415).send('Content-Type must be multipart/form-data.')
-        return
-    }
-    
+async function runBusboy(saveDirectory, {req, res, next}) {
     const busboyConfig = {
         headers: req.headers, // pass headers to busboy
         limits: {
@@ -193,7 +198,7 @@ export async function uploadImages(req, res, next) {
         },
         preservePath: true
     }
-    
+
     const files = [] // keep track of the files for communicating success or failure.
     let finished = false // busboy upload status
     const bb = busboy(busboyConfig)
@@ -217,6 +222,7 @@ export async function uploadImages(req, res, next) {
         fileInfo.id = await randomUUID()
         fileInfo.savePath = path.join(process.env.IMAGES_DIR, saveDirectory, fileInfo.id)
         fileInfo.relPath = path.join(saveDirectory, fileInfo.id)
+        //TODO: Determine is relPath is needed, use imageUrl instead. Sync with 'allowedKeys'
 
         // make sure the file is an image
         if (fileInfo.mimeType == 'image/jpeg') {
@@ -227,6 +233,10 @@ export async function uploadImages(req, res, next) {
             fileInfo.savePath += '.png'
             fileInfo.relPath += '.png'
             isAcceptable = true
+        }
+
+        if (isAcceptable) {
+            fileInfo.imageUrl = new URL(fileInfo.relPath, imageBaseURL).href
         }
 
         // track files
@@ -271,5 +281,34 @@ export async function uploadImages(req, res, next) {
 
     // Connect the request to busboy
     req.pipe(bb);
+}
 
+export async function isMultipart(req, res, next) {
+    // Check for proper content-type, needs to be multipart/form-data
+    // busboy should error out on malformed data, be we do our own check before starting.
+    if (req.headers['content-type'].includes('multipart/form-data')) {
+        next()
+    } else {
+        res.status(415).send('Content-Type must be multipart/form-data.')
+    }
+}
+
+// Handle upload image(s) request for express
+export async function uploadImages(req, res, next) {
+    // console.log('UPLOAD REQUEST MADE::', req.headers)
+    const folderDateString = toIsoWithTimezoneString(new Date(req.headers.uploadtime))
+
+    // Consider hashing the userid
+    const saveDirectory = `${req.user.id}_${folderDateString}`
+    // straight hash for directory
+    // const saveDirectory = await nanoid()
+    
+    runBusboy(saveDirectory, {req, res, next}) 
+}
+
+// Handle upload image(s) for the annotation guide
+export async function uploadAnnotationImages(req, res, next) {
+    const saveDirectory = `${req.user.id}_annotations`
+
+    runBusboy(saveDirectory, { req, res, next })
 }

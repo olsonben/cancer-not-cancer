@@ -1,0 +1,36 @@
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    volumes:
+      - ./api:/app/api
+      - uploaded_images:/var/www/html/static/images
+    ports:
+      - "3333:3333"
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+
+  nginx:
+    build:
+      context: ./
+      dockerfile: nginx/Dockerfile
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./client/.output/public:/usr/share/nginx/html/public
+    ports:
+      - "3000:3000"
+
+  db: 
+    env_file: "./db/.env"
+    image: mariadb
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./db/data:/docker-entrypoint-initdb.d/      
+    ports:
+      - "3306:3306"
+
+volumes:
+  mariadb_data:
+  uploaded_images:

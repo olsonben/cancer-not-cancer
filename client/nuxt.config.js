@@ -5,6 +5,9 @@ import { defineNuxtConfig } from "nuxt/config"
  * work at the same url as production.
  */
 const base = new URL(process.env.PUBLIC_PATH).pathname
+const matomoNoscriptUrl = new URL('js/', process.env.NUXT_PUBLIC_ANALYTICS_URL)
+matomoNoscriptUrl.searchParams.set('idsite', 1)
+matomoNoscriptUrl.searchParams.set('rec', 1)
 
 export default defineNuxtConfig({
   /** 
@@ -44,7 +47,7 @@ export default defineNuxtConfig({
        * The noscript is setup for matomo. Nuxt2's __dangerouslyDisableSanitizers doesn't exist anymore.
        */
       noscript: [{
-        innerHTML: "\<img src=\"https://client.milmed.ai/b/js/?idsite=1&amp;rec=1\" style=\"border: 0\" alt=\"\" />"
+        innerHTML: `<img src="${matomoNoscriptUrl.href}" style="border: 0" alt="" />`
       }],
     },
   },
@@ -55,9 +58,12 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // private config here
     
+    // With a proper .env, the following values will be overwritten
     public: {
-      uploadSizeLimit: process.env.UPLOAD_SIZE_LIMIT,
-      apiUrl: process.env.API_URL,
+      uploadSizeLimit: 50, // in bytes
+      filesPerUploadRequest: 5,
+      apiUrl: '[API URL]',
+      analyticsUrl: '[ANALYTICS URL]',
     }
   },
 
@@ -70,22 +76,25 @@ export default defineNuxtConfig({
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: '@import "@/assets/scss/variables.scss"; @import "@/assets/scss/colors.scss";',
+          additionalData: '@use "@/assets/scss/variables.scss" as *; @use "@/assets/scss/colors.scss" as *;',
         }
       },
     }
   },
 
-  /** 
-   * Plugins: https://nuxt.com/docs/guide/directory-structure/plugins
-   * Plugins are loaded during application creation and are usable throughout the app.
-   * Note: Ad blockers may breaking the site because of matomo.
+  /**
+   * To get fontawesome working with SSR, the following is required
+   * Workaround: https://github.com/nuxt/nuxt/discussions/16014
+   * Why: https://github.com/FortAwesome/vue-fontawesome/issues/394#issuecomment-2092933896
    */
-  plugins: [
-    '~/plugins/error-handler.js',
-    '~/plugins/draggable.js',
-    { src: '~/plugins/matomo.js', ssr: false },
-  ],
+  build: {
+    transpile: [
+      "@fortawesome/fontawesome-svg-core",
+      "@fortawesome/free-regular-svg-icons",
+      "@fortawesome/free-solid-svg-icons",
+      "@fortawesome/vue-fontawesome",
+    ],
+  },
 
   /**
    * Auto import components: https://nuxt.com/docs/guide/directory-structure/components#component-names
@@ -109,14 +118,41 @@ export default defineNuxtConfig({
   /**
    * Server side rendering: set to false because this site is served statically.
    */
-  ssr: false,
+  // ssr: false,
+  routeRules: {
+    '/': {
+      prerender: true
+    },
+    '/pathapp' : {
+      prerender: true,
+      ssr: true
+    },
+    '/pathapp/**' : {
+      // prerender: false,
+      ssr: false
+    },
+    '/admin/**': {
+      // prerender: false,
+      ssr: false
+    },
+    '/about': {
+      prerender: true
+    },
+    '/issues': {
+      prerender: true
+    },
+  },
 
   /**
    * Sourcemap and devtools are on by default in dev mode. To use them in
    * staging or production you should uncomment them.
    */
-  // sourcemap: true,
-  // devtools: { enabled: true }
+  sourcemap: true,
+  devtools: { enabled: true,
+    timeline: {
+      enabled: true
+    }
+  }
   // debug: true
 
 })

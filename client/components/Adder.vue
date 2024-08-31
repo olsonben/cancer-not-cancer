@@ -5,7 +5,7 @@
                 <h2 class="has-text-weight-semibold">Active</h2>
                 <ul>
                     <li
-                        v-for="tag in localTags.applied"
+                        v-for="tag in applied"
                         :key="tag.id"
                         v-draggable="{ tag, type: 'applied', editable: true }"
                         class="tag is-info"
@@ -18,7 +18,7 @@
                 <h2 class="has-text-weight-semibold">Available</h2>
                 <ul>
                     <li
-                        v-for="tag in localTags.available"
+                        v-for="tag in available"
                         :key="tag.id"
                         v-draggable="{ tag, type: 'available', editable: true }"
                         class="tag is-success"
@@ -31,51 +31,46 @@
     </div>
 </template>
 
-<script>
-// const dummyTagsData = {
-//     applied: [
-//         { id: 1, name: "Tag A" },
-//         { id: 2, name: "Tag B" },
-//     ],
-//     available: [
-//         { id: 3, name: "Tag C" },
-//         { id: 4, name: "Tag D" },
-//     ]
-// }
+<script setup>
+// const dummyTagsData = [
+//         { id: 1, name: "Tag A", applied: 1 },
+//         { id: 2, name: "Tag B", applied: 1 },
+//         { id: 3, name: "Tag C", applied: 0 },
+//         { id: 4, name: "Tag D", applied: 0 },
+// ]
 
-export default {
-    props: ['tags'],
-    emits: ['update'],
-    computed: {
-        localTags() {
-            return {
-                applied: Array.from(this.tags.applied),
-                available: Array.from(this.tags.available),
-            }
-        }
-    },
-    methods: {
-        onDrop(event, column) {
-            const data = JSON.parse(event.dataTransfer.getData('application/json'))
-            if (column !== data.type) {
-                if (column === 'applied') {
-                    this.localTags.available = this.localTags.available.filter((obj) =>  {
-                        return obj.id !== data.tag.id
-                    })
-                    this.localTags.applied.push(data.tag)
-                } else {
-                    this.localTags.applied = this.localTags.applied.filter((obj) => {
-                        return obj.id !== data.tag.id
-                    })
-                    this.localTags.available.push(data.tag)
-                }
-                
-                this.$emit('update', this.localTags)
-            }
-            
+// Technically this could just be a prop, but defineModel returns a ref
+const tags = defineModel('tags', {
+    type: Array,
+    default: null,
+})
+
+const applied = computed(() => {
+    return tags.value.filter((tag) => tag.applied === 1)
+})
+
+const available = computed(() => {
+    return tags.value.filter((tag) => tag.applied === 0)
+})
+
+const setAppliedById = (id, appliedValue = 0) => {
+    const index = tags.value.findIndex((tag) => tag.id === id)
+    if (index !== -1) {
+        tags.value[index].applied = appliedValue
+    }
+}
+
+const onDrop = (event, column) => {
+    const data = JSON.parse(event.dataTransfer.getData('application/json'))
+    if (column !== data.type) {
+        if (column === 'applied') {
+            setAppliedById(data.tag.id, 1)
+        } else {
+            setAppliedById(data.tag.id, 0)
         }
     }
 }
+
 </script>
 
 <style lang='scss' scoped>
