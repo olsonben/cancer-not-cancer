@@ -49,6 +49,26 @@ export async function removeEmptyImageFolders() {
     }
 }
 
+function asyncDebounce(func, delay=5000) {
+    let timeoutId
+
+    return async function(...args) {
+        if (timeoutId) {
+            clearTimeout(timeoutId)
+        }
+        timeoutId = setTimeout(async () => {
+            try {
+                await func.apply(this, args)
+            } catch (err) {
+                console.log(err)
+            }
+        }, delay);
+    }
+}
+
+// TODO: Add protections for multiple uploads simultaneously
+export const delayedRemoveEmptyImageFolders = asyncDebounce(removeEmptyImageFolders, 5000)
+
 // Removes a file if it can.
 export async function removeFile(filePath) {
     try {
@@ -72,8 +92,7 @@ function updateFileInfo(fileInfo, success, message) {
 // Save a readablestream to disk. First saves to the temporary director, then
 // moves the complete save to the image directory.
 async function saveFile(file, fileInfo) {
-    // tmpdir stores files for 3~10 days
-    const saveTo = path.join(os.tmpdir(), path.basename(fileInfo.savePath))
+    const saveTo = path.join(process.env.IMAGES_DIR, 'tmp', path.basename(fileInfo.savePath))
     const moveTo = path.join(fileInfo.savePath)
 
     // Since we are trying to preserve the path we have to do a lot of directory creating.

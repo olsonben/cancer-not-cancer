@@ -252,6 +252,37 @@ const masterChangeHandler = async (changeData) => {
         deleteAllContents(changeData.folder)
     }
 }
+
+/**
+ * TODO: try manual lazy loading folder and file components
+ * <component
+      v-if="isOpen"
+      :is="getComponent(item)"
+      :item="item"
+      v-for="item in children"
+      :key="item.id"
+    />
+
+    getComponent(item) {
+      return item.type === 'folder'
+        ? () => import('./Folder.vue')
+        : () => import('./File.vue');
+    },
+ */
+
+/**
+ * NOTES from template:
+ * 
+ * <!-- TODO: This is essentially the ImagePicker can that component be used here? -->
+ * <div class="menu">
+ * 
+ * <!-- TODO: Should probably be replaced with a app wide loading animation. -->
+ * <button v-if="loading" class="button is-loading is-medium is-info">loading</button>
+ * 
+ * <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
+ * <ul class="menu-list">
+ *      <li v-for="(file, index) in files" :key="fileKey(file)">
+ */
 </script>
 
 <template>
@@ -281,14 +312,11 @@ const masterChangeHandler = async (changeData) => {
                         </div>
                     </div>
                 </div>
-            <!-- TODO: This is essentially the ImagePicker can that component be used here? -->
             <div class="menu">
                 <p v-if="!deleteMode" class="menu-label">Images Folders: Drag files and folder where you want to move them.</p>
                 <p v-else class="menu-label"><span class="has-text-danger">WARNING:</span> Deleting folders and images will permanently remove files, including images associated with existing tasks.</p>
-                <!-- TODO: Should probably be replaced with a app wide loading animation. -->
                 <button v-if="loading" class="button is-loading is-medium is-info">loading</button>
                 <ul class="menu-list">
-                    <!-- https://stackoverflow.com/questions/42629509/you-are-binding-v-model-directly-to-a-v-for-iteration-alias -->
                     <li v-for="(file, index) in files" :key="fileKey(file)">
                         <Folder v-if="isFolder(file)"
                         v-model="files[index]"

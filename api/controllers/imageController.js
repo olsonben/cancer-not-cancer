@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import imageOps from '../dbOperations/imageOps.js'
 import tagOps from '../dbOperations/tagOps.js'
-import { isMultipart, uploadImages, uploadAnnotationImages, removeFile, removeEmptyImageFolders } from '../lib/upload.js' // middleware to handle uploads
+import { isMultipart, uploadImages, uploadAnnotationImages, removeFile, delayedRemoveEmptyImageFolders } from '../lib/upload.js' // middleware to handle uploads
 import { getIP, virtualFileSystem as VFS, asyncHandler } from '../lib/functions.js' // Helper functions
 
 import * as path from 'path'
@@ -145,7 +145,7 @@ const imageController = {
                 await removeFile(file.savePath)
             }
         }
-        removeEmptyImageFolders()
+        delayedRemoveEmptyImageFolders()
         next()
     },
         
@@ -155,7 +155,7 @@ const imageController = {
     async deleteFile(filePath) {
         const absoluteFilePath = path.join(process.env.IMAGES_DIR, filePath)
         await removeFile(absoluteFilePath)
-        removeEmptyImageFolders()
+        delayedRemoveEmptyImageFolders()
     },
 
     /** Delete files at the relative file path.
@@ -164,7 +164,7 @@ const imageController = {
     async deleteFiles(filePaths) {
         const absoluteFilePaths = filePaths.map((filePath) => path.join(process.env.IMAGES_DIR, filePath))
         await Promise.all(absoluteFilePaths.map((absFilePath) => removeFile(absFilePath)))
-        removeEmptyImageFolders()
+        delayedRemoveEmptyImageFolders()
     },
         
     /** Filters file upload output to relevant data only (Return to sender the
